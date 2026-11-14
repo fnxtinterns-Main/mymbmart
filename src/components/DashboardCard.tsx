@@ -173,7 +173,7 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
         {showBreakdown && (
           <div className="mt-3 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3 text-xs">
             <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-              To keep full financial clarity, MegaBachatMart separates your earnings into 4 clear categories:
+              To keep full financial clarity, MEGA BACHAT MART separates your earnings into 4 clear categories:
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

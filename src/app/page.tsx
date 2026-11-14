@@ -178,7 +178,7 @@ export default function Home() {
 
             </div>
 
-            {/* Right 4 Cols: MegaBachatMart Plus Benefits (Picture 5 replica) */}
+            {/* Right 4 Cols: MEGA BACHAT MART Plus Benefits (Picture 5 replica) */}
             <div className="lg:col-span-4 bg-gradient-to-b from-brand-mint via-white to-emerald-50/50 rounded-3xl p-6 sm:p-7 border border-emerald-200 shadow-sm flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div>

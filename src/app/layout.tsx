@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MegaBachatMart | Bachat Bhi. Kamai Bhi.",
+  title: "MEGA BACHAT MART | Bachat Bhi. Kamai Bhi. - www.mymbmart.com",
   description: "India's Community E-Commerce Movement. Save on daily essentials, empower local SHGs and women entrepreneurs, and earn referral micro-credit on every purchase.",
   icons: {
     icon: "/images/LOgo.jpeg",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MegaBachatMart",
+    title: "MEGA BACHAT MART",
   },
 };
 
@@ -20,7 +20,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#0D2C6C",
+  themeColor: "#064E3B",
 };
 
 export default function RootLayout({

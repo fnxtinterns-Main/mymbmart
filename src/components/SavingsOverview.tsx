@@ -110,7 +110,7 @@ export const SavingsOverview: React.FC<SavingsOverviewProps> = ({
             <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
               <CheckCircle className="w-4 h-4" />
             </div>
-            <span>You are saving more with MegaBachatMart!</span>
+            <span>You are saving more with MEGA BACHAT MART!</span>
           </div>
         </div>
       ) : (

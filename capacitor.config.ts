@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.mymbmart.app',
-  appName: 'MegaBachatMart',
+  appName: 'MEGA BACHAT MART',
   webDir: 'out',
   server: {
     androidScheme: 'https',
