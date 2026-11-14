@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -83,6 +83,39 @@ export const Navbar: React.FC<NavbarProps> = ({
   ]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const notifRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotificationsOpen(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
+        setUserDropdown(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setNotificationsOpen(false);
+        setUserDropdown(false);
+      }
+    };
+
+    if (notificationsOpen || userDropdown) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('touchstart', handleOutsideClick);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [notificationsOpen, userDropdown]);
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -180,7 +213,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             
             {/* Notification Bell with Floating Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
               <button 
                 className="p-2 text-slate-600 hover:text-brand-forest hover:bg-brand-mint rounded-full transition relative"
                 title="Notifications"
@@ -197,97 +230,98 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Notification Popover Card */}
               {notificationsOpen && (
-                <>
-                  {/* Backdrop overlay for mobile */}
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setNotificationsOpen(false)}
-                  />
-
-                  <div className="absolute right-0 sm:-right-12 mt-2 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-emerald-100 py-3 z-50 animate-in fade-in zoom-in duration-150">
-                    
-                    {/* Header */}
-                    <div className="px-4 pb-3 border-b border-slate-100 flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-7 h-7 rounded-lg bg-brand-mint text-brand-forest flex items-center justify-center">
-                          <Bell className="w-4 h-4" />
-                        </div>
-                        <h4 className="font-extrabold text-sm text-slate-900">Community Updates</h4>
-                        {unreadCount > 0 && (
-                          <span className="bg-brand-orange text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                            {unreadCount} New
-                          </span>
-                        )}
+                <div className="absolute right-0 sm:-right-12 mt-2 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-emerald-100 py-3 z-50 animate-in fade-in zoom-in duration-150">
+                  
+                  {/* Header */}
+                  <div className="px-4 pb-3 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-7 h-7 rounded-lg bg-brand-mint text-brand-forest flex items-center justify-center">
+                        <Bell className="w-4 h-4" />
                       </div>
+                      <h4 className="font-extrabold text-sm text-slate-900">Community Updates</h4>
+                      {unreadCount > 0 && (
+                        <span className="bg-brand-orange text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                          {unreadCount} New
+                        </span>
+                      )}
+                    </div>
 
+                    <div className="flex items-center space-x-2">
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllAsRead}
                           className="text-[11px] font-bold text-brand-green hover:underline"
                         >
-                          Mark all read
+                          Mark read
                         </button>
                       )}
-                    </div>
-
-                    {/* Notification List */}
-                    <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
-                      {notifications.map((item) => (
-                        <Link
-                          key={item.id}
-                          href={item.link}
-                          onClick={() => {
-                            markAsRead(item.id);
-                            setNotificationsOpen(false);
-                          }}
-                          className={`block p-3.5 hover:bg-slate-50 transition relative group ${
-                            !item.read ? 'bg-brand-mint/20' : ''
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                              item.category === 'SHG' 
-                                ? 'bg-emerald-100 text-brand-forest' 
-                                : item.category === 'SAVINGS' 
-                                ? 'bg-blue-100 text-brand-blue'
-                                : item.category === 'EARN'
-                                ? 'bg-orange-100 text-brand-orange'
-                                : 'bg-slate-100 text-slate-700'
-                            }`}>
-                              {item.category}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {item.time}
-                            </span>
-                          </div>
-
-                          <h5 className="text-xs font-bold text-slate-900 mt-1.5 group-hover:text-brand-forest transition-colors">
-                            {item.title}
-                          </h5>
-                          <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                            {item.desc}
-                          </p>
-
-                          {!item.read && (
-                            <span className="absolute top-3 right-3 w-1.5 h-1.5 bg-brand-orange rounded-full"></span>
-                          )}
-                        </Link>
-                      ))}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="px-4 pt-2.5 border-t border-slate-100 text-center">
-                      <Link
-                        href="/shop"
+                      <button
                         onClick={() => setNotificationsOpen(false)}
-                        className="text-xs font-bold text-brand-forest hover:text-brand-green transition"
+                        className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition"
+                        title="Close"
                       >
-                        Explore Daily Deals & SHG Marketplace →
-                      </Link>
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
-
                   </div>
-                </>
+
+                  {/* Notification List */}
+                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
+                    {notifications.map((item) => (
+                      <Link
+                        key={item.id}
+                        href={item.link}
+                        onClick={() => {
+                          markAsRead(item.id);
+                          setNotificationsOpen(false);
+                        }}
+                        className={`block p-3.5 hover:bg-slate-50 transition relative group ${
+                          !item.read ? 'bg-brand-mint/20' : ''
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                            item.category === 'SHG' 
+                              ? 'bg-emerald-100 text-brand-forest' 
+                              : item.category === 'SAVINGS' 
+                              ? 'bg-blue-100 text-brand-blue'
+                              : item.category === 'EARN'
+                              ? 'bg-orange-100 text-brand-orange'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {item.category}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {item.time}
+                          </span>
+                        </div>
+
+                        <h5 className="text-xs font-bold text-slate-900 mt-1.5 group-hover:text-brand-forest transition-colors">
+                          {item.title}
+                        </h5>
+                        <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                          {item.desc}
+                        </p>
+
+                        {!item.read && (
+                          <span className="absolute top-3 right-3 w-1.5 h-1.5 bg-brand-orange rounded-full"></span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-4 pt-2.5 border-t border-slate-100 text-center">
+                    <Link
+                      href="/shop"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="text-xs font-bold text-brand-forest hover:text-brand-green transition"
+                    >
+                      Explore Daily Deals & SHG Marketplace →
+                    </Link>
+                  </div>
+
+                </div>
               )}
             </div>
 
@@ -304,7 +338,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* User Profile or Sign In Button */}
             {isLoggedIn && user ? (
-              <div className="relative">
+              <div className="relative" ref={userDropdownRef}>
                 <button
                   onClick={() => setUserDropdown(!userDropdown)}
                   className="flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-full border border-slate-200 hover:border-emerald-300 bg-white transition"
