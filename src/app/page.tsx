@@ -559,43 +559,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 8. Recommended Color Palette & Brand Identity Showcase (Matching Picture 5) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-3xl border border-emerald-100 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-2">
-                Official Brand Colour Identity
-              </span>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
-                <div className="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
-                  <span className="w-3.5 h-3.5 rounded-full bg-brand-green"></span>
-                  <span className="font-bold text-slate-800">Bachat Green <span className="text-[10px] text-slate-400 font-mono">#16A34A</span></span>
-                </div>
-                <div className="flex items-center space-x-2 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-xl">
-                  <span className="w-3.5 h-3.5 rounded-full bg-brand-orange"></span>
-                  <span className="font-bold text-slate-800">Saffron Orange <span className="text-[10px] text-slate-400 font-mono">#FF5722</span></span>
-                </div>
-                <div className="flex items-center space-x-2 bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-xl">
-                  <span className="w-3.5 h-3.5 rounded-full bg-brand-blue"></span>
-                  <span className="font-bold text-slate-800">Offer Cyan <span className="text-[10px] text-slate-400 font-mono">#0284C7</span></span>
-                </div>
-                <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-                  <span className="w-3.5 h-3.5 rounded-full bg-brand-mint border border-emerald-300"></span>
-                  <span className="font-bold text-slate-800">Fresh Mint <span className="text-[10px] text-slate-400 font-mono">#E6F7EE</span></span>
-                </div>
-                <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-                  <span className="w-3.5 h-3.5 rounded-full bg-brand-charcoal"></span>
-                  <span className="font-bold text-slate-800">Charcoal Slate <span className="text-[10px] text-slate-400 font-mono">#0F172A</span></span>
-                </div>
-              </div>
-            </div>
 
-            <div className="flex items-center space-x-2 bg-emerald-50 text-brand-forest px-4 py-3 rounded-2xl border border-emerald-200 text-xs font-bold shrink-0">
-              <CheckCircle2 className="w-4 h-4 text-brand-green shrink-0" />
-              <span>Fresh. Friendly. Trustworthy. Community First.</span>
-            </div>
-          </div>
-        </section>
 
       </main>
 
