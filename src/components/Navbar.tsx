@@ -10,12 +10,15 @@ import {
   Search, 
   Menu, 
   X, 
-  ChevronDown 
+  ChevronDown,
+  User as UserIcon,
+  LogIn
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 
 interface NavbarProps {
-  user: UserProfile;
+  user?: UserProfile | null;
+  isLoggedIn?: boolean;
   cartCount: number;
   onOpenCart: () => void;
   onOpenAuth: () => void;
@@ -24,6 +27,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   user,
+  isLoggedIn = false,
   cartCount,
   onOpenCart,
   onOpenAuth,
@@ -116,67 +120,77 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </button>
 
-            {/* User Profile / Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setUserDropdown(!userDropdown)}
-                className="flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 transition"
-              >
-                <div className="w-8 h-8 rounded-full bg-brand-navy text-white flex items-center justify-center text-xs font-bold">
-                  {user.name.charAt(0)}
-                </div>
-                <div className="hidden md:block text-left text-xs">
-                  <div className="font-semibold text-slate-900 truncate max-w-[90px]">{user.name}</div>
-                  <div className="text-[10px] text-emerald-600 font-bold">{user.memberId}</div>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden md:block" />
-              </button>
-
-              {userDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs text-slate-500">Signed in as</p>
-                    <p className="text-sm font-bold text-slate-900">{user.name}</p>
-                    <span className="inline-block mt-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
-                      {user.level} Member
-                    </span>
+            {/* User Profile or Sign In Button */}
+            {isLoggedIn && user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setUserDropdown(!userDropdown)}
+                  className="flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-full border border-slate-200 hover:border-slate-300 bg-slate-50 transition"
+                >
+                  <div className="w-8 h-8 rounded-full bg-brand-navy text-white flex items-center justify-center text-xs font-bold">
+                    {user.name.charAt(0)}
                   </div>
+                  <div className="hidden md:block text-left text-xs">
+                    <div className="font-semibold text-slate-900 truncate max-w-[90px]">{user.name}</div>
+                    <div className="text-[10px] text-emerald-600 font-bold">{user.memberId}</div>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden md:block" />
+                </button>
 
-                  <Link
-                    href="/savings"
-                    onClick={() => setUserDropdown(false)}
-                    className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <span>My Dashboard & Wallet</span>
-                  </Link>
+                {userDropdown && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-slate-100">
+                      <p className="text-xs text-slate-500">Signed in as</p>
+                      <p className="text-sm font-bold text-slate-900">{user.name}</p>
+                      <span className="inline-block mt-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
+                        {user.level} Member
+                      </span>
+                    </div>
 
-                  <Link
-                    href="/refer"
-                    onClick={() => setUserDropdown(false)}
-                    className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <span>Refer & Earn</span>
-                  </Link>
-
-                  <Link
-                    href="/producer"
-                    onClick={() => setUserDropdown(false)}
-                    className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <span>Join as SHG / Producer</span>
-                  </Link>
-
-                  <div className="border-t border-slate-100 mt-1 pt-1">
-                    <button
-                      onClick={() => { onOpenAuth(); setUserDropdown(false); }}
-                      className="w-full text-left px-4 py-2 text-sm text-brand-orange font-medium hover:bg-orange-50"
+                    <Link
+                      href="/savings"
+                      onClick={() => setUserDropdown(false)}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
                     >
-                      Switch Account / Sign In
-                    </button>
+                      <span>My Dashboard & Wallet</span>
+                    </Link>
+
+                    <Link
+                      href="/refer"
+                      onClick={() => setUserDropdown(false)}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
+                    >
+                      <span>Refer & Earn</span>
+                    </Link>
+
+                    <Link
+                      href="/producer"
+                      onClick={() => setUserDropdown(false)}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
+                    >
+                      <span>Join as SHG / Producer</span>
+                    </Link>
+
+                    <div className="border-t border-slate-100 mt-1 pt-1">
+                      <button
+                        onClick={() => { onOpenAuth(); setUserDropdown(false); }}
+                        className="w-full text-left px-4 py-2 text-sm text-brand-orange font-medium hover:bg-orange-50"
+                      >
+                        Switch Account / Sign In
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="flex items-center space-x-1.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2 rounded-full shadow-sm shadow-orange-500/20 transition active:scale-95"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In / Join</span>
+              </button>
+            )}
 
             {/* Mobile Menu Toggle */}
             <button

@@ -5,44 +5,24 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
-import { DashboardCard } from '@/components/DashboardCard';
-import { SavingsOverview } from '@/components/SavingsOverview';
-import { ReferAndEarn } from '@/components/ReferAndEarn';
 import { CartDrawer } from '@/components/CartDrawer';
 import { AuthModal } from '@/components/AuthModal';
-import { WithdrawModal } from '@/components/WithdrawModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
 
-import { 
-  initialUser, 
-  initialWallet, 
-  initialTransactions, 
-  monthlySavings, 
-  sampleProducts 
-} from '@/lib/data';
-import { CartItem, ProductItem, Transaction, UserProfile, WalletState } from '@/lib/types';
+import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
+import { CartItem, ProductItem, UserProfile } from '@/lib/types';
 
 import { 
   Sparkles, 
-  ShoppingBag, 
   ArrowRight, 
-  ShieldCheck, 
   CheckCircle2, 
-  Tag, 
-  Users,
-  Store,
-  HeartHandshake,
-  TrendingUp,
-  Percent,
-  ChevronRight,
-  Gift
+  ChevronRight
 } from 'lucide-react';
 
 export default function Home() {
-  const [user, setUser] = useState<UserProfile>(initialUser);
-  const [wallet, setWallet] = useState<WalletState>(initialWallet);
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([
     { product: sampleProducts[0], quantity: 1 },
     { product: sampleProducts[1], quantity: 1 },
@@ -50,7 +30,6 @@ export default function Home() {
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [orderToast, setOrderToast] = useState<string | null>(null);
 
   const handleAddToCart = (product: ProductItem) => {
@@ -84,21 +63,6 @@ export default function Home() {
     setCartItems((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  const handleWithdrawSuccess = (amount: number, payoutInfo: string) => {
-    setWallet((prev) => ({ ...prev, balance: prev.balance - amount }));
-    const newTx: Transaction = {
-      id: 'tx-' + Date.now(),
-      date: 'Just now',
-      title: 'Withdrawal to ' + (payoutInfo.includes('@') ? 'UPI' : 'Bank'),
-      type: 'WITHDRAWAL',
-      amount: -amount,
-      status: 'COMPLETED',
-      smartChainHash: '0x' + Math.random().toString(16).substring(2, 8),
-      description: `Transferred ₹${amount} to ${payoutInfo}`,
-    };
-    setTransactions((prev) => [newTx, ...prev]);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       
@@ -110,9 +74,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Navbar */}
+      {/* Main Navbar (Unauthenticated state by default) */}
       <Navbar
         user={user}
+        isLoggedIn={isLoggedIn}
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
@@ -131,50 +96,7 @@ export default function Home() {
           }}
         />
 
-        {/* 2. Visual Dashboard Sneak-Peek (Directly matching your mockup cards) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 mb-8 gap-2">
-            <div>
-              <div className="flex items-center space-x-2 text-xs font-bold text-brand-orange uppercase tracking-wider">
-                <Sparkles className="w-4 h-4" />
-                <span>Bachat & Kamai Live Hub</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-                Your Community Dashboard At A Glance
-              </h2>
-            </div>
-            <Link
-              href="/savings"
-              className="inline-flex items-center space-x-1.5 text-xs font-bold text-brand-navy hover:text-brand-orange transition"
-            >
-              <span>Full Passbook & Analytics</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-            {/* Card 1: Member Profile & Wallet */}
-            <DashboardCard
-              user={user}
-              wallet={wallet}
-              onOpenWithdraw={() => setIsWithdrawOpen(true)}
-              onViewOrders={() => { window.location.href = '/shop'; }}
-              onViewReferrals={() => { window.location.href = '/refer'; }}
-            />
-
-            {/* Card 2: Savings Overview (Monthly chart) */}
-            <SavingsOverview
-              totalSavings={wallet.totalSavings}
-              monthlyData={monthlySavings}
-              transactions={transactions}
-            />
-
-            {/* Card 3: Refer & Earn (Gift card + WhatsApp quick share) */}
-            <ReferAndEarn user={user} />
-          </div>
-        </section>
-
-        {/* 3. Section 2: Kya Hai MegaBachatMart? (From pitch) */}
+        {/* 2. Section 2: Kya Hai MegaBachatMart? (From pitch) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-r from-slate-900 via-brand-navy to-emerald-950 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
             <div className="max-w-3xl space-y-4">
@@ -210,7 +132,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 4. Section 3: The PROSUMER REVOLUTION (3 Pillars from pitch) */}
+        {/* 3. Section 3: The PROSUMER REVOLUTION (3 Pillars from pitch) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center max-w-3xl mx-auto space-y-2">
             <span className="text-xs font-bold text-brand-orange uppercase tracking-wider">
@@ -289,7 +211,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 5. Trending Products Preview */}
+        {/* 4. Trending Products Preview */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <div>
@@ -353,7 +275,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 6. Section 4: How It Works — 4 Simple Steps */}
+        {/* 5. Section 4: How It Works — 4 Simple Steps */}
         <section className="bg-slate-100 py-12 sm:py-16 border-y border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             <div className="text-center max-w-2xl mx-auto space-y-2">
@@ -403,7 +325,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 7. Section 5: Kiske Liye Hai? */}
+        {/* 6. Section 5: Kiske Liye Hai? */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
@@ -447,7 +369,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 8. Final CTA (From pitch) */}
+        {/* 7. Final CTA (From pitch) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-r from-emerald-900 to-brand-navy rounded-3xl p-8 sm:p-14 text-center text-white shadow-2xl space-y-6">
             <h2 className="text-3xl sm:text-5xl font-black tracking-tight">
@@ -483,26 +405,21 @@ export default function Home() {
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
         onClearCart={() => setCartItems([])}
-        walletBalance={wallet.balance}
+        walletBalance={initialWallet.balance}
         onOrderSuccess={(orderData) => {
           setOrderToast(`Order Confirmed! You saved ₹${orderData.shoppingSavings}.`);
           setTimeout(() => setOrderToast(null), 4000);
         }}
       />
 
-      {/* Auth Modal */}
+      {/* Auth Modal (Sign In / Register) */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onLoginSuccess={(u) => setUser((p) => ({ ...p, ...u }))}
-      />
-
-      {/* Withdrawal Modal */}
-      <WithdrawModal
-        isOpen={isWithdrawOpen}
-        onClose={() => setIsWithdrawOpen(false)}
-        availableBalance={wallet.balance}
-        onWithdrawSuccess={handleWithdrawSuccess}
+        onLoginSuccess={(u) => {
+          setUser({ ...initialUser, ...u });
+          setIsLoggedIn(true);
+        }}
       />
 
       {/* Mobile Bottom Navigation Bar */}
