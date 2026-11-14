@@ -1,0 +1,21 @@
+{
+  "name": "MegaBachatMart",
+  "short_name": "mymbmart",
+  "description": "Bachat Bhi. Kamai Bhi. Apni Community Ke Saath.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0D2C6C",
+  "icons": [
+    {
+      "src": "/images/LOgo.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/images/LOgo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

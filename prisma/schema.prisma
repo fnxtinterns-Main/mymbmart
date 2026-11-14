@@ -1,0 +1,160 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CONSUMER
+  PROMOTER
+  PRODUCER
+  ADMIN
+}
+
+enum TransactionType {
+  CASHBACK
+  SHOPPING_DISCOUNT
+  WALLET_CREDIT
+  DIRECT_REFERRAL
+  LEVEL_INCOME
+  REDEEM_PURCHASE
+  WITHDRAWAL
+}
+
+enum TransactionStatus {
+  COMPLETED
+  PENDING
+  FAILED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum ProducerCategory {
+  SHG
+  SHOP_MERCHANT
+  CLOUD_KITCHEN
+  WOMEN_ENTREPRENEUR
+}
+
+model User {
+  id              String            @id @default(uuid())
+  memberId        String            @unique
+  name            String
+  email           String?           @unique
+  phone           String?           @unique
+  passwordHash    String?
+  role            Role              @default(PROMOTER)
+  referralCode    String            @unique
+  referredById    String?
+  referredBy      User?             @relation("UserReferrals", fields: [referredById], references: [id])
+  downline        User[]            @relation("UserReferrals")
+  level           String            @default("Silver")
+  isActive        Boolean           @default(true)
+  wallet          Wallet?
+  producerProfile ProducerProfile?
+  orders          Order[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model OtpVerification {
+  id          String   @id @default(uuid())
+  identifier  String   // Email or phone
+  code        String
+  purpose     String   // "REGISTRATION" | "LOGIN"
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model Wallet {
+  id             String              @id @default(uuid())
+  userId         String              @unique
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance        Float               @default(0)
+  totalSavings   Float               @default(0)
+  actualCashback Float               @default(0)
+  referralRewards Float              @default(0)
+  lifetimeEarned Float               @default(0)
+  transactions   WalletTransaction[]
+  updatedAt      DateTime            @updatedAt
+}
+
+model WalletTransaction {
+  id              String            @id @default(uuid())
+  walletId        String
+  wallet          Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  amount          Float
+  type            TransactionType
+  status          TransactionStatus @default(COMPLETED)
+  title           String
+  description     String?
+  smartChainHash  String?
+  createdAt       DateTime          @default(now())
+}
+
+model ProducerProfile {
+  id           String           @id @default(uuid())
+  userId       String           @unique
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName String
+  category     ProducerCategory
+  city         String
+  state        String
+  isVerified   Boolean          @default(false)
+  products     Product[]
+  createdAt    DateTime         @default(now())
+}
+
+model Product {
+  id             String           @id @default(uuid())
+  name           String
+  category       String
+  description    String?
+  mrp            Float
+  bachatPrice    Float
+  unit           String
+  imageUrl       String?
+  stock          Int              @default(100)
+  isSHG          Boolean          @default(false)
+  producerId     String?
+  producer       ProducerProfile? @relation(fields: [producerId], references: [id])
+  orderItems     OrderItem[]
+  createdAt      DateTime         @default(now())
+}
+
+model Order {
+  id                 String      @id @default(uuid())
+  orderNumber        String      @unique
+  userId             String
+  user               User        @relation(fields: [userId], references: [id])
+  status             OrderStatus @default(CONFIRMED)
+  totalMRP           Float
+  totalBachatPrice   Float
+  savings            Float
+  creditsApplied     Float       @default(0)
+  finalAmount        Float
+  deliveryAddress    String
+  items              OrderItem[]
+  createdAt          DateTime    @default(now())
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+  unitPrice   Float
+  bachatPrice Float
+}
