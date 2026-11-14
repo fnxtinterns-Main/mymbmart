@@ -5,12 +5,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack: (config, { dev }) => {
-    if (dev) {
-      config.cache = false; // Prevents Windows PackFileCacheStrategy ENOENT / rename crashes
-    }
-    return config;
-  },
+  turbopack: {},
 };
 
 export default nextConfig;
