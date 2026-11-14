@@ -67,7 +67,12 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             isActive('/savings') ? 'text-brand-forest font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Wallet className={`w-5 h-5 ${isActive('/savings') ? 'text-brand-forest' : 'text-slate-400'}`} />
+          <div className="relative">
+            <Wallet className={`w-5 h-5 ${isActive('/savings') ? 'text-brand-forest' : 'text-slate-400'}`} />
+            <span className="absolute -top-1 -right-2.5 bg-amber-500 text-white text-[7px] font-black uppercase px-1 rounded-full">
+              Soon
+            </span>
+          </div>
           <span className="text-[10px] mt-0.5">Savings</span>
         </Link>
 
@@ -78,7 +83,12 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             isActive('/refer') ? 'text-brand-orange font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Share2 className={`w-5 h-5 ${isActive('/refer') ? 'text-brand-orange' : 'text-slate-400'}`} />
+          <div className="relative">
+            <Share2 className={`w-5 h-5 ${isActive('/refer') ? 'text-brand-orange' : 'text-slate-400'}`} />
+            <span className="absolute -top-1 -right-2.5 bg-amber-500 text-white text-[7px] font-black uppercase px-1 rounded-full">
+              Soon
+            </span>
+          </div>
           <span className="text-[10px] mt-0.5">Refer</span>
         </Link>
 

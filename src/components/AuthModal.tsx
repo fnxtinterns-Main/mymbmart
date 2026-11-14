@@ -104,19 +104,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </button>
 
         {/* Brand Header */}
-        <div className="text-center space-y-1 mb-6">
-          <div className="inline-flex items-center space-x-1.5 bg-orange-100 text-brand-orange text-xs font-bold px-3 py-1 rounded-full mb-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Prosumer Portal</span>
+        <div className="text-center space-y-1 mb-5">
+          <div className="inline-flex items-center space-x-1.5 bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-3 py-1 rounded-full mb-1">
+            <Sparkles className="w-3.5 h-3.5 text-brand-orange" />
+            <span>Coming Soon • VIP Early Access</span>
           </div>
           <h3 className="text-2xl font-black text-slate-900">
-            {mode === 'otp' ? 'First-Time OTP Login' : 'Welcome Back'}
+            {mode === 'otp' ? 'Sign In / Pre-Register' : 'Member Login'}
           </h3>
-          <p className="text-xs text-slate-500">
-            {mode === 'otp'
-              ? 'Verify via Mobile or Email OTP to activate your bachat & referral wallet'
-              : 'Sign in with your registered email and password'}
+          <p className="text-xs text-slate-600">
+            Member accounts & Smart Chain wallet are launching soon! Enter your contact below to reserve your early spot.
           </p>
+        </div>
+
+        {/* Coming Soon Notice Card */}
+        <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3 mb-5 flex items-start space-x-2.5 text-xs text-amber-950">
+          <span className="text-base shrink-0">✨</span>
+          <div className="leading-snug">
+            <span className="font-extrabold text-amber-900">Pre-Launch Perk:</span> Early members receive a flat <strong>₹100 Micro-Credit Welcome Bonus</strong> + priority SHG group buying access when we go live.
+          </div>
         </div>
 
         {/* Tab switch */}

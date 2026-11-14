@@ -167,8 +167,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/shop', label: 'Shop', icon: Store },
-    { href: '/savings', label: 'Savings', icon: PiggyBank },
-    { href: '/refer', label: 'Refer & Earn', icon: Users },
+    { href: '/savings', label: 'Savings', icon: PiggyBank, badge: 'Soon' },
+    { href: '/refer', label: 'Refer & Earn', icon: Users, badge: 'Soon' },
   ];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -233,12 +233,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex flex-col items-center px-3 py-1 rounded-xl text-xs font-semibold transition-all ${
+                  className={`relative flex flex-col items-center px-3 py-1 rounded-xl text-xs font-semibold transition-all ${
                     active
                       ? 'text-brand-green font-bold bg-brand-mint/60'
                       : 'text-slate-600 hover:text-brand-forest hover:bg-slate-50'
                   }`}
                 >
+                  {link.badge && (
+                    <span className="absolute -top-1.5 -right-0.5 text-[8px] font-black uppercase tracking-wider bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-xs">
+                      {link.badge}
+                    </span>
+                  )}
                   <Icon className={`w-4 h-4 mb-0.5 ${active ? 'text-brand-green' : 'text-slate-500'}`} />
                   <span>{link.label}</span>
                 </Link>
@@ -440,11 +445,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="flex items-center space-x-1.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-md shadow-orange-500/20 transition active:scale-95"
+                className="flex items-center space-x-1.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-md shadow-orange-500/20 transition active:scale-95"
               >
                 <LogIn className="w-4 h-4" />
                 <span className="hidden sm:inline">Sign In / Join</span>
                 <span className="sm:hidden">Join</span>
+                <span className="text-[8px] font-black uppercase tracking-wider bg-white/25 text-white px-1.5 py-0.5 rounded-full">
+                  Soon
+                </span>
               </button>
             )}
 
@@ -487,14 +495,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+                  className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
                     isActive(link.href)
                       ? 'text-brand-forest bg-brand-mint font-bold'
                       : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className="w-5 h-5 text-brand-green" />
-                  <span>{link.label}</span>
+                  <div className="flex items-center space-x-3">
+                    <Icon className="w-5 h-5 text-brand-green" />
+                    <span>{link.label}</span>
+                  </div>
+                  {link.badge && (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full">
+                      Coming Soon
+                    </span>
+                  )}
                 </Link>
               );
             })}
