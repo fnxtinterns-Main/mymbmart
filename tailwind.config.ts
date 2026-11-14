@@ -10,18 +10,18 @@ export default {
     extend: {
       colors: {
         brand: {
-          navy: "#0D2C6C",
-          "navy-dark": "#0A2255",
-          "navy-light": "#1B3E8C",
-          green: "#064E3B",
-          "green-light": "#0D684D",
-          "green-badge": "#16A34A",
-          orange: "#FF5722",
+          forest: "#064E3B",        // Deep Forest Green · Brand identity, navigation, headings
+          green: "#16A34A",         // Fresh Green · Savings, success, benefits
+          "green-hover": "#15803D",
+          orange: "#FF5722",        // Saffron Orange · Shop Now, Join Free, CTAs
           "orange-hover": "#E64A19",
           "orange-light": "#FFF3EE",
-          cyan: "#0284C7",
-          "cyan-light": "#E0F2FE",
-          surface: "#F8FAFC",
+          blue: "#0284C7",          // Electric Blue · Discounts, offers, highlights
+          "blue-light": "#E0F2FE",
+          mint: "#E6F7EE",          // Fresh Mint · Backgrounds and cards
+          "mint-light": "#F2FBF6",
+          charcoal: "#0F172A",      // Charcoal Slate · Body text and readability
+          slate: "#334155",
         },
       },
     },

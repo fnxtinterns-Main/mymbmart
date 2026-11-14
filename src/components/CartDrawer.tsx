@@ -229,7 +229,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                 <div className="flex justify-between items-baseline pt-2 border-t border-slate-200 text-slate-900">
                   <span className="text-sm font-bold">Total Amount</span>
-                  <span className="text-2xl font-black text-brand-navy">₹ {finalPayable}</span>
+                  <span className="text-2xl font-black text-brand-forest">₹ {finalPayable}</span>
                 </div>
               </div>
 

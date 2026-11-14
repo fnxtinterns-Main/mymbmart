@@ -101,7 +101,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
             type="button"
             onClick={() => setMethod('upi')}
             className={`py-2.5 rounded-xl border flex items-center justify-center space-x-2 transition ${
-              method === 'upi' ? 'bg-brand-navy text-white border-brand-navy shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200'
+              method === 'upi' ? 'bg-brand-forest text-white border-brand-forest shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200'
             }`}
           >
             <QrCode className="w-4 h-4" />
@@ -111,7 +111,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
             type="button"
             onClick={() => setMethod('bank')}
             className={`py-2.5 rounded-xl border flex items-center justify-center space-x-2 transition ${
-              method === 'bank' ? 'bg-brand-navy text-white border-brand-navy shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200'
+              method === 'bank' ? 'bg-brand-forest text-white border-brand-forest shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200'
             }`}
           >
             <Building2 className="w-4 h-4" />

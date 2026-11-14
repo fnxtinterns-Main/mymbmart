@@ -35,10 +35,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <Link
           href="/"
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
-            isActive('/') ? 'text-brand-navy font-bold' : 'text-slate-400 hover:text-slate-600'
+            isActive('/') ? 'text-brand-forest font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Home className={`w-5 h-5 ${isActive('/') ? 'text-brand-navy' : 'text-slate-400'}`} />
+          <Home className={`w-5 h-5 ${isActive('/') ? 'text-brand-forest' : 'text-slate-400'}`} />
           <span className="text-[10px] mt-0.5">Home</span>
         </Link>
 
@@ -46,11 +46,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <Link
           href="/shop"
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
-            isActive('/shop') ? 'text-brand-navy font-bold' : 'text-slate-400 hover:text-slate-600'
+            isActive('/shop') ? 'text-brand-green font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           <div className="relative">
-            <ShoppingBag className={`w-5 h-5 ${isActive('/shop') ? 'text-brand-navy' : 'text-slate-400'}`} />
+            <ShoppingBag className={`w-5 h-5 ${isActive('/shop') ? 'text-brand-green' : 'text-slate-400'}`} />
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-2 bg-brand-orange text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                 {cartCount}
@@ -64,10 +64,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <Link
           href="/savings"
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
-            isActive('/savings') ? 'text-emerald-700 font-bold' : 'text-slate-400 hover:text-slate-600'
+            isActive('/savings') ? 'text-brand-forest font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Wallet className={`w-5 h-5 ${isActive('/savings') ? 'text-emerald-700' : 'text-slate-400'}`} />
+          <Wallet className={`w-5 h-5 ${isActive('/savings') ? 'text-brand-forest' : 'text-slate-400'}`} />
           <span className="text-[10px] mt-0.5">Savings</span>
         </Link>
 
@@ -86,10 +86,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <Link
           href="/producer"
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
-            isActive('/producer') ? 'text-brand-navy font-bold' : 'text-slate-400 hover:text-slate-600'
+            isActive('/producer') ? 'text-brand-blue font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <MoreHorizontal className={`w-5 h-5 ${isActive('/producer') ? 'text-brand-navy' : 'text-slate-400'}`} />
+          <MoreHorizontal className={`w-5 h-5 ${isActive('/producer') ? 'text-brand-blue' : 'text-slate-400'}`} />
           <span className="text-[10px] mt-0.5">Producer</span>
         </Link>
 

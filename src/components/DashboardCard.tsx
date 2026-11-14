@@ -43,7 +43,7 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
         <div className="flex items-center space-x-4">
           {/* Avatar */}
           <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-navy to-emerald-600 text-white flex items-center justify-center text-xl font-black shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-forest to-brand-green text-white flex items-center justify-center text-xl font-black shadow-md">
               {user.name.charAt(0)}
             </div>
             <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">

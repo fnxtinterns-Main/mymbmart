@@ -52,7 +52,7 @@ export const ProducerSection: React.FC = () => {
     },
     {
       title: 'SHOP OWNERS & MERCHANTS',
-      tagColor: 'bg-brand-navy',
+      tagColor: 'bg-brand-forest',
       items: ['Kirana & General Store', 'Daily Essentials Listing', 'Local Delivery Network', 'Repeat Customers'],
       action: 'Join as Seller',
     },
@@ -112,7 +112,7 @@ export const ProducerSection: React.FC = () => {
 
               <button
                 onClick={() => setFormOpen(true)}
-                className="w-full bg-slate-100 hover:bg-brand-navy hover:text-white text-slate-800 text-xs font-bold py-2.5 rounded-xl border border-slate-200 transition-colors"
+                className="w-full bg-slate-100 hover:bg-brand-forest hover:text-white text-slate-800 text-xs font-bold py-2.5 rounded-xl border border-slate-200 transition-colors"
               >
                 {cat.action}
               </button>

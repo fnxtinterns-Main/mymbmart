@@ -50,8 +50,8 @@ export const ReferAndEarn: React.FC<ReferAndEarnProps> = ({ user }) => {
       
       {/* Header */}
       <div>
-        <div className="flex items-center space-x-2 text-brand-navy font-extrabold text-base sm:text-lg pb-3 border-b border-slate-100">
-          <div className="w-8 h-8 rounded-xl bg-sky-100 text-brand-cyan flex items-center justify-center">
+        <div className="flex items-center space-x-2 text-brand-forest font-extrabold text-base sm:text-lg pb-3 border-b border-slate-100">
+          <div className="w-8 h-8 rounded-xl bg-orange-100 text-brand-orange flex items-center justify-center">
             <Share2 className="w-4 h-4" />
           </div>
           <span>Refer & Earn</span>
@@ -70,7 +70,7 @@ export const ReferAndEarn: React.FC<ReferAndEarnProps> = ({ user }) => {
             <div className="absolute inset-x-0 h-6 bg-amber-400/90 top-1/2 -translate-y-1/2"></div>
             <div className="absolute inset-y-0 w-6 bg-amber-400/90 left-1/2 -translate-x-1/2"></div>
             <Gift className="w-14 h-14 text-white z-10 drop-shadow-md" />
-            <div className="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow">
+            <div className="absolute -top-2 -right-2 bg-brand-orange text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
               Micro-Credit
             </div>
           </div>
@@ -82,7 +82,7 @@ export const ReferAndEarn: React.FC<ReferAndEarnProps> = ({ user }) => {
             Your Referral Code
           </span>
           <div className="flex items-center justify-center space-x-3">
-            <span className="text-2xl font-black font-mono tracking-widest text-brand-navy">
+            <span className="text-2xl font-black font-mono tracking-widest text-brand-forest">
               {user.referralCode}
             </span>
             <button

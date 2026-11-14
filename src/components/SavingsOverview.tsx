@@ -52,7 +52,7 @@ export const SavingsOverview: React.FC<SavingsOverviewProps> = ({
             <button
               onClick={() => setActiveTab('ledger')}
               className={`px-3 py-1 rounded-lg transition ${
-                activeTab === 'ledger' ? 'bg-white shadow-sm text-brand-navy font-bold' : 'text-slate-500'
+                activeTab === 'ledger' ? 'bg-white shadow-sm text-brand-forest font-bold' : 'text-slate-500'
               }`}
             >
               Smart Ledger
@@ -130,7 +130,7 @@ export const SavingsOverview: React.FC<SavingsOverviewProps> = ({
                 <span className={`font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
                   {tx.amount > 0 ? `+₹${tx.amount}` : `₹${Math.abs(tx.amount)}`}
                 </span>
-                <p className="font-mono text-[9px] text-brand-navy font-bold flex items-center justify-end space-x-1">
+                <p className="font-mono text-[9px] text-brand-forest font-bold flex items-center justify-end space-x-1">
                   <ShieldCheck className="w-3 h-3 text-emerald-500" />
                   <span>{tx.smartChainHash}</span>
                 </p>

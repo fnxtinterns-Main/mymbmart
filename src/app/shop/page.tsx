@@ -60,7 +60,12 @@ export default function ShopPage() {
       />
 
       <main className="flex-1 pb-16">
-        <StoreCatalog products={sampleProducts} onAddToCart={handleAddToCart} />
+        <StoreCatalog 
+          products={sampleProducts} 
+          cartItems={cartItems}
+          onAddToCart={handleAddToCart}
+          onUpdateQuantity={handleUpdateQuantity}
+        />
       </main>
 
       <CartDrawer

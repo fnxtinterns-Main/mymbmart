@@ -170,7 +170,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     placeholder="e.g. MB123456"
                     value={referralCode}
                     onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-brand-orange focus:outline-none font-mono uppercase font-bold text-brand-navy"
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-brand-orange focus:outline-hidden font-mono uppercase font-bold text-brand-forest"
                   />
                   <p className="text-[10px] text-slate-400 mt-1">
                     Joining with a referral connects you to community bulk discounts.
@@ -216,7 +216,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           nextInput?.focus();
                         }
                       }}
-                      className="w-11 h-12 text-center text-lg font-black rounded-xl border border-slate-300 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/30 focus:outline-none"
+                      className="w-11 h-12 text-center text-lg font-black rounded-xl border border-slate-300 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/30 focus:outline-hidden"
                     />
                   ))}
                 </div>
@@ -254,7 +254,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 placeholder="name@example.com"
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-brand-navy focus:outline-none"
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-brand-forest focus:outline-hidden"
               />
             </div>
 
@@ -268,7 +268,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-brand-navy focus:outline-none"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-brand-forest focus:outline-hidden"
                 />
               </div>
             </div>
@@ -276,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-navy hover:bg-slate-900 text-white font-extrabold py-3.5 rounded-2xl shadow-lg transition"
+              className="w-full bg-brand-forest hover:bg-emerald-950 text-white font-extrabold py-3.5 rounded-2xl shadow-lg transition"
             >
               {loading ? <span>Signing in...</span> : <span>Sign In with Password</span>}
             </button>
