@@ -32,7 +32,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         
         {/* 1. Top Hero Graphic Banner (User's Exact Design Graphic) */}
         <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-emerald-950/5 border border-emerald-200/90 bg-white group cursor-pointer">
-          <div className="relative w-full aspect-[1024/341]">
+          <div className="relative w-full aspect-[1024/339]">
             <Image
               src="/images/hero_banner.jpg"
               alt="MEGA BACHAT MART - Bachat Bhi. Kamai Bhi! Shop Smart. Save More."
