@@ -2,18 +2,15 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { 
   ShoppingBag, 
-  User, 
   Bell, 
   Search, 
   Menu, 
   X, 
-  Sparkles, 
-  ChevronDown, 
-  Smartphone, 
-  Monitor,
-  HeartHandshake
+  ChevronDown 
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 
@@ -22,11 +19,7 @@ interface NavbarProps {
   cartCount: number;
   onOpenCart: () => void;
   onOpenAuth: () => void;
-  onOpenWithdraw: () => void;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  isMobilePreview: boolean;
-  setIsMobilePreview: (val: boolean) => void;
+  onOpenWithdraw?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,72 +27,32 @@ export const Navbar: React.FC<NavbarProps> = ({
   cartCount,
   onOpenCart,
   onOpenAuth,
-  activeTab,
-  setActiveTab,
-  isMobilePreview,
-  setIsMobilePreview,
 }) => {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
 
   const navLinks = [
-    { id: 'home', label: 'Home' },
-    { id: 'shop', label: 'Shop' },
-    { id: 'savings', label: 'Savings' },
-    { id: 'refer', label: 'Refer & Earn' },
-    { id: 'producer', label: 'Producer / SHG' },
+    { href: '/', label: 'Home' },
+    { href: '/shop', label: 'Shop' },
+    { href: '/savings', label: 'Savings' },
+    { href: '/refer', label: 'Refer & Earn' },
+    { href: '/producer', label: 'Producer / SHG' },
   ];
+
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname.startsWith(href);
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
-      {/* Top Notification Announcement Bar */}
-      <div className="bg-brand-navy text-white text-xs sm:text-sm py-1.5 px-4 font-medium">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="bg-brand-orange text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Prosumer Revolution
-            </span>
-            <span className="hidden sm:inline">
-              Shop directly from Women Entrepreneurs & SHGs at genuine community discounts!
-            </span>
-            <span className="sm:hidden truncate">
-              Bachat Bhi. Kamai Bhi. Apni Community!
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-3 text-xs">
-            {/* Mobile / Desktop frame toggle */}
-            <button
-              onClick={() => setIsMobilePreview(!isMobilePreview)}
-              className="flex items-center space-x-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded transition text-slate-200 hover:text-white"
-              title="Toggle Mobile App Frame View"
-            >
-              {isMobilePreview ? (
-                <>
-                  <Monitor className="w-3.5 h-3.5 text-brand-cyan" />
-                  <span className="hidden md:inline">Desktop View</span>
-                </>
-              ) : (
-                <>
-                  <Smartphone className="w-3.5 h-3.5 text-brand-orange" />
-                  <span className="hidden md:inline">App View Preview</span>
-                </>
-              )}
-            </button>
-            <span className="text-slate-300 hidden md:inline">|</span>
-            <span className="text-emerald-400 font-semibold hidden md:inline">
-              Smart Chain Verified
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Navbar */}
+      {/* Main Navbar (Top banner removed as requested) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
           {/* Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+          <Link href="/" className="flex items-center space-x-3 cursor-pointer">
             <div className="relative w-36 sm:w-48 h-10 sm:h-12">
               <Image
                 src="/images/LOgo.jpeg"
@@ -109,43 +62,43 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="object-contain object-left"
               />
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
             {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => setActiveTab(link.id)}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  activeTab === link.id
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  isActive(link.href)
                     ? 'text-brand-navy bg-slate-100 font-bold border-b-2 border-brand-navy'
                     : 'text-slate-600 hover:text-brand-navy hover:bg-slate-50'
                 }`}
               >
                 {link.label}
-              </button>
+              </Link>
             ))}
           </nav>
 
           {/* Right Action Icons: Search, Notifications, Cart, User */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             
-            {/* Search Button (Quick filter) */}
-            <button 
-              onClick={() => setActiveTab('shop')}
+            {/* Search Button */}
+            <Link 
+              href="/shop"
               className="p-2 text-slate-600 hover:text-brand-navy hover:bg-slate-100 rounded-full transition"
               title="Search groceries & products"
             >
               <Search className="w-5 h-5" />
-            </button>
+            </Link>
 
             {/* Notification Bell */}
             <div className="relative">
               <button 
                 className="p-2 text-slate-600 hover:text-brand-navy hover:bg-slate-100 rounded-full transition"
                 title="Notifications"
-                onClick={() => alert('Community Alerts: New SHG Winter Pickles listed! Referral reward credited.')}
+                onClick={() => alert('Community Alerts: New SHG Winter specials listed! Your referral rewards are active.')}
               >
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-brand-orange rounded-full ring-2 ring-white"></span>
@@ -189,26 +142,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => { setActiveTab('savings'); setUserDropdown(false); }}
+                  <Link
+                    href="/savings"
+                    onClick={() => setUserDropdown(false)}
                     className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
                   >
                     <span>My Dashboard & Wallet</span>
-                  </button>
+                  </Link>
 
-                  <button
-                    onClick={() => { setActiveTab('refer'); setUserDropdown(false); }}
+                  <Link
+                    href="/refer"
+                    onClick={() => setUserDropdown(false)}
                     className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
                   >
                     <span>Refer & Earn</span>
-                  </button>
+                  </Link>
 
-                  <button
-                    onClick={() => { setActiveTab('producer'); setUserDropdown(false); }}
+                  <Link
+                    href="/producer"
+                    onClick={() => setUserDropdown(false)}
                     className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
                   >
                     <span>Join as SHG / Producer</span>
-                  </button>
+                  </Link>
 
                   <div className="border-t border-slate-100 mt-1 pt-1">
                     <button
@@ -234,22 +190,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-slate-100 space-y-2">
+          <div className="lg:hidden py-4 border-t border-slate-100 space-y-1.5">
             {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => {
-                  setActiveTab(link.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full text-left px-4 py-2.5 rounded-lg text-base font-semibold transition ${
-                  activeTab === link.id
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-2.5 rounded-xl text-base font-semibold transition ${
+                  isActive(link.href)
                     ? 'text-brand-navy bg-slate-100 font-bold'
                     : 'text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 {link.label}
-              </button>
+              </Link>
             ))}
           </div>
         )}

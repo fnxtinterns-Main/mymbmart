@@ -112,13 +112,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             {/* Right Column: 3 Feature Cards & Visuals */}
             <div className="lg:col-span-5 flex flex-col space-y-4">
               
-              {/* Feature Pill 1: Save 10% Instantly */}
+              {/* Feature Pill 1: Save 5% - 30% Instantly */}
               <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 sm:p-5 flex items-center space-x-4 hover:bg-white/15 transition-all">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
                   <PiggyBank className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-white">Save 10% - 30% Instantly</h3>
+                  <h3 className="text-base sm:text-lg font-bold text-white">Save 5% - 30% Instantly</h3>
                   <p className="text-xs sm:text-sm text-slate-300">Direct producer pricing & community bulk discounts on daily essentials.</p>
                 </div>
               </div>
