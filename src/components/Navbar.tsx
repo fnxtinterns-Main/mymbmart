@@ -43,14 +43,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [notifications, setNotifications] = useState([
+  const initialNotifications = [
     {
       id: 'notif-1',
       title: 'New SHG Specials Listed',
       desc: 'Handmade Amla Pickles & cold-pressed mustard oil from Mahila Bachat Gat are now live with direct producer pricing.',
       time: '10m ago',
       category: 'SHG',
-      read: false,
+      read: true,
       link: '/shop',
     },
     {
@@ -59,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       desc: 'Group discount unlocked: Flat 22% off on Organic Cold-Pressed Mustard Oil & Premium Basmati Rice.',
       time: '2h ago',
       category: 'SAVINGS',
-      read: false,
+      read: true,
       link: '/shop',
     },
     {
@@ -68,7 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       desc: 'Earn up to ₹2,000/month by referring neighbors. Share your invite code and grow your community network.',
       time: '1d ago',
       category: 'EARN',
-      read: false,
+      read: true,
       link: '/refer',
     },
     {
@@ -80,9 +80,56 @@ export const Navbar: React.FC<NavbarProps> = ({
       read: true,
       link: '/savings',
     },
-  ]);
+  ];
+
+  const [notifications, setNotifications] = useState(initialNotifications);
+
+  // Load read state from localStorage
+  useEffect(() => {
+    try {
+      const readIds = localStorage.getItem('mymbmart_read_notifications');
+      if (readIds) {
+        const parsed: string[] = JSON.parse(readIds);
+        setNotifications((prev) =>
+          prev.map((n) => (parsed.includes(n.id) ? { ...n, read: true } : n))
+        );
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, read: true }));
+      try {
+        localStorage.setItem(
+          'mymbmart_read_notifications',
+          JSON.stringify(updated.map((n) => n.id))
+        );
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+  };
+
+  const markAsRead = (id: string) => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+      try {
+        localStorage.setItem(
+          'mymbmart_read_notifications',
+          JSON.stringify(updated.filter((n) => n.read).map((n) => n.id))
+        );
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+  };
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
@@ -116,16 +163,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [notificationsOpen, userDropdown]);
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
 
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },

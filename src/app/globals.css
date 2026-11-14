@@ -42,3 +42,42 @@ body {
 .ios-safe-bottom {
   padding-bottom: max(1rem, var(--safe-bottom));
 }
+
+/* ==========================================================================
+   Teachmint X Interactive Intelligent Panel & 75"-86" 4K Smart TV Optimizations
+   ========================================================================== */
+
+/* Full HD / 1080p Presentation Displays */
+@media (min-width: 1920px) {
+  html {
+    font-size: 18px; /* Proportional upscale for crisp distance readability */
+  }
+  .max-w-7xl {
+    max-width: 1680px; /* Expand layout horizontally to avoid empty side gutters */
+  }
+}
+
+/* 2K / QHD & 75"-86" Interactive Touch Panels (Teachmint X) */
+@media (min-width: 2560px) {
+  html {
+    font-size: 22px; /* Large touch targets & comfortable viewing from 6-12 ft */
+  }
+  .max-w-7xl {
+    max-width: 2160px; /* Grand presentation layout filling the 86" panel */
+  }
+}
+
+/* Native 4K UHD Displays (3840 x 2160) */
+@media (min-width: 3840px) {
+  html {
+    font-size: 26px; /* High-DPI TV scaling */
+  }
+  .max-w-7xl {
+    max-width: 3200px;
+  }
+}
+
+/* Touch targets and interactions for interactive stylus and finger touch */
+button, a {
+  touch-action: manipulation;
+}

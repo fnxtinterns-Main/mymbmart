@@ -31,10 +31,28 @@ import {
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    { product: sampleProducts[0], quantity: 1 },
-    { product: sampleProducts[1], quantity: 1 },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Load persisted cart from localStorage on mount (starts empty if none)
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mymbmart_cart');
+      if (saved) {
+        setCartItems(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  // Save cart changes to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('mymbmart_cart', JSON.stringify(cartItems));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [cartItems]);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);

@@ -13,10 +13,28 @@ import { Sparkles, ShoppingBag, ShieldCheck } from 'lucide-react';
 
 export default function ShopPage() {
   const [user, setUser] = useState<UserProfile>(initialUser);
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    { product: sampleProducts[0], quantity: 1 },
-    { product: sampleProducts[1], quantity: 1 },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Load persisted cart from localStorage on mount (starts empty if none)
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mymbmart_cart');
+      if (saved) {
+        setCartItems(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  // Save cart changes to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('mymbmart_cart', JSON.stringify(cartItems));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [cartItems]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
