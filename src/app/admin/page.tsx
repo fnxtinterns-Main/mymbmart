@@ -19,7 +19,13 @@ import {
   RefreshCw,
   Plus,
   ChevronRight,
-  Database
+  Database,
+  Lock,
+  Unlock,
+  Key,
+  Eye,
+  EyeOff,
+  LogOut
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -60,7 +66,15 @@ interface AdminMetrics {
   };
 }
 
+const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || 'MBM@Admin2026';
+
 export default function AdminDashboardPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [showPin, setShowPin] = useState(false);
+
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'inventory' | 'producers' | 'checklist'>('overview');
   const [loading, setLoading] = useState(true);
@@ -86,8 +100,38 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    fetchMetrics();
+    if (typeof window !== 'undefined') {
+      const authStatus = sessionStorage.getItem('mbm_admin_authenticated');
+      if (authStatus === 'true') {
+        setIsAuthenticated(true);
+        fetchMetrics();
+      }
+    }
+    setIsCheckingAuth(false);
   }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pinInput.trim() === ADMIN_PIN) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('mbm_admin_authenticated', 'true');
+      }
+      setIsAuthenticated(true);
+      setPinError('');
+      fetchMetrics();
+    } else {
+      setPinError('Invalid Admin Passcode. Access denied.');
+    }
+  };
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('mbm_admin_authenticated');
+    }
+    setIsAuthenticated(false);
+    setPinInput('');
+    setMetrics(null);
+  };
 
   const handleOrderAction = async (orderId: string, action: 'PACK' | 'DISPATCH') => {
     try {
@@ -106,6 +150,106 @@ export default function AdminDashboardPage() {
       alert('Action failed');
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+        <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between">
+        {/* Minimal top bar */}
+        <header className="border-b border-slate-800/80 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-xl font-black text-white tracking-tight">
+              my<span className="text-brand-orange">mb</span>mart<span className="text-emerald-400">.com</span>
+            </span>
+            <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">
+              INTERNAL CONSOLE
+            </span>
+          </div>
+          <Link
+            href="/"
+            className="text-xs text-slate-400 hover:text-white transition flex items-center space-x-1"
+          >
+            <span>← Back to Storefront</span>
+          </Link>
+        </header>
+
+        {/* Auth Box */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl mx-auto flex items-center justify-center shadow-inner">
+                <Lock className="w-8 h-8" />
+              </div>
+              <h1 className="text-xl font-black text-white">Admin Operations Console</h1>
+              <p className="text-xs text-slate-400">
+                Restricted area. Please enter your administrator security key to unlock this terminal.
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                  Admin Passcode / Security Key
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPin ? 'text' : 'password'}
+                    value={pinInput}
+                    onChange={(e) => {
+                      setPinInput(e.target.value);
+                      if (pinError) setPinError('');
+                    }}
+                    placeholder="Enter security key..."
+                    autoFocus
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono pr-11"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  >
+                    {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {pinError && (
+                  <p className="text-rose-400 text-xs font-semibold mt-2 flex items-center space-x-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>{pinError}</span>
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <Unlock className="w-4 h-4" />
+                <span>Unlock Operations Console</span>
+              </button>
+            </form>
+
+            <div className="pt-4 border-t border-slate-800 text-center">
+              <p className="text-[11px] text-slate-500">
+                MegaBachatMart Multi-Tenant Platform • Secure Session Gate
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Minimal Footer */}
+        <footer className="text-center py-4 text-xs text-slate-600 border-t border-slate-900">
+          © {new Date().getFullYear()} MegaBachatMart (mymbmart.com). Unauthorized access is strictly prohibited.
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col justify-between">
@@ -153,6 +297,14 @@ export default function AdminDashboardPage() {
             >
               <span>View Storefront →</span>
             </Link>
+            <button
+              onClick={handleLogout}
+              className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+              title="Lock Admin Session"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Lock Console</span>
+            </button>
           </div>
         </div>
 

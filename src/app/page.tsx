@@ -60,7 +60,7 @@ export default function Home() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [orderToast, setOrderToast] = useState<string | null>(null);
   const [addedId, setAddedId] = useState<string | null>(null);
-  const [activeOrder, setActiveOrder] = useState<OrderRecord | null>(ordersStore[0] || null);
+  const [activeOrder, setActiveOrder] = useState<OrderRecord | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
   const handleAddToCart = (product: ProductItem) => {
@@ -114,30 +114,6 @@ export default function Home() {
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
       />
-
-      {/* Floating Active Delivery Bar */}
-      {activeOrder && activeOrder.status !== 'DELIVERED' && (
-        <div className="bg-gradient-to-r from-brand-forest to-emerald-800 text-white px-4 py-2.5 shadow-md flex items-center justify-between text-xs sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-300"></span>
-              </span>
-              <span className="font-extrabold">Live Quick Delivery:</span>
-              <span className="text-emerald-200">#{activeOrder.orderNumber} ({activeOrder.status.replace(/_/g, ' ')})</span>
-              <span className="hidden sm:inline text-amber-300 font-bold">• Doorstep OTP: {activeOrder.deliveryOtp}</span>
-            </div>
-
-            <button
-              onClick={() => setIsTrackingOpen(true)}
-              className="bg-brand-orange hover:bg-orange-600 text-white font-black px-3 py-1 rounded-xl text-xs shadow-xs transition"
-            >
-              Track Order & Dispatch →
-            </button>
-          </div>
-        </div>
-      )}
 
       <main className="flex-1 space-y-12 sm:space-y-16 pb-16">
         

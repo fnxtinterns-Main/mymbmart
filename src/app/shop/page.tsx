@@ -18,7 +18,7 @@ export default function ShopPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [activeOrder, setActiveOrder] = useState<OrderRecord | null>(ordersStore[0] || null);
+  const [activeOrder, setActiveOrder] = useState<OrderRecord | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
 
   // Load persisted cart from localStorage on mount
@@ -90,30 +90,6 @@ export default function ShopPage() {
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
       />
-
-      {/* Floating Active Delivery Bar (Quick Commerce Feature) */}
-      {activeOrder && activeOrder.status !== 'DELIVERED' && (
-        <div className="bg-gradient-to-r from-brand-forest to-emerald-800 text-white px-4 py-2.5 shadow-md flex items-center justify-between text-xs sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-300"></span>
-              </span>
-              <span className="font-extrabold">Active Quick Delivery:</span>
-              <span className="text-emerald-200">#{activeOrder.orderNumber} ({activeOrder.status.replace(/_/g, ' ')})</span>
-              <span className="hidden sm:inline text-amber-300 font-bold">• OTP: {activeOrder.deliveryOtp}</span>
-            </div>
-
-            <button
-              onClick={() => setIsTrackingOpen(true)}
-              className="bg-brand-orange hover:bg-orange-600 text-white font-black px-3 py-1 rounded-xl text-xs shadow-xs transition"
-            >
-              Live Tracking & Dispatch →
-            </button>
-          </div>
-        </div>
-      )}
 
       <main className="flex-1 pb-16">
         <StoreCatalog 
