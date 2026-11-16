@@ -43,7 +43,18 @@ import {
   CheckSquare,
   Square,
   ChevronRight,
-  Filter
+  Filter,
+  Boxes,
+  FileSpreadsheet,
+  History,
+  CalendarClock,
+  AlertOctagon,
+  ArrowUpRight,
+  ArrowDownRight,
+  Plus,
+  Tag,
+  Barcode,
+  ClipboardList
 } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
 
@@ -128,6 +139,57 @@ export default function AdminDashboardPage() {
   const [riderNameInput, setRiderNameInput] = useState('Amit Kumar (EV-Fleet)');
   const [riderPhoneInput, setRiderPhoneInput] = useState('9876543210');
 
+  // Inventory & SKU Module States
+  const [inventorySubTab, setInventorySubTab] = useState<'STOCK_LEVELS' | 'PRODUCTS_SKUS' | 'BATCHES_FEFO' | 'PURCHASING_GRN' | 'LEDGER' | 'RESERVATIONS' | 'SUPPLIERS'>('STOCK_LEVELS');
+  const [inventoryData, setInventoryData] = useState<any>(null);
+  const [inventorySearch, setInventorySearch] = useState('');
+
+  // Inventory Modals
+  const [adjustModalSku, setAdjustModalSku] = useState<any | null>(null);
+  const [adjustDelta, setAdjustDelta] = useState<number>(0);
+  const [adjustReason, setAdjustReason] = useState<string>('DAMAGE');
+  const [adjustNotes, setAdjustNotes] = useState<string>('');
+
+  const [isGrnModalOpen, setIsGrnModalOpen] = useState(false);
+  const [grnForm, setGrnForm] = useState({
+    poNumber: 'PO-2026-RCH-089',
+    skuCode: 'MB-GRO-AASH-5K',
+    receivedQty: 50,
+    batchNumber: 'B-2026-901',
+    manufactureDate: new Date().toISOString().split('T')[0],
+    expiryDate: '2027-05-30',
+    costPrice: 215,
+  });
+
+  const [isAddSkuModalOpen, setIsAddSkuModalOpen] = useState(false);
+  const [addSkuForm, setAddSkuForm] = useState({
+    skuCode: '',
+    productName: '',
+    brand: '',
+    category: 'Groceries',
+    variantName: '',
+    unitOfMeasure: 'kg',
+    mrp: 100,
+    sellingPrice: 85,
+    costPrice: 70,
+    barcode: '',
+    reorderPoint: 20,
+    reorderQty: 50,
+  });
+
+  const [barcodeModalSku, setBarcodeModalSku] = useState<any | null>(null);
+
+  const fetchInventory = () => {
+    fetch('/api/admin/inventory')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setInventoryData(data);
+        }
+      })
+      .catch(() => {});
+  };
+
   const fetchMetrics = () => {
     setLoading(true);
     fetch('/api/admin/metrics')
@@ -160,6 +222,8 @@ export default function AdminDashboardPage() {
         }
       })
       .catch(() => {});
+
+    fetchInventory();
   };
 
   useEffect(() => {
@@ -291,6 +355,113 @@ export default function AdminDashboardPage() {
     setLowStockList(prev => prev.map(item => item.sku === sku ? { ...item, reordered: true } : item));
     setActionMessage(`Purchase order dispatched for SKU ${sku}`);
     setTimeout(() => setActionMessage(''), 4000);
+  };
+
+  const handleAdjustStockSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustModalSku) return;
+    try {
+      const res = await fetch('/api/admin/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ADJUST_STOCK',
+          skuCode: adjustModalSku.skuCode,
+          quantityDelta: adjustDelta,
+          reasonCode: adjustReason,
+          notes: adjustNotes,
+          createdBy: 'Ranchi Central Inventory Lead',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionMessage(data.message);
+        setTimeout(() => setActionMessage(''), 4000);
+        setAdjustModalSku(null);
+        setAdjustDelta(0);
+        setAdjustNotes('');
+        fetchInventory();
+      } else {
+        alert(data.message || 'Failed to adjust stock');
+      }
+    } catch {
+      alert('Network error adjusting stock');
+    }
+  };
+
+  const handlePostGrnSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'POST_GRN',
+          ...grnForm,
+          receivedBy: 'Ranchi Central Receiving Supervisor',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionMessage(`Goods received! Note #${data.grnNumber} posted to ledger.`);
+        setTimeout(() => setActionMessage(''), 4000);
+        setIsGrnModalOpen(false);
+        fetchInventory();
+      } else {
+        alert(data.message || 'Failed to post GRN');
+      }
+    } catch {
+      alert('Network error posting GRN');
+    }
+  };
+
+  const handleAddSkuSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'ADD_SKU',
+          ...addSkuForm,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionMessage(`New SKU ${data.sku.skuCode} successfully added to catalog.`);
+        setTimeout(() => setActionMessage(''), 4000);
+        setIsAddSkuModalOpen(false);
+        fetchInventory();
+      } else {
+        alert(data.message || 'Failed to add SKU');
+      }
+    } catch {
+      alert('Network error adding SKU');
+    }
+  };
+
+  const handleReleaseReservation = async (reservationId: string) => {
+    if (!confirm('Are you sure you want to release this stock reservation back to sellable pool?')) return;
+    try {
+      const res = await fetch('/api/admin/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'RELEASE_RESERVATION',
+          reservationId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionMessage('Stock reservation released.');
+        setTimeout(() => setActionMessage(''), 4000);
+        fetchInventory();
+      } else {
+        alert(data.message || 'Failed to release reservation');
+      }
+    } catch {
+      alert('Network error releasing reservation');
+    }
   };
 
   // Auth gate
@@ -1519,56 +1690,667 @@ export default function AdminDashboardPage() {
           )}
 
           {/* ============================================================== */}
-          {/* TAB 5: INVENTORY & SKUs                                        */}
+          {/* TAB 5: INVENTORY & SKU MANAGEMENT (SPECIFICATION V1.0)        */}
           {/* ============================================================== */}
           {activeTab === 'inventory' && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-black text-[#0F172A]">Dark Store Inventory & Thresholds</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Automated stock monitoring and restock triggers.</p>
+              
+              {/* Header & Store Context Banner */}
+              <div className="bg-white p-6 rounded-3xl border border-[#E2E8F0] shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-emerald-100 text-[#064E3B] text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      Store: Ranchi Central (MBM-RCH-01)
+                    </span>
+                    <span className="bg-blue-50 text-[#0284C7] text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-blue-200">
+                      Single Source of Truth: Immutable Ledger
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-black text-[#0F172A] tracking-tight">
+                    Inventory & SKU Management
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Formula: <strong className="text-emerald-700 font-mono">Available = On-hand − (Reserved Soft + Hard)</strong> • Multi-store ready architecture.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2 shrink-0">
+                  <button
+                    onClick={() => setIsGrnModalOpen(true)}
+                    className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Inward Stock (Post GRN)</span>
+                  </button>
+                  <button
+                    onClick={() => setIsAddSkuModalOpen(true)}
+                    className="bg-[#064E3B] hover:bg-emerald-900 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                  >
+                    <Boxes className="w-3.5 h-3.5" />
+                    <span>Add New SKU</span>
+                  </button>
+                </div>
               </div>
 
-              {lowStockList.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {lowStockList.map((item) => (
-                    <div key={item.sku} className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className="font-mono text-[10px] text-slate-400 font-bold">{item.sku}</span>
-                          <h4 className="text-sm font-bold text-[#0F172A]">{item.name}</h4>
-                        </div>
-                        <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                          Stock: {item.stock}
-                        </span>
-                      </div>
-
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-rose-500 rounded-full"
-                          style={{ width: `${Math.min(100, (item.stock / (item.threshold || 10)) * 100)}%` }}
-                        ></div>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs pt-1">
-                        <span className="text-slate-500">Reorder Threshold: {item.threshold} units</span>
-                        <button
-                          onClick={() => triggerReorder(item.sku)}
-                          disabled={item.reordered}
-                          className="bg-[#16A34A] hover:bg-[#15803D] disabled:bg-slate-200 text-white text-[11px] font-bold px-3 py-1 rounded-lg cursor-pointer"
-                        >
-                          {item.reordered ? 'PO Dispatched' : 'Order Stock'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+              {/* 6 Top KPI Metrics Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total SKUs</span>
+                  <p className="text-xl font-black text-[#0F172A]">
+                    {inventoryData?.metrics?.totalSkus ?? 7}
+                  </p>
+                  <p className="text-[10px] text-slate-500">
+                    {inventoryData?.metrics?.activeSkus ?? 7} Active in Store
+                  </p>
                 </div>
-              ) : (
-                <div className="bg-white rounded-2xl border border-[#E2E8F0] p-12 text-center text-slate-400 space-y-2">
-                  <CheckCircle2 className="w-10 h-10 text-[#16A34A] mx-auto" />
-                  <p className="text-sm font-bold text-slate-700">All Product Inventory Healthy</p>
-                  <p className="text-xs text-slate-500">No items currently below minimum reorder thresholds in Ranchi Dark Store.</p>
+
+                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">On-Hand Stock</span>
+                  <p className="text-xl font-black text-[#0F172A]">
+                    {inventoryData?.metrics?.totalOnHandUnits ?? 393}
+                  </p>
+                  <p className="text-[10px] text-slate-500">Physical units in hub</p>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-1">
+                  <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">Reserved Units</span>
+                  <p className="text-xl font-black text-amber-700">
+                    {inventoryData?.metrics?.totalReservedUnits ?? 48}
+                  </p>
+                  <p className="text-[10px] text-slate-500">Soft + Hard orders</p>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-1">
+                  <span className="text-[10px] font-bold text-[#16A34A] uppercase tracking-wider block">Available Stock</span>
+                  <p className="text-xl font-black text-[#16A34A]">
+                    {inventoryData?.metrics?.totalAvailableUnits ?? 345}
+                  </p>
+                  <p className="text-[10px] text-slate-500">Sellable online</p>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-1">
+                  <span className="text-[10px] font-bold text-[#0284C7] uppercase tracking-wider block">Stock Valuation</span>
+                  <p className="text-xl font-black text-[#0284C7] font-mono">
+                    ₹{(inventoryData?.metrics?.totalStockValuation ?? 58450).toLocaleString('en-IN')}
+                  </p>
+                  <p className="text-[10px] text-slate-500">At weighted cost</p>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-1">
+                  <span className="text-[10px] font-bold text-[#FF5722] uppercase tracking-wider block">Critical Alerts</span>
+                  <p className="text-xl font-black text-[#FF5722]">
+                    {(inventoryData?.metrics?.lowStockCount ?? 2) + (inventoryData?.metrics?.nearExpiryCount ?? 2)}
+                  </p>
+                  <p className="text-[10px] text-slate-500">
+                    {inventoryData?.metrics?.lowStockCount ?? 2} Low • {inventoryData?.metrics?.nearExpiryCount ?? 2} Expiry
+                  </p>
+                </div>
+              </div>
+
+              {/* Inventory Sub-Navigation Tabs */}
+              <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 border-b border-[#E2E8F0]">
+                {[
+                  { key: 'STOCK_LEVELS', label: 'Stock Levels (Buckets)', icon: Boxes },
+                  { key: 'PRODUCTS_SKUS', label: 'Products & SKUs', icon: Tag },
+                  { key: 'BATCHES_FEFO', label: 'Batch & Expiry (FEFO)', icon: CalendarClock },
+                  { key: 'PURCHASING_GRN', label: 'Purchasing & GRN', icon: FileSpreadsheet },
+                  { key: 'LEDGER', label: 'Movement Ledger', icon: History },
+                  { key: 'RESERVATIONS', label: 'Live Reservations', icon: Clock },
+                  { key: 'SUPPLIERS', label: 'Suppliers Master', icon: Store },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isCurrent = inventorySubTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setInventorySubTab(tab.key as any)}
+                      className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                        isCurrent
+                          ? 'bg-[#064E3B] text-white shadow-xs'
+                          : 'bg-white text-slate-600 hover:bg-slate-100 border border-[#E2E8F0]'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ============================================================== */}
+              {/* SUB-TAB 1: STOCK LEVELS (STORE BUCKETS)                        */}
+              {/* ============================================================== */}
+              {inventorySubTab === 'STOCK_LEVELS' && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden space-y-4 p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-black text-[#0F172A]">Store-Level Stock Buckets</h3>
+                      <p className="text-xs text-slate-500">Live derived balances per SKU at Ranchi Central Dark Hub</p>
+                    </div>
+
+                    <div className="relative w-full sm:w-64">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                      <input
+                        type="text"
+                        placeholder="Search SKU or product..."
+                        value={inventorySearch}
+                        onChange={(e) => setInventorySearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-medium outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
+                        <tr>
+                          <th className="p-3">SKU Code & Product</th>
+                          <th className="p-3">Category</th>
+                          <th className="p-3 text-right">On-Hand</th>
+                          <th className="p-3 text-right">Reserved (S/H)</th>
+                          <th className="p-3 text-right text-emerald-800 font-black">Available</th>
+                          <th className="p-3 text-right">Incoming</th>
+                          <th className="p-3 text-right">Damaged</th>
+                          <th className="p-3 text-right">ROP</th>
+                          <th className="p-3 text-center">Status</th>
+                          <th className="p-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(inventoryData?.data?.buckets ?? []).filter((b: any) => 
+                          !inventorySearch || 
+                          b.skuCode.toLowerCase().includes(inventorySearch.toLowerCase()) ||
+                          b.productName.toLowerCase().includes(inventorySearch.toLowerCase())
+                        ).map((bucket: any) => {
+                          const available = Math.max(0, bucket.onHand - (bucket.reservedSoft + bucket.reservedHard));
+                          const isLowStock = available <= bucket.reorderPoint;
+                          return (
+                            <tr key={bucket.skuCode} className="hover:bg-slate-50/70 transition">
+                              <td className="p-3">
+                                <span className="font-mono text-[10px] font-bold text-slate-400 block">{bucket.skuCode}</span>
+                                <span className="font-bold text-[#0F172A]">{bucket.productName}</span>
+                              </td>
+                              <td className="p-3 text-slate-500 font-medium">{bucket.category}</td>
+                              <td className="p-3 text-right font-black text-slate-800">{bucket.onHand}</td>
+                              <td className="p-3 text-right font-medium text-amber-700">
+                                {bucket.reservedSoft + bucket.reservedHard}
+                                <span className="text-[10px] text-slate-400 block font-normal">({bucket.reservedSoft}s / {bucket.reservedHard}h)</span>
+                              </td>
+                              <td className="p-3 text-right font-black text-[#16A34A] text-sm">
+                                {available}
+                              </td>
+                              <td className="p-3 text-right text-blue-600 font-bold">+{bucket.incoming}</td>
+                              <td className="p-3 text-right text-rose-600">{bucket.damaged}</td>
+                              <td className="p-3 text-right text-slate-600 font-mono">{bucket.reorderPoint}</td>
+                              <td className="p-3 text-center">
+                                {isLowStock ? (
+                                  <span className="bg-rose-100 text-rose-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-200">
+                                    Low Stock
+                                  </span>
+                                ) : (
+                                  <span className="bg-emerald-100 text-[#064E3B] text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                                    Healthy
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                                <button
+                                  onClick={() => {
+                                    setAdjustModalSku(bucket);
+                                    setAdjustDelta(0);
+                                  }}
+                                  className="text-[11px] font-bold text-[#0284C7] hover:underline cursor-pointer"
+                                >
+                                  Adjust
+                                </button>
+                                <span className="text-slate-300">•</span>
+                                <button
+                                  onClick={() => {
+                                    const skuItem = inventoryData?.data?.skus?.find((s: any) => s.skuCode === bucket.skuCode);
+                                    setBarcodeModalSku(skuItem || {
+                                      skuCode: bucket.skuCode,
+                                      productName: bucket.productName,
+                                      barcode: '8901030800014',
+                                      mrp: 290
+                                    });
+                                  }}
+                                  className="text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                                >
+                                  Barcode
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
+
+              {/* ============================================================== */}
+              {/* SUB-TAB 2: PRODUCTS & SKUs                                     */}
+              {/* ============================================================== */}
+              {inventorySubTab === 'PRODUCTS_SKUS' && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden space-y-4 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-[#0F172A]">Product Master & SKU Catalog</h3>
+                      <p className="text-xs text-slate-500">Central product registry with HSN codes and packaging units</p>
+                    </div>
+                    <button
+                      onClick={() => setIsAddSkuModalOpen(true)}
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      + Add New SKU
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
+                        <tr>
+                          <th className="p-3">SKU & Barcode</th>
+                          <th className="p-3">Product & Brand</th>
+                          <th className="p-3">Category</th>
+                          <th className="p-3">Unit</th>
+                          <th className="p-3 text-right">MRP</th>
+                          <th className="p-3 text-right">Cost</th>
+                          <th className="p-3 text-right">Selling Price</th>
+                          <th className="p-3 text-center">Batch/Expiry</th>
+                          <th className="p-3 text-center">Status</th>
+                          <th className="p-3 text-right">Print</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(inventoryData?.data?.skus ?? []).map((sku: any) => (
+                          <tr key={sku.id} className="hover:bg-slate-50/70 transition">
+                            <td className="p-3">
+                              <span className="font-mono text-xs font-black text-[#0F172A] block">{sku.skuCode}</span>
+                              <span className="font-mono text-[10px] text-slate-400">{sku.barcode}</span>
+                            </td>
+                            <td className="p-3">
+                              <span className="font-bold text-[#0F172A] block">{sku.productName}</span>
+                              <span className="text-[10px] text-slate-500">{sku.brand}</span>
+                            </td>
+                            <td className="p-3 text-slate-600 font-medium">{sku.category}</td>
+                            <td className="p-3 text-slate-600">{sku.variantName}</td>
+                            <td className="p-3 text-right font-mono text-slate-500 line-through">₹{sku.mrp}</td>
+                            <td className="p-3 text-right font-mono text-slate-600">₹{sku.costPrice}</td>
+                            <td className="p-3 text-right font-mono font-bold text-[#16A34A]">₹{sku.sellingPrice}</td>
+                            <td className="p-3 text-center space-x-1">
+                              {sku.isBatchTracked && (
+                                <span className="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.2 rounded border border-blue-200">
+                                  Batch
+                                </span>
+                              )}
+                              {sku.isExpiryTracked && (
+                                <span className="bg-amber-50 text-amber-700 text-[9px] font-bold px-1.5 py-0.2 rounded border border-amber-200">
+                                  Expiry
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className="bg-emerald-100 text-[#064E3B] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                {sku.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-right">
+                              <button
+                                onClick={() => setBarcodeModalSku(sku)}
+                                className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                                title="Print Barcode Label"
+                              >
+                                <Barcode className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================== */}
+              {/* SUB-TAB 3: BATCH & EXPIRY (FEFO PICKING ENGINE)                */}
+              {/* ============================================================== */}
+              {inventorySubTab === 'BATCHES_FEFO' && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden space-y-4 p-4">
+                  <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 flex items-start space-x-3 text-xs text-amber-900">
+                    <CalendarClock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-black text-amber-950">FEFO (First-Expiry-First-Out) Picking Rule Enforced</h4>
+                      <p className="mt-0.5 text-amber-800 leading-relaxed">
+                        Store picking routes automatically suggest batches in expiry-ascending order. Products expiring soonest must be cleared first.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
+                        <tr>
+                          <th className="p-3">Batch Number</th>
+                          <th className="p-3">SKU & Product</th>
+                          <th className="p-3">Mfg Date</th>
+                          <th className="p-3">Expiry Date</th>
+                          <th className="p-3 text-right">Days Left</th>
+                          <th className="p-3 text-right">Remaining Qty</th>
+                          <th className="p-3 text-center">Status</th>
+                          <th className="p-3 text-center">FEFO Priority</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(inventoryData?.data?.batches ?? []).map((batch: any, idx: number) => {
+                          const now = new Date().getTime();
+                          const exp = new Date(batch.expiryDate).getTime();
+                          const daysLeft = Math.round((exp - now) / (1000 * 3600 * 24));
+                          const isCritical = daysLeft <= 10;
+                          const isWarning = daysLeft <= 30 && daysLeft > 10;
+                          return (
+                            <tr key={batch.id} className="hover:bg-slate-50/70 transition">
+                              <td className="p-3 font-mono font-bold text-[#0F172A]">{batch.batchNumber}</td>
+                              <td className="p-3">
+                                <span className="font-mono text-[10px] text-slate-400 block">{batch.skuCode}</span>
+                                <span className="font-bold text-[#0F172A]">{batch.productName}</span>
+                              </td>
+                              <td className="p-3 text-slate-600 font-mono">{batch.manufactureDate}</td>
+                              <td className="p-3 font-mono font-bold text-slate-800">{batch.expiryDate}</td>
+                              <td className="p-3 text-right font-bold">
+                                {isCritical ? (
+                                  <span className="text-rose-600 font-black">{daysLeft} Days (Critical)</span>
+                                ) : isWarning ? (
+                                  <span className="text-amber-600 font-bold">{daysLeft} Days</span>
+                                ) : (
+                                  <span className="text-emerald-700">{daysLeft} Days</span>
+                                )}
+                              </td>
+                              <td className="p-3 text-right font-black text-slate-900">{batch.remainingQty} units</td>
+                              <td className="p-3 text-center">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  isCritical 
+                                    ? 'bg-rose-100 text-rose-800 border border-rose-200' 
+                                    : isWarning 
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                }`}>
+                                  {batch.status}
+                                </span>
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className="bg-slate-100 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-md">
+                                  #{idx + 1}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================== */}
+              {/* SUB-TAB 4: PURCHASING & GRN                                    */}
+              {/* ============================================================== */}
+              {inventorySubTab === 'PURCHASING_GRN' && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden space-y-4 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-[#0F172A]">Purchase Orders & Inward Goods Receipt (GRN)</h3>
+                      <p className="text-xs text-slate-500">Track open supplier orders and post incoming shipments to the stock ledger</p>
+                    </div>
+                    <button
+                      onClick={() => setIsGrnModalOpen(true)}
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-3.5 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      + Inward Goods (Post GRN)
+                    </button>
+                  </div>
+
+                  <div className="divide-y divide-slate-100">
+                    {(inventoryData?.data?.purchaseOrders ?? []).map((po: any) => (
+                      <div key={po.id} className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono text-xs font-black text-[#0F172A]">{po.poNumber}</span>
+                            <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              {po.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 font-medium">Supplier: <strong className="text-slate-800">{po.supplierName}</strong></p>
+                          <p className="text-[11px] text-slate-500">Expected Delivery: {po.expectedDate} • Store: Ranchi Central</p>
+                          
+                          <div className="pt-2 flex flex-wrap gap-2">
+                            {po.items.map((item: any, i: number) => (
+                              <span key={i} className="bg-slate-50 border border-slate-200 text-slate-700 text-[11px] px-2.5 py-1 rounded-lg">
+                                {item.productName}: <strong>{item.orderedQty} units</strong> (Cost: ₹{item.unitCost})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col md:items-end justify-between space-y-2 shrink-0">
+                          <p className="text-sm font-black text-[#0F172A] font-mono">
+                            Total: ₹{po.totalAmount.toLocaleString('en-IN')}
+                          </p>
+                          <button
+                            onClick={() => {
+                              setGrnForm(prev => ({
+                                ...prev,
+                                poNumber: po.poNumber,
+                                skuCode: po.items[0]?.skuCode || 'MB-GRO-AASH-5K',
+                                receivedQty: po.items[0]?.orderedQty || 50,
+                                costPrice: po.items[0]?.unitCost || 215,
+                              }));
+                              setIsGrnModalOpen(true);
+                            }}
+                            className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-[#064E3B] text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                          >
+                            Receive & Post GRN →
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================== */}
+              {/* SUB-TAB 5: MOVEMENT LEDGER (IMMUTABLE SINGLE SOURCE OF TRUTH)  */}
+              {/* ============================================================== */}
+              {inventorySubTab === 'LEDGER' && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden space-y-4 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-[#0F172A]">Immutable Stock Movement Ledger</h3>
+                      <p className="text-xs text-slate-500">Append-only audit trail. Stock balance is derived from every logged delta.</p>
+                    </div>
+                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">
+                      Audit Compliant
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
+                        <tr>
+                          <th className="p-3">Timestamp</th>
+                          <th className="p-3">Movement</th>
+                          <th className="p-3">SKU & Product</th>
+                          <th className="p-3 text-right">Delta</th>
+                          <th className="p-3 text-right">Balance After</th>
+                          <th className="p-3">Reference</th>
+                          <th className="p-3">Reason / Notes</th>
+                          <th className="p-3">Recorded By</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(inventoryData?.data?.ledger ?? []).map((entry: any) => {
+                          const isPositive = entry.quantityDelta > 0;
+                          return (
+                            <tr key={entry.id} className="hover:bg-slate-50/70 transition">
+                              <td className="p-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                                {new Date(entry.createdAt).toLocaleString('en-IN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </td>
+                              <td className="p-3">
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                  entry.movementType === 'RECEIPT'
+                                    ? 'bg-emerald-100 text-[#064E3B]'
+                                    : entry.movementType === 'SALE'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : entry.movementType === 'ADJUST'
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : 'bg-slate-100 text-slate-700'
+                                }`}>
+                                  {entry.movementType}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <span className="font-mono text-[10px] text-slate-400 block">{entry.skuCode}</span>
+                                <span className="font-bold text-[#0F172A]">{entry.productName}</span>
+                              </td>
+                              <td className={`p-3 text-right font-black font-mono ${isPositive ? 'text-[#16A34A]' : 'text-rose-600'}`}>
+                                {isPositive ? `+${entry.quantityDelta}` : entry.quantityDelta}
+                              </td>
+                              <td className="p-3 text-right font-mono font-bold text-slate-800">
+                                {entry.balanceAfter}
+                              </td>
+                              <td className="p-3 font-mono text-[11px] text-slate-600">
+                                {entry.referenceType} #{entry.referenceId}
+                              </td>
+                              <td className="p-3 text-slate-500 text-[11px]">
+                                {entry.reasonCode && <strong className="text-slate-700 block">[{entry.reasonCode}]</strong>}
+                                {entry.notes || 'Routine stock movement'}
+                              </td>
+                              <td className="p-3 text-slate-500 text-[11px] whitespace-nowrap">{entry.createdBy}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================== */}
+              {/* SUB-TAB 6: LIVE RESERVATIONS MONITOR                           */}
+              {/* ============================================================== */}
+              {inventorySubTab === 'RESERVATIONS' && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden space-y-4 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-[#0F172A]">Live Stock Reservations (Atomic Locking)</h3>
+                      <p className="text-xs text-slate-500">Soft (checkout TTL countdown) and Hard (store accepted) stock commitments</p>
+                    </div>
+                    <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                      Two-Stage Hybrid Reservation Active
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
+                        <tr>
+                          <th className="p-3">Order Link</th>
+                          <th className="p-3">SKU & Item</th>
+                          <th className="p-3">Type</th>
+                          <th className="p-3 text-right">Quantity Locked</th>
+                          <th className="p-3">TTL / Expiry</th>
+                          <th className="p-3 text-center">Status</th>
+                          <th className="p-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(inventoryData?.data?.reservations ?? []).map((res: any) => (
+                          <tr key={res.id} className="hover:bg-slate-50/70 transition">
+                            <td className="p-3 font-mono font-bold text-slate-800">
+                              #{res.orderNumber}
+                            </td>
+                            <td className="p-3">
+                              <span className="font-mono text-[10px] text-slate-400 block">{res.skuCode}</span>
+                              <span className="font-bold text-[#0F172A]">{res.productName}</span>
+                            </td>
+                            <td className="p-3">
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                res.reservationType === 'SOFT'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              }`}>
+                                {res.reservationType}
+                              </span>
+                            </td>
+                            <td className="p-3 text-right font-black text-[#0F172A]">{res.quantity} units</td>
+                            <td className="p-3 text-slate-500 font-mono text-[11px]">
+                              {new Date(res.expiresAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                res.status === 'ACTIVE'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {res.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-right">
+                              {res.status === 'ACTIVE' && (
+                                <button
+                                  onClick={() => handleReleaseReservation(res.id)}
+                                  className="text-[11px] font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
+                                >
+                                  Release Stock
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================== */}
+              {/* SUB-TAB 7: SUPPLIERS MASTER                                    */}
+              {/* ============================================================== */}
+              {inventorySubTab === 'SUPPLIERS' && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden space-y-4 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-[#0F172A]">Registered Suppliers Master</h3>
+                      <p className="text-xs text-slate-500">Authorized FMCG distributors and SHG producer cooperatives</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {(inventoryData?.data?.suppliers ?? []).map((sup: any) => (
+                      <div key={sup.id} className="p-4 bg-[#F8FAFC] border border-slate-200 rounded-2xl space-y-2">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-black text-sm text-[#0F172A]">{sup.name}</h4>
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            Active
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 font-medium">Contact: {sup.contactPerson} ({sup.phone})</p>
+                        <p className="text-[11px] text-slate-500 font-mono">GSTIN: {sup.gstin}</p>
+                        <div className="pt-2 border-t border-slate-200 text-xs flex justify-between text-slate-600">
+                          <span>Terms: <strong>{sup.paymentTerms}</strong></span>
+                          <span>Lead Time: <strong>{sup.leadTimeDays} Days</strong></span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
@@ -2020,6 +2802,479 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 4: MANUAL STOCK ADJUSTMENT (IMMUTABLE LEDGER POST)        */}
+      {/* ============================================================== */}
+      {adjustModalSku && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-5 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0284C7] flex items-center justify-center">
+                  <Sliders className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-[#0F172A]">Stock Adjustment</h3>
+                  <p className="text-[10px] text-slate-500 font-mono">{adjustModalSku.skuCode}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAdjustModalSku(null)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-full"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdjustStockSubmit} className="space-y-4 text-xs">
+              <div className="bg-[#F8FAFC] p-3 rounded-xl border border-slate-200 space-y-1">
+                <p className="font-bold text-[#0F172A]">{adjustModalSku.productName}</p>
+                <div className="flex justify-between text-slate-500 pt-1">
+                  <span>Current On-Hand: <strong className="text-slate-800">{adjustModalSku.onHand}</strong></span>
+                  <span>New Balance: <strong className="text-[#16A34A]">{adjustModalSku.onHand + Number(adjustDelta || 0)}</strong></span>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Quantity Delta (Negative for damage/loss, positive for found)
+                </label>
+                <input
+                  type="number"
+                  value={adjustDelta}
+                  onChange={(e) => setAdjustDelta(Number(e.target.value))}
+                  placeholder="e.g. -2 or 5"
+                  className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-bold font-mono outline-hidden"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Reason Code (Immutable Audit Requirement)
+                </label>
+                <select
+                  value={adjustReason}
+                  onChange={(e) => setAdjustReason(e.target.value)}
+                  className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-medium outline-hidden"
+                >
+                  <option value="DAMAGE">DAMAGE — Broken/damaged in store</option>
+                  <option value="THEFT">THEFT — Shrinkage / missing</option>
+                  <option value="COUNT_CORRECTION">COUNT_CORRECTION — Physical count mismatch</option>
+                  <option value="EXPIRY_WRITEOFF">EXPIRY_WRITEOFF — Expired stock disposal</option>
+                  <option value="CUSTOMER_RETURN_RESTOCK">CUSTOMER_RETURN_RESTOCK — Resellable returned item</option>
+                  <option value="SAMPLE_PROMO">SAMPLE_PROMO — Promotional sample</option>
+                  <option value="SYSTEM_CORRECTION">SYSTEM_CORRECTION — Bug/data correction</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  Investigation Notes / Explanations
+                </label>
+                <textarea
+                  rows={2}
+                  value={adjustNotes}
+                  onChange={(e) => setAdjustNotes(e.target.value)}
+                  placeholder="Describe root cause and approval reference..."
+                  className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-medium outline-hidden"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAdjustModalSku(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-[#064E3B] hover:bg-emerald-900 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                >
+                  Post to Ledger
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 5: GOODS RECEIPT NOTE (GRN) INWARD ENTRY                 */}
+      {/* ============================================================== */}
+      {isGrnModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-5 animate-in fade-in max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center">
+                  <FileSpreadsheet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-[#0F172A]">Goods Receipt Note (GRN)</h3>
+                  <p className="text-[10px] text-slate-500">Inward shipment directly into Ranchi Central stock</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsGrnModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-full"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePostGrnSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">PO Reference #</label>
+                  <input
+                    type="text"
+                    value={grnForm.poNumber}
+                    onChange={(e) => setGrnForm({ ...grnForm, poNumber: e.target.value })}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-mono outline-hidden"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Target SKU</label>
+                  <select
+                    value={grnForm.skuCode}
+                    onChange={(e) => setGrnForm({ ...grnForm, skuCode: e.target.value })}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-bold font-mono outline-hidden"
+                  >
+                    {(inventoryData?.data?.skus ?? []).map((s: any) => (
+                      <option key={s.skuCode} value={s.skuCode}>
+                        {s.skuCode} ({s.productName})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Received Quantity (Units)</label>
+                  <input
+                    type="number"
+                    value={grnForm.receivedQty}
+                    onChange={(e) => setGrnForm({ ...grnForm, receivedQty: Number(e.target.value) })}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-bold outline-hidden"
+                    min="1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Unit Cost Price (₹)</label>
+                  <input
+                    type="number"
+                    value={grnForm.costPrice}
+                    onChange={(e) => setGrnForm({ ...grnForm, costPrice: Number(e.target.value) })}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-mono outline-hidden"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <span className="text-[10px] font-black uppercase text-slate-500 block">Batch & Expiry Traceability</span>
+                
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Supplier Batch / Lot #</label>
+                  <input
+                    type="text"
+                    value={grnForm.batchNumber}
+                    onChange={(e) => setGrnForm({ ...grnForm, batchNumber: e.target.value })}
+                    placeholder="e.g. B-2026-X88"
+                    className="w-full p-2 bg-white border border-[#E2E8F0] rounded-xl font-mono outline-hidden"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] text-slate-600 block mb-1">Manufacture Date</label>
+                    <input
+                      type="date"
+                      value={grnForm.manufactureDate}
+                      onChange={(e) => setGrnForm({ ...grnForm, manufactureDate: e.target.value })}
+                      className="w-full p-2 bg-white border border-[#E2E8F0] rounded-xl outline-hidden"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-600 block mb-1">Expiry Date</label>
+                    <input
+                      type="date"
+                      value={grnForm.expiryDate}
+                      onChange={(e) => setGrnForm({ ...grnForm, expiryDate: e.target.value })}
+                      className="w-full p-2 bg-white border border-[#E2E8F0] rounded-xl outline-hidden"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsGrnModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                >
+                  Confirm & Post GRN
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 6: ADD NEW SKU CATALOG ITEM                              */}
+      {/* ============================================================== */}
+      {isAddSkuModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-5 animate-in fade-in max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#064E3B] flex items-center justify-center">
+                  <Boxes className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-[#0F172A]">Add New Product SKU</h3>
+                  <p className="text-[10px] text-slate-500">Assign to Ranchi Central Catalog</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddSkuModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-full"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddSkuSubmit} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">SKU Code (Unique)</label>
+                  <input
+                    type="text"
+                    placeholder="MB-GRO-PROD-1K"
+                    value={addSkuForm.skuCode}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, skuCode: e.target.value.toUpperCase() })}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-mono font-bold outline-hidden uppercase"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Category</label>
+                  <select
+                    value={addSkuForm.category}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, category: e.target.value })}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-medium outline-hidden"
+                  >
+                    <option value="Groceries">Groceries</option>
+                    <option value="Daily Essentials">Daily Essentials</option>
+                    <option value="SHG Specials">SHG Specials</option>
+                    <option value="Personal Care">Personal Care</option>
+                    <option value="Home & Kitchen">Home & Kitchen</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Product Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Organic Brown Rice"
+                  value={addSkuForm.productName}
+                  onChange={(e) => setAddSkuForm({ ...addSkuForm, productName: e.target.value })}
+                  className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl outline-hidden"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Brand</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Nature Organics"
+                    value={addSkuForm.brand}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, brand: e.target.value })}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Pack Size / Variant</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1 kg Pouch"
+                    value={addSkuForm.variantName}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, variantName: e.target.value })}
+                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">MRP (₹)</label>
+                  <input
+                    type="number"
+                    value={addSkuForm.mrp}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, mrp: Number(e.target.value) })}
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-mono outline-hidden"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Cost Price (₹)</label>
+                  <input
+                    type="number"
+                    value={addSkuForm.costPrice}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, costPrice: Number(e.target.value) })}
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-mono outline-hidden"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Selling (₹)</label>
+                  <input
+                    type="number"
+                    value={addSkuForm.sellingPrice}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, sellingPrice: Number(e.target.value) })}
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-mono font-bold text-[#16A34A] outline-hidden"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Reorder Point (Units)</label>
+                  <input
+                    type="number"
+                    value={addSkuForm.reorderPoint}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, reorderPoint: Number(e.target.value) })}
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-mono outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Barcode (EAN-13)</label>
+                  <input
+                    type="text"
+                    placeholder="Auto-generated if empty"
+                    value={addSkuForm.barcode}
+                    onChange={(e) => setAddSkuForm({ ...addSkuForm, barcode: e.target.value })}
+                    className="w-full p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-mono outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsAddSkuModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-[#064E3B] hover:bg-emerald-900 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                >
+                  Save & Publish SKU
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 7: BARCODE & LABEL PRINT PREVIEW                         */}
+      {/* ============================================================== */}
+      {barcodeModalSku && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-slate-200 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-sm font-black text-[#0F172A]">Barcode Label Preview</h3>
+              <button
+                onClick={() => setBarcodeModalSku(null)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-full"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Printable Label Card */}
+            <div className="p-4 bg-white border-2 border-dashed border-slate-300 rounded-2xl text-center space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
+                MegaBachatMart • Ranchi Central
+              </span>
+              <h4 className="font-bold text-xs text-[#0F172A] leading-snug">
+                {barcodeModalSku.productName}
+              </h4>
+              <p className="text-[11px] font-mono text-slate-500 font-bold">
+                {barcodeModalSku.skuCode}
+              </p>
+
+              {/* Barcode Graphic */}
+              <div className="py-2 flex flex-col items-center justify-center">
+                <div className="flex items-end justify-center h-12 space-x-0.5 bg-white px-3 py-1">
+                  {[4,2,6,1,3,5,2,4,6,1,3,2,5,1,4,2,6,3,1,4,2,5,3,6,1,2].map((height, i) => (
+                    <div
+                      key={i}
+                      className="bg-black"
+                      style={{
+                        width: i % 3 === 0 ? '3px' : '1.5px',
+                        height: `${height * 7}px`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <span className="font-mono text-xs tracking-widest text-slate-700 font-bold mt-1">
+                  {barcodeModalSku.barcode || '8901030800014'}
+                </span>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
+                <span className="font-bold text-slate-500">MRP: ₹{barcodeModalSku.mrp}</span>
+                <span className="font-black text-[#16A34A] text-sm">₹{barcodeModalSku.sellingPrice || barcodeModalSku.mrp}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setBarcodeModalSku(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="flex-1 py-2.5 rounded-xl bg-[#064E3B] hover:bg-emerald-900 text-white text-xs font-bold transition shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Label</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
