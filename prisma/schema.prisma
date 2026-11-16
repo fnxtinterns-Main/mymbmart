@@ -7,154 +7,341 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ----------------------------------------------------
+// ENUMS
+// ----------------------------------------------------
+
 enum Role {
-  CONSUMER
-  PROMOTER
-  PRODUCER
+  CUSTOMER
+  SELLER
+  SHG_PRODUCER
+  STORE_MANAGER
+  RIDER
+  SUPPORT
   ADMIN
+  SUPER_ADMIN
 }
 
-enum TransactionType {
-  CASHBACK
-  SHOPPING_DISCOUNT
-  WALLET_CREDIT
-  DIRECT_REFERRAL
-  LEVEL_INCOME
-  REDEEM_PURCHASE
-  WITHDRAWAL
+enum FulfilmentType {
+  QUICK_COMMERCE      // 10-30 mins from local dark store
+  STANDARD_MARKETPLACE // 2-4 days courier dispatch from seller/warehouse
+  BOTH
 }
 
-enum TransactionStatus {
-  COMPLETED
-  PENDING
-  FAILED
+enum StoreStatus {
+  OPEN
+  CLOSED
+  MAINTENANCE
 }
 
 enum OrderStatus {
-  PENDING
-  CONFIRMED
+  PLACED
+  PROCESSING
+  PACKED
+  ASSIGNED
+  PICKED_UP
   OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
+  RETURN_REQUESTED
+  RETURNED
+  REFUNDED
 }
 
-enum ProducerCategory {
-  SHG
-  SHOP_MERCHANT
-  CLOUD_KITCHEN
-  WOMEN_ENTREPRENEUR
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
 }
+
+enum PaymentMethod {
+  UPI
+  CARD
+  NET_BANKING
+  WALLET
+  CASH_ON_DELIVERY
+}
+
+enum LedgerEntryType {
+  CREDIT_PURCHASE_CASHBACK
+  CREDIT_DIRECT_REFERRAL_L1
+  CREDIT_TEAM_REFERRAL_L2
+  CREDIT_COMMUNITY_REFERRAL_L3
+  CREDIT_PROMOTIONAL_BONUS
+  DEBIT_ORDER_REDEMPTION
+  DEBIT_EXPIRY
+  REVERSAL_REFUND
+}
+
+enum LedgerEntryStatus {
+  PENDING_RETURN_WINDOW
+  CONFIRMED
+  CANCELLED
+}
+
+// ----------------------------------------------------
+// USER & PROFILE MODELS
+// ----------------------------------------------------
 
 model User {
   id              String            @id @default(uuid())
   memberId        String            @unique
   name            String
+  phone           String            @unique
   email           String?           @unique
-  phone           String?           @unique
   passwordHash    String?
-  role            Role              @default(PROMOTER)
+  role            Role              @default(CUSTOMER)
   referralCode    String            @unique
   referredById    String?
   referredBy      User?             @relation("UserReferrals", fields: [referredById], references: [id])
   downline        User[]            @relation("UserReferrals")
-  level           String            @default("Silver")
+  level           String            @default("Silver") // Silver, Gold, Platinum, Diamond
   isActive        Boolean           @default(true)
-  wallet          Wallet?
-  producerProfile ProducerProfile?
+  addresses       Address[]
+  rewardAccount   RewardAccount?
   orders          Order[]
+  sellerProfile   SellerProfile?
+  assignedStoreId String?
+  assignedStore   Store?            @relation("StoreStaff", fields: [assignedStoreId], references: [id])
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+
+  @@index([phone])
+  @@index([referralCode])
 }
 
-model OtpVerification {
+model Address {
   id          String   @id @default(uuid())
-  identifier  String   // Email or phone
-  code        String
-  purpose     String   // "REGISTRATION" | "LOGIN"
-  expiresAt   DateTime
-  verifiedAt  DateTime?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   @default("HOME") // HOME, WORK, OTHER
+  fullAddress String
+  landmark    String?
+  city        String   @default("Ranchi")
+  state       String   @default("Jharkhand")
+  pincode     String
+  latitude    Float
+  longitude   Float
+  isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
+
+  orders      Order[]
+
+  @@index([latitude, longitude])
+  @@index([pincode])
 }
 
-model Wallet {
-  id             String              @id @default(uuid())
-  userId         String              @unique
-  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance        Float               @default(0)
-  totalSavings   Float               @default(0)
-  actualCashback Float               @default(0)
-  referralRewards Float              @default(0)
-  lifetimeEarned Float               @default(0)
-  transactions   WalletTransaction[]
-  updatedAt      DateTime            @updatedAt
+// ----------------------------------------------------
+// QUICK COMMERCE STORES & DARK STORES
+// ----------------------------------------------------
+
+model Store {
+  id              String           @id @default(uuid())
+  storeCode       String           @unique
+  name            String
+  city            String           @default("Ranchi")
+  state           String           @default("Jharkhand")
+  address         String
+  latitude        Float
+  longitude       Float
+  deliveryRadiusKm Float           @default(5.0)
+  status          StoreStatus      @default(OPEN)
+  staff           User[]           @relation("StoreStaff")
+  inventory       StoreInventory[]
+  subOrders       SubOrder[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([latitude, longitude])
 }
 
-model WalletTransaction {
-  id              String            @id @default(uuid())
-  walletId        String
-  wallet          Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  amount          Float
-  type            TransactionType
-  status          TransactionStatus @default(COMPLETED)
-  title           String
-  description     String?
-  smartChainHash  String?
-  createdAt       DateTime          @default(now())
+model StoreInventory {
+  id                 String   @id @default(uuid())
+  storeId            String
+  store              Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productId          String
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantityAvailable  Int      @default(0)
+  quantityReserved   Int      @default(0)
+  updatedAt          DateTime @updatedAt
+
+  @@unique([storeId, productId])
 }
 
-model ProducerProfile {
-  id           String           @id @default(uuid())
-  userId       String           @unique
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+// ----------------------------------------------------
+// CATALOGUE & PRODUCTS
+// ----------------------------------------------------
+
+model Category {
+  id          String         @id @default(uuid())
+  slug        String         @unique
+  name        String
+  description String?
+  imageUrl    String?
+  type        FulfilmentType @default(QUICK_COMMERCE)
+  sortOrder   Int            @default(0)
+  products    Product[]
+  createdAt   DateTime       @default(now())
+}
+
+model SellerProfile {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessName String
-  category     ProducerCategory
+  isSHG        Boolean   @default(false)
+  shgGroupName String?
+  gstin        String?
+  fssaiNumber  String?
   city         String
   state        String
-  isVerified   Boolean          @default(false)
+  isVerified   Boolean   @default(false)
+  commissionPct Float    @default(5.0)
   products     Product[]
-  createdAt    DateTime         @default(now())
+  createdAt    DateTime  @default(now())
 }
 
 model Product {
   id             String           @id @default(uuid())
+  sku            String           @unique
   name           String
-  category       String
-  description    String?
+  slug           String           @unique
+  categoryId     String
+  category       Category         @relation(fields: [categoryId], references: [id])
+  unit           String           // e.g. "500 g", "1 Litre", "5 kg"
   mrp            Float
   bachatPrice    Float
-  unit           String
-  imageUrl       String?
-  stock          Int              @default(100)
+  discountPct    Int              @default(0)
+  cashbackPct    Float            @default(5.0) // Earned after delivery
+  description    String?
+  imageUrl       String
   isSHG          Boolean          @default(false)
-  producerId     String?
-  producer       ProducerProfile? @relation(fields: [producerId], references: [id])
+  producerName   String?
+  fulfilmentType FulfilmentType   @default(QUICK_COMMERCE)
+  sellerId       String?
+  seller         SellerProfile?   @relation(fields: [sellerId], references: [id])
+  storeInventory StoreInventory[]
   orderItems     OrderItem[]
+  isActive       Boolean          @default(true)
   createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([categoryId])
+  @@index([sku])
 }
 
+// ----------------------------------------------------
+// ORDERS & SPLIT SHIPMENTS
+// ----------------------------------------------------
+
 model Order {
-  id                 String      @id @default(uuid())
-  orderNumber        String      @unique
+  id                 String        @id @default(uuid())
+  orderNumber        String        @unique
   userId             String
-  user               User        @relation(fields: [userId], references: [id])
-  status             OrderStatus @default(CONFIRMED)
+  user               User          @relation(fields: [userId], references: [id])
+  addressId          String
+  deliveryAddress    Address       @relation(fields: [addressId], references: [id])
   totalMRP           Float
   totalBachatPrice   Float
-  savings            Float
-  creditsApplied     Float       @default(0)
-  finalAmount        Float
-  deliveryAddress    String
+  savingsEarned      Float         @default(0)
+  deliveryFee        Float         @default(0)
+  creditsApplied     Float         @default(0)
+  finalPayable       Float
+  paymentStatus      PaymentStatus @default(PENDING)
+  paymentMethod      PaymentMethod @default(UPI)
+  orderStatus        OrderStatus   @default(PLACED)
+  deliveryOtp        String?       // 4-digit verification OTP
+  gatewayOrderId     String?
+  gatewayPaymentId   String?
   items              OrderItem[]
-  createdAt          DateTime    @default(now())
+  subOrders          SubOrder[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([orderNumber])
+}
+
+// Split Shipment for Multi-Store / Multi-Seller fulfilment
+model SubOrder {
+  id             String        @id @default(uuid())
+  subOrderNumber String        @unique
+  parentOrderId  String
+  parentOrder    Order         @relation(fields: [parentOrderId], references: [id], onDelete: Cascade)
+  storeId        String?
+  store          Store?        @relation(fields: [storeId], references: [id])
+  sellerId       String?
+  fulfilmentType FulfilmentType
+  status         OrderStatus   @default(PLACED)
+  trackingNumber String?
+  assignedRiderPhone String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([parentOrderId])
 }
 
 model OrderItem {
-  id          String   @id @default(uuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  quantity    Int
-  unitPrice   Float
-  bachatPrice Float
+  id             String   @id @default(uuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  quantity       Int
+  unitMRP        Float
+  unitBachatPrice Float
+  cashbackEarned Float    @default(0)
+}
+
+// ----------------------------------------------------
+// IMMUTABLE REWARDS & SAVINGS LEDGER (DOUBLE-ENTRY)
+// ----------------------------------------------------
+
+model RewardAccount {
+  id                    String         @id @default(uuid())
+  userId                String         @unique
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance               Float          @default(0)
+  totalSavings          Float          @default(0)
+  totalCashbackEarned   Float          @default(0)
+  totalReferralEarned   Float          @default(0)
+  lifetimeEarned        Float          @default(0)
+  entries               RewardLedger[]
+  updatedAt             DateTime       @updatedAt
+}
+
+model RewardLedger {
+  id                String            @id @default(uuid())
+  accountId         String
+  account           RewardAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactionRef    String            @unique
+  orderId           String?
+  entryType         LedgerEntryType
+  status            LedgerEntryStatus @default(CONFIRMED)
+  amount            Float             // Positive for Credit, Negative for Debit
+  runningBalance    Float
+  title             String
+  description       String
+  smartChainHash    String?           // Cryptographic hash audit verification
+  createdAt         DateTime          @default(now())
+
+  @@index([accountId])
+  @@index([transactionRef])
+}
+
+// ----------------------------------------------------
+// AUTH & OTP
+// ----------------------------------------------------
+
+model OtpVerification {
+  id         String    @id @default(uuid())
+  identifier String    // Mobile phone or email
+  code       String
+  purpose    String    // LOGIN, REGISTRATION, WITHDRAWAL
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([identifier])
 }

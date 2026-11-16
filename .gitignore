@@ -16,7 +16,9 @@
 out.zip
 *.zip
 
-# misc
+# android / ide
+android/.idea/
+.idea/
 .DS_Store
 *.pem
 
