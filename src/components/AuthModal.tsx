@@ -188,7 +188,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               mode === 'password' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
             }`}
           >
-            Password / Google
+            Password Login
           </button>
         </div>
 
