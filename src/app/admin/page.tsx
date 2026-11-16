@@ -197,8 +197,8 @@ export default function AdminDashboardPage() {
                 <div className="text-2xl sm:text-3xl font-black text-slate-900">
                   ₹{metrics.kpis.totalGMV.toLocaleString()}
                 </div>
-                <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-                  +18.4% this week
+                <span className="text-[11px] text-slate-500 font-medium inline-block">
+                  Verified Store Transactions
                 </span>
               </div>
 
@@ -316,73 +316,80 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {metrics.recentOrders.map((order) => (
-                <div 
-                  key={order.id} 
-                  className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-black text-slate-900 text-sm">#{order.orderNumber}</span>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                        order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
-                        order.status === 'OUT_FOR_DELIVERY' ? 'bg-sky-100 text-sky-800' :
-                        order.status === 'PACKED' ? 'bg-purple-100 text-purple-800' :
-                        'bg-amber-100 text-amber-800'
-                      }`}>
-                        {order.status}
-                      </span>
-                      <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-slate-200">
-                        OTP: {order.deliveryOtp}
-                      </span>
+              {metrics.recentOrders.length === 0 ? (
+                <div className="text-center py-10 px-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs space-y-1.5 text-slate-500">
+                  <p className="font-bold text-slate-800 text-sm">No Active Orders In Dispatch Queue</p>
+                  <p className="text-[11px]">When customers place quick commerce or marketplace orders, they will appear here in real time for packing and rider allocation.</p>
+                </div>
+              ) : (
+                metrics.recentOrders.map((order) => (
+                  <div 
+                    key={order.id} 
+                    className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-black text-slate-900 text-sm">#{order.orderNumber}</span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                          order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
+                          order.status === 'OUT_FOR_DELIVERY' ? 'bg-sky-100 text-sky-800' :
+                          order.status === 'PACKED' ? 'bg-purple-100 text-purple-800' :
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {order.status}
+                        </span>
+                        <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-slate-200">
+                          OTP: {order.deliveryOtp}
+                        </span>
+                      </div>
+
+                      <p className="text-slate-600">
+                        <strong>Customer:</strong> {order.userName} {order.userPhone ? `(${order.userPhone})` : ''}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate max-w-md">
+                        <strong>Address:</strong> {order.deliveryAddress}
+                      </p>
+                      <p className="text-[11px] text-emerald-700 font-bold">
+                        Payable: ₹{order.totalPayable} • Cashback: +₹{order.cashbackEarnable}
+                      </p>
                     </div>
 
-                    <p className="text-slate-600">
-                      <strong>Customer:</strong> {order.userName} ({order.userPhone})
-                    </p>
-                    <p className="text-[11px] text-slate-500 truncate max-w-md">
-                      <strong>Address:</strong> {order.deliveryAddress}
-                    </p>
-                    <p className="text-[11px] text-emerald-700 font-bold">
-                      Payable: ₹{order.totalPayable} • Cashback: +₹{order.cashbackEarnable}
-                    </p>
+                    <div className="flex items-center space-x-2 shrink-0">
+                      {order.status === 'PLACED' && (
+                        <button
+                          onClick={() => handleOrderAction(order.id, 'PACK')}
+                          className="bg-brand-forest hover:bg-emerald-950 text-white font-bold py-2 px-3.5 rounded-xl transition text-xs flex items-center space-x-1"
+                        >
+                          <PackageCheck className="w-3.5 h-3.5" />
+                          <span>Pack Order</span>
+                        </button>
+                      )}
+
+                      {order.status === 'PACKED' && (
+                        <button
+                          onClick={() => handleOrderAction(order.id, 'DISPATCH')}
+                          className="bg-brand-green hover:bg-brand-green-hover text-white font-bold py-2 px-3.5 rounded-xl transition text-xs flex items-center space-x-1"
+                        >
+                          <Bike className="w-3.5 h-3.5" />
+                          <span>Dispatch Rider</span>
+                        </button>
+                      )}
+
+                      {order.status === 'OUT_FOR_DELIVERY' && (
+                        <span className="text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200">
+                          Rider On Way (Verify with OTP)
+                        </span>
+                      )}
+
+                      {order.status === 'DELIVERED' && (
+                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                          ✓ Fulfilled & Cashback Paid
+                        </span>
+                      )}
+                    </div>
                   </div>
-
-                  <div className="flex items-center space-x-2 shrink-0">
-                    {order.status === 'PLACED' && (
-                      <button
-                        onClick={() => handleOrderAction(order.id, 'PACK')}
-                        className="bg-brand-forest hover:bg-emerald-950 text-white font-bold py-2 px-3.5 rounded-xl transition text-xs flex items-center space-x-1"
-                      >
-                        <PackageCheck className="w-3.5 h-3.5" />
-                        <span>Pack Order</span>
-                      </button>
-                    )}
-
-                    {order.status === 'PACKED' && (
-                      <button
-                        onClick={() => handleOrderAction(order.id, 'DISPATCH')}
-                        className="bg-brand-green hover:bg-brand-green-hover text-white font-bold py-2 px-3.5 rounded-xl transition text-xs flex items-center space-x-1"
-                      >
-                        <Bike className="w-3.5 h-3.5" />
-                        <span>Dispatch Rider</span>
-                      </button>
-                    )}
-
-                    {order.status === 'OUT_FOR_DELIVERY' && (
-                      <span className="text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200">
-                        Rider On Way (Verify with OTP)
-                      </span>
-                    )}
-
-                    {order.status === 'DELIVERED' && (
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                        ✓ Fulfilled & Cashback Paid
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
@@ -436,33 +443,40 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {producersList.map((prod) => (
-                <div 
-                  key={prod.id}
-                  className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
-                >
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-black text-slate-900 text-sm">{prod.businessName}</h4>
-                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">
-                        {prod.category}
+              {producersList.length === 0 ? (
+                <div className="text-center py-10 px-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs space-y-1.5 text-slate-500">
+                  <p className="font-bold text-slate-800 text-sm">No Pending Producer Registrations</p>
+                  <p className="text-[11px]">Rural Self Help Groups (SHGs) and local producers who register via the portal will appear here for verification and dark store catalog assignment.</p>
+                </div>
+              ) : (
+                producersList.map((prod) => (
+                  <div 
+                    key={prod.id}
+                    className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
+                  >
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-black text-slate-900 text-sm">{prod.businessName}</h4>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">
+                          {prod.category}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 mt-0.5">
+                        <strong>Contact:</strong> {prod.contactPerson} {prod.phone ? `(${prod.phone})` : ''} • {prod.city}, {prod.state}
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        <strong>Products:</strong> {prod.products}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                        ✓ Registered Supplier
                       </span>
                     </div>
-                    <p className="text-slate-600 mt-0.5">
-                      <strong>Contact:</strong> {prod.contactPerson} ({prod.phone}) • {prod.city}, {prod.state}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      <strong>Products:</strong> {prod.products}
-                    </p>
                   </div>
-
-                  <div className="flex items-center space-x-2 shrink-0">
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                      ✓ Verified Supplier
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}

@@ -28,22 +28,26 @@ export async function POST(req: Request) {
       }
 
       const isEmail = identifier.includes('@');
-      const name = isEmail ? identifier.split('@')[0] : 'Member ' + identifier.slice(-4);
-      const memberId = 'MB' + Math.floor(100000 + Math.random() * 900000);
-      const generatedReferralCode = 'MB' + Math.floor(100000 + Math.random() * 900000);
+      const cleanPhone = isEmail ? '' : identifier;
+      const cleanEmail = isEmail ? identifier : '';
+      const name = isEmail 
+        ? identifier.split('@')[0].charAt(0).toUpperCase() + identifier.split('@')[0].slice(1) 
+        : 'Member ' + identifier.slice(-4);
+      const memberId = 'MBM' + Math.floor(100000 + Math.random() * 900000);
+      const generatedReferralCode = 'MBM' + Math.floor(100000 + Math.random() * 900000);
 
       const userProfile = {
         id: 'usr-' + Date.now(),
         memberId,
-        name: isEmail ? name.charAt(0).toUpperCase() + name.slice(1) : initialUser.name,
-        phone: isEmail ? '+91 98765 43210' : identifier,
-        email: isEmail ? identifier : 'shopper@mymbmart.com',
+        name,
+        phone: cleanPhone,
+        email: cleanEmail,
         role: 'CUSTOMER',
         isActive: true,
         level: 'Silver',
         referralCode: generatedReferralCode,
-        referredBy: referralCode || 'MB123456',
-        walletBalance: 150, // Welcome credit
+        referredBy: referralCode || '',
+        walletBalance: 0,
         joinedAt: new Date().toISOString(),
       };
 

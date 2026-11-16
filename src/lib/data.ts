@@ -1,89 +1,32 @@
 import { UserProfile, WalletState, Transaction, ProductItem } from './types';
 
 export const initialUser: UserProfile = {
-  id: 'usr-1',
-  memberId: 'MB123456',
-  name: 'Aviraj Sharma',
-  phone: '+91 98765 43210',
-  email: 'aviraj@example.com',
-  role: 'PROMOTER',
+  id: '',
+  memberId: '',
+  name: 'Guest User',
+  phone: '',
+  email: '',
+  role: 'CONSUMER',
   isActive: true,
-  level: 'Gold',
-  referralCode: 'MB123456',
-  directReferralsCount: 5,
-  totalTeamCount: 12,
+  level: 'Silver',
+  referralCode: 'MBM2026',
+  directReferralsCount: 0,
+  totalTeamCount: 0,
 };
 
 export const initialWallet: WalletState = {
-  balance: 1250,
-  totalSavings: 2500,
-  actualCashback: 450,
-  walletCredits: 350,
-  referralRewards: 800,
-  lifetimeEarned: 1600,
+  balance: 0,
+  totalSavings: 0,
+  actualCashback: 0,
+  walletCredits: 0,
+  referralRewards: 0,
+  lifetimeEarned: 0,
   pendingWithdrawals: 0,
 };
 
-export const initialTransactions: Transaction[] = [
-  {
-    id: 'tx-101',
-    date: '14 Nov 2026, 10:15 AM',
-    title: 'Level 1 Commission - Ramesh S.',
-    type: 'REFERRAL_REWARD',
-    amount: 150,
-    status: 'COMPLETED',
-    smartChainHash: '0x8f2a...c4b1',
-    description: 'Earned 5% commission on Ramesh\'s monthly grocery order #MB-9821'
-  },
-  {
-    id: 'tx-102',
-    date: '12 Nov 2026, 04:30 PM',
-    title: 'Order Bachat Cashback',
-    type: 'ACTUAL_CASHBACK',
-    amount: 80,
-    status: 'COMPLETED',
-    smartChainHash: '0x3d7e...a912',
-    description: 'Cashback credited for Order #MB-9742 (Daily Essentials)'
-  },
-  {
-    id: 'tx-103',
-    date: '08 Nov 2026, 02:20 PM',
-    title: 'Community Welcome Credit',
-    type: 'WALLET_CREDIT',
-    amount: 100,
-    status: 'COMPLETED',
-    smartChainHash: '0x1c4b...f5e8',
-    description: 'Prosumer activation welcome bonus'
-  },
-  {
-    id: 'tx-104',
-    date: '03 Nov 2026, 11:45 AM',
-    title: 'Level 2 Commission - Priya K.',
-    type: 'REFERRAL_REWARD',
-    amount: 70,
-    status: 'COMPLETED',
-    smartChainHash: '0x5e9a...7d33',
-    description: 'Commission from downline team member shopping activity'
-  },
-  {
-    id: 'tx-105',
-    date: '28 Oct 2026, 06:10 PM',
-    title: 'Redeemed on Order #MB-9510',
-    type: 'REDEEM_PURCHASE',
-    amount: -250,
-    status: 'COMPLETED',
-    smartChainHash: '0x9b2c...44a7',
-    description: 'Wallet micro-credits deducted towards order payment'
-  }
-];
+export const initialTransactions: Transaction[] = [];
 
-export const monthlySavings = [
-  { month: 'Jan', amount: 350 },
-  { month: 'Feb', amount: 450 },
-  { month: 'Mar', amount: 520 },
-  { month: 'Apr', amount: 580 },
-  { month: 'May', amount: 600 },
-];
+export const monthlySavings: Array<{ month: string; amount: number }> = [];
 
 export const sampleProducts: ProductItem[] = [
   {

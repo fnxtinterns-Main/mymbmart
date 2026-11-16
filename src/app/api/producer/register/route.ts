@@ -14,34 +14,7 @@ interface ProducerInput {
   ifscCode?: string;
 }
 
-const registeredProducers: any[] = [
-  {
-    id: 'shg-01',
-    businessName: 'Mahila Shakti SHG',
-    category: 'SHG',
-    contactPerson: 'Sita Devi',
-    phone: '+91 94312 99881',
-    city: 'Ranchi',
-    state: 'Jharkhand',
-    products: 'Handmade Aam Ka Achar, Lemon Pickle, Sattu',
-    status: 'VERIFIED_ACTIVE',
-    rating: 4.9,
-    ordersSupplied: 342,
-  },
-  {
-    id: 'shg-02',
-    businessName: 'Gramin Vikas Kisan Mandal',
-    category: 'SHG',
-    contactPerson: 'Babulal Marandi',
-    phone: '+91 94315 77662',
-    city: 'Khunti',
-    state: 'Jharkhand',
-    products: 'Pure Desi Bilona Cow Ghee, Wild Honey',
-    status: 'VERIFIED_ACTIVE',
-    rating: 4.8,
-    ordersSupplied: 512,
-  }
-];
+const registeredProducers: any[] = [];
 
 export async function GET() {
   return NextResponse.json({

@@ -152,34 +152,43 @@ export const PromoterTeamView: React.FC = () => {
         </div>
 
         <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-          {currentMembers.map((member) => (
-            <div 
-              key={member.id}
-              className="p-3 bg-slate-50 hover:bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 transition flex items-center justify-between text-xs"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-brand-mint text-brand-forest font-black flex items-center justify-center text-xs">
-                  {member.name.charAt(0)}
+          {currentMembers.length === 0 ? (
+            <div className="text-center py-8 px-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs space-y-1.5">
+              <p className="font-bold text-slate-700">No promoters registered in this level yet</p>
+              <p className="text-[11px] text-slate-500">
+                Share your WhatsApp referral invite link to build your team and start earning {activeTab === 'L1' ? '5%' : activeTab === 'L2' ? '2%' : '1%'} commission on everyday grocery orders.
+              </p>
+            </div>
+          ) : (
+            currentMembers.map((member) => (
+              <div 
+                key={member.id}
+                className="p-3 bg-slate-50 hover:bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 transition flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-brand-mint text-brand-forest font-black flex items-center justify-center text-xs">
+                    {member.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900">{member.name}</h4>
+                    <div className="text-[11px] text-slate-500">
+                      <span>Joined {member.joinedDate}</span>
+                      {member.referredBy && <span> • Via {member.referredBy}</span>}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-extrabold text-slate-900">{member.name}</h4>
-                  <div className="text-[11px] text-slate-500">
-                    <span>Joined {member.joinedDate}</span>
-                    {member.referredBy && <span> • Via {member.referredBy}</span>}
+
+                <div className="text-right">
+                  <div className="font-extrabold text-emerald-700">
+                    +₹{member.commissionEarned}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    Spend: ₹{member.monthlySpend}
                   </div>
                 </div>
               </div>
-
-              <div className="text-right">
-                <div className="font-extrabold text-emerald-700">
-                  +₹{member.commissionEarned}
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  Spend: ₹{member.monthlySpend}
-                </div>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 

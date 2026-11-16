@@ -81,7 +81,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       if (data.success && data.order) {
         setCurrentOrder(data.order);
         if (onOrderUpdated) onOrderUpdated(data.order);
-        setSimulatorMessage('Rider Sunil Mahto has picked up the order and is on the way!');
+        setSimulatorMessage('Delivery partner has picked up the order and is on the way!');
       }
     } catch {
       setIsSimulating(false);

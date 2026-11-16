@@ -36,10 +36,16 @@ export default function SavingsPage() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
-  const [cartItems] = useState<CartItem[]>([
-    { product: sampleProducts[0], quantity: 1 },
-    { product: sampleProducts[1], quantity: 1 },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mymbmart_cart');
+      if (saved) setCartItems(JSON.parse(saved));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   const handleWithdrawSuccess = (amount: number, payoutInfo: string) => {
     setWallet((prev) => ({ ...prev, balance: prev.balance - amount }));
@@ -59,8 +65,8 @@ export default function SavingsPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between selection:bg-brand-orange selection:text-white">
       <Navbar
-        user={user}
-        isLoggedIn={true}
+        user={user.phone ? user : null}
+        isLoggedIn={Boolean(user.phone)}
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
@@ -84,10 +90,10 @@ export default function SavingsPage() {
           </div>
           <div className="flex items-center space-x-3">
             <span className="text-xs text-slate-500">
-              Member ID: <strong className="text-brand-forest font-mono">{user.memberId}</strong>
+              Member ID: <strong className="text-brand-forest font-mono">{user.memberId || 'Guest Member'}</strong>
             </span>
             <span className="bg-brand-mint text-brand-forest text-xs font-extrabold px-3 py-1 rounded-full">
-              {user.level} Tier
+              {user.level || 'Standard'}
             </span>
           </div>
         </div>
@@ -294,7 +300,7 @@ export default function SavingsPage() {
                     </span>
                     <p className="text-[11px] text-slate-500 mt-0.5">Instant checkout price drops</p>
                   </div>
-                  <span className="text-base font-black text-brand-forest">₹1,250</span>
+                  <span className="text-base font-black text-brand-forest">₹{wallet.totalSavings}</span>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200/80 flex items-center justify-between">
@@ -384,20 +390,29 @@ export default function SavingsPage() {
               </h4>
 
               <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1 text-xs">
-                {transactions.slice(0, 4).map((tx) => (
-                  <div key={tx.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-slate-900 truncate max-w-[160px]">{tx.title}</p>
-                      <p className="text-[10px] text-slate-400">{tx.date}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className={`font-black ${tx.amount > 0 ? 'text-brand-green' : 'text-slate-800'}`}>
-                        {tx.amount > 0 ? `+₹${tx.amount}` : `₹${Math.abs(tx.amount)}`}
-                      </span>
-                      <p className="font-mono text-[9px] text-slate-400">{tx.smartChainHash}</p>
-                    </div>
+                {transactions.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center text-slate-500 space-y-1">
+                    <p className="font-bold text-slate-700">No passbook entries yet</p>
+                    <p className="text-[10px] leading-relaxed">
+                      Transactions and cryptographic hashes will appear here automatically as you shop or earn referral rewards.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  transactions.slice(0, 4).map((tx) => (
+                    <div key={tx.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-900 truncate max-w-[160px]">{tx.title}</p>
+                        <p className="text-[10px] text-slate-400">{tx.date}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`font-black ${tx.amount > 0 ? 'text-brand-green' : 'text-slate-800'}`}>
+                          {tx.amount > 0 ? `+₹${tx.amount}` : `₹${Math.abs(tx.amount)}`}
+                        </span>
+                        <p className="font-mono text-[9px] text-slate-400">{tx.smartChainHash}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               <button

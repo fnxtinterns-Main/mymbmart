@@ -28,7 +28,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [mode, setMode] = useState<'otp' | 'password'>('otp');
   const [step, setStep] = useState<'input' | 'verify'>('input');
   const [contact, setContact] = useState('');
-  const [referralCode, setReferralCode] = useState('MB123456');
+  const [referralCode, setReferralCode] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -109,8 +109,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const fallbackUser = {
         name: contact.includes('@') ? contact.split('@')[0] : 'Community Member',
         phone: contact,
-        memberId: 'MB123456',
-        role: 'PROMOTER' as const,
+        memberId: 'MBM' + Math.floor(100000 + Math.random() * 900000),
+        role: 'CONSUMER' as const,
       };
       onLoginSuccess(fallbackUser);
       onClose();
@@ -127,10 +127,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setTimeout(() => {
       setLoading(false);
       const user = {
-        name: contact ? (contact.includes('@') ? contact.split('@')[0] : contact) : 'Aviraj Sharma',
-        memberId: 'MB123456',
-        phone: '+91 98765 43210',
-        role: 'PROMOTER' as const,
+        name: contact ? (contact.includes('@') ? contact.split('@')[0] : 'Member ' + contact.slice(-4)) : 'Community Member',
+        memberId: 'MBM' + Math.floor(100000 + Math.random() * 900000),
+        phone: contact || '',
+        role: 'CONSUMER' as const,
       };
       try {
         localStorage.setItem('mbm_user', JSON.stringify(user));
@@ -206,7 +206,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <input
                       type="text"
                       required
-                      placeholder="+91 98765 43210 or yourname@gmail.com"
+                      placeholder="Enter 10-digit mobile number or email"
                       value={contact}
                       onChange={(e) => setContact(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-brand-green focus:border-brand-green text-slate-900 outline-hidden"
@@ -220,7 +220,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. MB123456"
+                    placeholder="Enter sponsor code (if any)"
                     value={referralCode}
                     onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                     className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-brand-green outline-hidden font-mono uppercase font-bold text-brand-forest"

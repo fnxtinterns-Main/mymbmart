@@ -139,7 +139,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
               <input
                 type="text"
                 required
-                placeholder="name@okhdfcbank or 9876543210@paytm"
+                placeholder="yourname@bankupi"
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
                 className="w-full p-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none"

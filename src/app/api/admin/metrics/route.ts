@@ -34,21 +34,21 @@ export async function GET() {
       success: true,
       timestamp: new Date().toISOString(),
       kpis: {
-        totalGMV: totalGMV + 184500, // Pilot cumulative total
-        totalOrders: totalOrdersCount + 420,
-        totalCustomerSavings: totalCustomerSavings + 42100,
+        totalGMV: totalGMV,
+        totalOrders: totalOrdersCount,
+        totalCustomerSavings: totalCustomerSavings,
         pendingDispatchCount: pendingOrders,
         outForDeliveryCount: inTransitOrders,
-        deliveredCount: deliveredOrders + 418,
-        activeSHGProducers: 12,
-        activePromoterCount: 148,
+        deliveredCount: deliveredOrders,
+        activeSHGProducers: 2, // Certified local producer partners
+        activePromoterCount: 0,
       },
       darkStore: darkStoreKPIs,
       recentOrders: ordersStore.slice(0, 10),
       systemHealth: {
         database: 'HEALTHY',
         redisQueue: 'OPERATIONAL',
-        smartChainNode: 'SYNCED (Block #1042)',
+        smartChainNode: 'SYNCED',
         smsSmtpGateway: 'ONLINE',
       }
     });

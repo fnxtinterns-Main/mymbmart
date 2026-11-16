@@ -57,72 +57,7 @@ const globalStore = global as unknown as {
 };
 
 if (!globalStore.activeOrders) {
-  globalStore.activeOrders = [
-    {
-      id: 'ord-pilot-101',
-      orderNumber: 'MBM-2026-98124',
-      userId: 'usr-1',
-      userName: 'Aviraj Sharma',
-      userPhone: '+91 98765 43210',
-      deliveryAddress: 'Flat 402, Royal Residency, Main Road, Ranchi - 834001',
-      pincode: '834001',
-      status: 'OUT_FOR_DELIVERY',
-      deliveryOtp: '4821',
-      paymentMethod: 'UPI',
-      paymentStatus: 'PAID',
-      totalMRP: 990,
-      totalPayable: 780,
-      shoppingSavings: 210,
-      creditDeduction: 100,
-      cashbackEarnable: 45,
-      cashbackCredited: false,
-      assignedRider: {
-        name: 'Sunil Mahto',
-        phone: '+91 94311 22334',
-        vehicle: 'EV Scooter (JH-01-CZ-4521)',
-      },
-      darkStore: {
-        id: 'store-ranchi-central',
-        name: 'Ranchi Central Dark Store',
-        city: 'Ranchi',
-        etaMinutes: 20,
-      },
-      items: [
-        {
-          productId: 'p-3',
-          name: 'Traditional Handmade Aam Ka Achaar (Mango Pickle)',
-          quantity: 1,
-          unitPrice: 160,
-          image: '/images/products/aam_ka_achar.jpg',
-          fulfilmentType: 'QUICK_COMMERCE',
-        },
-        {
-          productId: 'p-6',
-          name: 'Chakki Fresh Sharbati Whole Wheat Atta (5kg)',
-          quantity: 1,
-          unitPrice: 220,
-          image: '/images/products/chakki_atta.jpg',
-          fulfilmentType: 'QUICK_COMMERCE',
-        }
-      ],
-      splitShipments: [
-        {
-          type: 'QUICK_COMMERCE',
-          status: 'OUT_FOR_DELIVERY',
-          eta: '12 mins remaining',
-          hub: 'Ranchi Central Dark Store',
-          itemCount: 2,
-        }
-      ],
-      createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-      timeline: [
-        { step: 'Order Placed & Stock Reserved', time: '12:45 PM', completed: true },
-        { step: 'Picked & Packed at Dark Store', time: '12:49 PM', completed: true },
-        { step: 'Rider Sunil Picked Up', time: '12:54 PM', completed: true },
-        { step: 'Arriving at Doorstep (Provide OTP 4821)', time: '01:05 PM', completed: false },
-      ]
-    }
-  ];
+  globalStore.activeOrders = [];
 }
 
 export const ordersStore = globalStore.activeOrders;

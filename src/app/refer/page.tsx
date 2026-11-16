@@ -16,15 +16,22 @@ export default function ReferPage() {
   const [user, setUser] = useState<UserProfile>(initialUser);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [cartItems] = useState<CartItem[]>([
-    { product: sampleProducts[0], quantity: 1 },
-    { product: sampleProducts[1], quantity: 1 },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mymbmart_cart');
+      if (saved) setCartItems(JSON.parse(saved));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <Navbar
-        user={user}
+        user={user.phone ? user : null}
+        isLoggedIn={Boolean(user.phone)}
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}

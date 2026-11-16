@@ -106,7 +106,7 @@ async function runTestSuite() {
         deliveryAddress: 'Main Road, Ranchi Central - 834001',
         pincode: '834001',
         paymentMethod: 'UPI',
-        customerName: 'Aviraj Sharma',
+        customerName: 'Test Customer',
       }),
     });
     const data = await res.json();

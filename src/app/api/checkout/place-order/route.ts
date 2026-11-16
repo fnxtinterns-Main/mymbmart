@@ -14,8 +14,8 @@ export async function POST(req: Request) {
       paymentMethod = 'UPI',
       useWalletCredits = false,
       userWalletBalance = 350,
-      customerName = 'Aviraj Sharma',
-      customerPhone = '+91 98765 43210',
+      customerName = 'Customer',
+      customerPhone = '',
     } = body;
 
     if (!items || items.length === 0) {
@@ -119,11 +119,7 @@ export async function POST(req: Request) {
       creditDeduction,
       cashbackEarnable: totalCashback,
       cashbackCredited: false,
-      assignedRider: {
-        name: 'Sunil Mahto',
-        phone: '+91 94311 22334',
-        vehicle: 'EV Scooter (JH-01-CZ-4521)',
-      },
+      assignedRider: undefined,
       darkStore: {
         id: 'store-ranchi-central',
         name: 'Ranchi Central Dark Store',

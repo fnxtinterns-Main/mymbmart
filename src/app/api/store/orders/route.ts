@@ -14,7 +14,7 @@ export async function GET() {
       store: {
         id: 'store-ranchi-central',
         name: 'MegaBachatMart Ranchi Central Dark Store',
-        manager: 'Anand Kumar',
+        manager: 'Store Operations Desk',
         activeRidersAvailable: 4,
       },
       pendingPackCount: quickOrders.filter((o) => o.status === 'PLACED').length,
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       updateOrderStatus(order.id, 'OUT_FOR_DELIVERY');
       return NextResponse.json({
         success: true,
-        message: `Rider Sunil Mahto assigned. Order #${order.orderNumber} is now OUT FOR DELIVERY.`,
+        message: `Rider assigned. Order #${order.orderNumber} is now OUT FOR DELIVERY.`,
         order,
       });
     }

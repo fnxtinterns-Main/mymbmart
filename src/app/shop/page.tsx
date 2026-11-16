@@ -84,7 +84,8 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <Navbar
-        user={user}
+        user={user.phone ? user : null}
+        isLoggedIn={Boolean(user.phone)}
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
