@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:e2e": "node scripts/e2e-api-test.mjs",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "cap:sync": "cap sync",

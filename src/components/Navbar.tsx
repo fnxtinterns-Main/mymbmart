@@ -16,7 +16,8 @@ import {
   Menu, 
   X, 
   ChevronDown,
-  LogIn
+  LogIn,
+  Building2
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 
@@ -169,6 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { href: '/shop', label: 'Shop', icon: Store },
     { href: '/savings', label: 'Savings', icon: PiggyBank, badge: 'Soon' },
     { href: '/refer', label: 'Refer & Earn', icon: Users, badge: 'Soon' },
+    { href: '/admin', label: 'Admin Hub', icon: Building2, badge: 'Live' },
   ];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -429,6 +431,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <Store className="w-4 h-4 text-brand-blue" />
                       <span>Join as SHG / Producer</span>
+                    </Link>
+
+                    <Link
+                      href="/admin"
+                      onClick={() => setUserDropdown(false)}
+                      className="w-full text-left px-4 py-2 text-sm text-emerald-800 bg-emerald-50/50 hover:bg-emerald-100/70 flex items-center space-x-2 font-bold"
+                    >
+                      <Building2 className="w-4 h-4 text-emerald-600" />
+                      <span>Admin Hub & Checklist</span>
                     </Link>
 
                     <div className="border-t border-slate-100 mt-1 pt-1">
