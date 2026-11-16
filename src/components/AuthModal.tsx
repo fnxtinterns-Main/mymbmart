@@ -274,18 +274,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   ))}
                 </div>
 
-                {/* 1-Click Fill Test OTP */}
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    onClick={fillTestOtp}
-                    className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-brand-orange hover:text-orange-700 bg-orange-50 border border-orange-200 px-3 py-1 rounded-xl transition"
-                  >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    <span>Auto-fill Demo Code (123456)</span>
-                  </button>
-                </div>
-
                 <button
                   type="submit"
                   disabled={loading}
@@ -308,7 +296,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
-        {/* Mode 2: Password / Google / Apple Flow */}
+        {/* Mode 2: Password Flow */}
         {mode === 'password' && (
           <form onSubmit={handlePasswordLogin} className="space-y-4 text-xs sm:text-sm">
             <div>
@@ -345,44 +333,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             >
               {loading ? <span>Signing in...</span> : <span>Sign In with Password</span>}
             </button>
-
-            {/* Social Logins */}
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200"></div>
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase font-bold">
-                <span className="bg-white px-2 text-slate-400">Or continue with</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  const googleUser = { name: 'Verified Google User', email: 'user@gmail.com', memberId: 'MB882194' };
-                  try { localStorage.setItem('mbm_user', JSON.stringify(googleUser)); } catch (e) {}
-                  onLoginSuccess(googleUser);
-                  onClose();
-                }}
-                className="flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition text-xs font-bold text-slate-700"
-              >
-                <span>Google</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const appleUser = { name: 'Verified Apple User', email: 'user@apple.com', memberId: 'MB773412' };
-                  try { localStorage.setItem('mbm_user', JSON.stringify(appleUser)); } catch (e) {}
-                  onLoginSuccess(appleUser);
-                  onClose();
-                }}
-                className="flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl bg-black text-white hover:bg-slate-800 transition text-xs font-bold"
-              >
-                <span>Apple ID</span>
-              </button>
-            </div>
           </form>
         )}
 

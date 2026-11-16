@@ -17,6 +17,7 @@ import {
   X, 
   ChevronDown,
   LogIn,
+  LogOut,
   Building2
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
@@ -168,8 +169,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navLinks = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/shop', label: 'Shop', icon: Store },
-    { href: '/savings', label: 'Savings', icon: PiggyBank, badge: 'Soon' },
-    { href: '/refer', label: 'Refer & Earn', icon: Users, badge: 'Soon' },
+    { href: '/savings', label: 'Savings', icon: PiggyBank },
+    { href: '/refer', label: 'Refer & Earn', icon: Users },
   ];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -240,11 +241,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       : 'text-slate-600 hover:text-brand-forest hover:bg-slate-50'
                   }`}
                 >
-                  {link.badge && (
-                    <span className="absolute -top-1.5 -right-0.5 text-[8px] font-black uppercase tracking-wider bg-amber-500 text-white px-1.5 py-0.2 rounded-full shadow-xs">
-                      {link.badge}
-                    </span>
-                  )}
                   <Icon className={`w-4 h-4 mb-0.5 ${active ? 'text-brand-green' : 'text-slate-500'}`} />
                   <span>{link.label}</span>
                 </Link>
@@ -432,12 +428,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <span>Join as SHG / Producer</span>
                     </Link>
 
-                    <div className="border-t border-slate-100 mt-1 pt-1">
+                    <div className="border-t border-slate-100 mt-1 pt-1 space-y-1">
                       <button
                         onClick={() => { onOpenAuth(); setUserDropdown(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-brand-orange font-medium hover:bg-orange-50"
+                        className="w-full text-left px-4 py-2 text-xs text-slate-600 font-medium hover:bg-slate-50 flex items-center space-x-2"
                       >
-                        Switch Account / Sign In
+                        <LogIn className="w-3.5 h-3.5" />
+                        <span>Switch Account</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          try {
+                            localStorage.removeItem('mbm_user');
+                            localStorage.removeItem('mbm_token');
+                          } catch (e) {}
+                          setUserDropdown(false);
+                          window.location.reload();
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs text-rose-600 font-medium hover:bg-rose-50 flex items-center space-x-2"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Sign Out</span>
                       </button>
                     </div>
                   </div>
@@ -446,14 +457,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="flex items-center space-x-1.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-md shadow-orange-500/20 transition active:scale-95"
+                className="flex items-center space-x-1.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-md shadow-orange-500/20 transition active:scale-95 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 <span className="hidden sm:inline">Sign In / Join</span>
-                <span className="sm:hidden">Join</span>
-                <span className="text-[8px] font-black uppercase tracking-wider bg-white/25 text-white px-1.5 py-0.5 rounded-full">
-                  Soon
-                </span>
+                <span className="sm:hidden">Sign In</span>
               </button>
             )}
 
@@ -506,11 +514,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <Icon className="w-5 h-5 text-brand-green" />
                     <span>{link.label}</span>
                   </div>
-                  {link.badge && (
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full">
-                      Coming Soon
-                    </span>
-                  )}
                 </Link>
               );
             })}

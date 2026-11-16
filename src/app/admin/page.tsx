@@ -25,11 +25,9 @@ import {
   Key,
   Eye,
   EyeOff,
-  LogOut
+  LogOut,
+  ExternalLink
 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { initialUser } from '@/lib/data';
 
 interface AdminMetrics {
   kpis: {
@@ -252,14 +250,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-between">
-      <Navbar
-        user={{ ...initialUser, role: 'ADMIN' }}
-        cartCount={0}
-        onOpenCart={() => {}}
-        onOpenAuth={() => {}}
-      />
-
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-between">
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         
         {/* Top Header */}
@@ -955,7 +946,9 @@ export default function AdminDashboardPage() {
 
       </main>
 
-      <Footer />
+      <footer className="bg-slate-900 border-t border-slate-800 text-slate-500 py-4 px-6 text-center text-xs">
+        <p>© {new Date().getFullYear()} MegaBachatMart (mymbmart.com) Operations & Admin Control. Restricted Internal Node.</p>
+      </footer>
     </div>
   );
 }
