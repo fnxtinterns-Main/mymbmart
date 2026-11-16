@@ -20,6 +20,19 @@ export default function ShopPage() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [activeOrder, setActiveOrder] = useState<OrderRecord | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+  const [catalogProducts, setCatalogProducts] = useState<ProductItem[]>(sampleProducts);
+
+  // Fetch latest products from live catalog (including CSV-uploaded items)
+  React.useEffect(() => {
+    fetch('/api/products')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+          setCatalogProducts(data.products);
+        }
+      })
+      .catch((err) => console.error('Failed to fetch dynamic products:', err));
+  }, []);
 
   // Load persisted cart from localStorage on mount
   React.useEffect(() => {
@@ -93,7 +106,7 @@ export default function ShopPage() {
 
       <main className="flex-1 pb-16">
         <StoreCatalog 
-          products={sampleProducts} 
+          products={catalogProducts} 
           cartItems={cartItems}
           onAddToCart={handleAddToCart}
           onUpdateQuantity={handleUpdateQuantity}

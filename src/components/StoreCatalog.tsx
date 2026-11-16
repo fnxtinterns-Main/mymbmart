@@ -439,8 +439,9 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
                       {product.name}
                     </h3>
                     {product.producerName && (
-                      <p className="text-[11px] text-emerald-700 font-semibold mt-1 truncate">
-                        By {product.producerName}
+                      <p className="text-[11px] text-emerald-700 font-semibold mt-1 truncate flex items-center space-x-1">
+                        <Building2 className="w-3 h-3 inline text-emerald-600 shrink-0" />
+                        <span>{product.producerName.startsWith('Sold by:') ? product.producerName : `By ${product.producerName}`}</span>
                       </p>
                     )}
                     <p className="text-xs text-slate-500 mt-0.5">{product.unit}</p>

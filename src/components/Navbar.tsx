@@ -428,6 +428,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <span>Join as SHG / Producer</span>
                     </Link>
 
+                    <Link
+                      href="/shop/register"
+                      onClick={() => setUserDropdown(false)}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-brand-mint flex items-center space-x-2"
+                    >
+                      <Building2 className="w-4 h-4 text-emerald-700" />
+                      <span>Partner as Kirana Store</span>
+                    </Link>
+
                     <div className="border-t border-slate-100 mt-1 pt-1 space-y-1">
                       <button
                         onClick={() => { onOpenAuth(); setUserDropdown(false); }}

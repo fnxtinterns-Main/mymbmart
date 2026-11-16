@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { 
   X, 
   Smartphone, 
@@ -10,7 +11,8 @@ import {
   ShieldCheck, 
   ArrowRight,
   CheckCircle2,
-  KeyRound
+  KeyRound,
+  Store
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 
@@ -335,6 +337,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </button>
           </form>
         )}
+
+        {/* Merchant Partner Onboarding Pathway */}
+        <div className="mt-5 pt-4 border-t border-slate-100">
+          <div className="bg-emerald-50/80 rounded-2xl p-3.5 border border-emerald-200/80 flex items-center justify-between gap-2">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0">
+                <Store className="w-4 h-4 text-emerald-200" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-900 leading-tight">Kirana or Retail Shop Owner?</p>
+                <p className="text-[10px] text-slate-500">Partner with MegaBachatMart to sell online</p>
+              </div>
+            </div>
+            <Link
+              href="/shop/register"
+              onClick={onClose}
+              className="bg-[#064E3B] hover:bg-emerald-950 text-white text-[11px] font-black px-3 py-1.5 rounded-xl transition whitespace-nowrap"
+            >
+              Apply Now →
+            </Link>
+          </div>
+        </div>
 
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { getCatalogProducts } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     const isSHG = searchParams.get('isSHG');
     const sort = searchParams.get('sort'); // 'savings_desc', 'price_asc', 'price_desc'
 
-    let filtered = [...CATALOG_PRODUCTS];
+    let filtered = [...getCatalogProducts()];
 
     if (category && category !== 'All') {
       filtered = filtered.filter(

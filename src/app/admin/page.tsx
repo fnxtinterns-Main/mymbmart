@@ -56,11 +56,13 @@ import {
   Barcode,
   ClipboardList,
   Compass,
-  Rocket
+  Rocket,
+  UserCheck
 } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
 import { RoutingAdminTab } from '@/components/RoutingAdminTab';
 import { PilotPlaybookTab } from '@/components/PilotPlaybookTab';
+import { MerchantOnboardingTab } from '@/components/admin/MerchantOnboardingTab';
 
 interface AdminMetrics {
   kpis: {
@@ -106,7 +108,7 @@ export default function AdminDashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'orders' | 'dispatch_board' | 'pickup_slots' | 'inventory' | 'routing' | 'pilot' | 'producers' | 'roles' | 'checklist'
+    'overview' | 'orders' | 'dispatch_board' | 'pickup_slots' | 'inventory' | 'merchants' | 'routing' | 'pilot' | 'producers' | 'roles' | 'checklist'
   >('overview');
   
   // Header modals
@@ -525,6 +527,7 @@ export default function AdminDashboardPage() {
     { id: 'dispatch_board', label: 'Dispatch Board (Kanban)', icon: Truck },
     { id: 'pickup_slots', label: 'Pickup Slots (Ranchi Central)', icon: Clock },
     { id: 'inventory', label: 'Inventory & SKUs', icon: Layers },
+    { id: 'merchants', label: 'Merchant Onboarding & KYC', icon: UserCheck, tag: 'Kirana' },
     { id: 'routing', label: 'Hyperlocal Routing Engine', icon: Compass },
     { id: 'pilot', label: 'Pilot Operations (Ranchi)', icon: Rocket, tag: 'Days 1-90' },
     { id: 'producers', label: 'SHG Producers', icon: Store, badge: producersList.length },
@@ -2487,6 +2490,11 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          {/* ============================================================== */}
+          {/* TAB: MERCHANT ONBOARDING & KYC (KIRANA APPROVALS)              */}
+          {/* ============================================================== */}
+          {activeTab === 'merchants' && <MerchantOnboardingTab />}
 
           {/* ============================================================== */}
           {/* TAB: HYPERLOCAL ROUTING ENGINE & DIAGNOSTICS                   */}
