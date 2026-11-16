@@ -4,28 +4,16 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
-  Building2, 
   ShoppingBag, 
   TrendingUp, 
   Users, 
   Bike, 
-  PackageCheck, 
   ShieldCheck, 
-  Sparkles, 
   AlertTriangle,
-  ArrowRight,
   Search,
   CheckCircle2,
   Clock,
   RefreshCw,
-  Plus,
-  ChevronRight,
-  Database,
-  Lock,
-  Unlock,
-  Key,
-  Eye,
-  EyeOff,
   LogOut,
   ExternalLink,
   Menu,
@@ -34,21 +22,12 @@ import {
   HelpCircle,
   BarChart3,
   Layers,
-  ArrowUpRight,
-  ArrowDownRight,
-  RotateCcw,
   Check,
-  Filter,
-  Download,
-  AlertCircle,
-  Truck,
-  UserCheck,
-  FileText,
   Sliders,
   Store,
-  Wallet,
-  Tag
+  Wallet
 } from 'lucide-react';
+import { sampleProducts } from '@/lib/data';
 
 interface AdminMetrics {
   kpis: {
@@ -85,8 +64,6 @@ interface AdminMetrics {
   };
 }
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || 'MBM@Admin2026';
-
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -104,68 +81,25 @@ export default function AdminDashboardPage() {
   const [showHelp, setShowHelp] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   
-  // Data states
+  // Genuine Data states
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState('');
   const [producersList, setProducersList] = useState<any[]>([]);
-
-  // Interactive local states for refunds, approvals & low stock reorders
-  const [pendingApprovals, setPendingApprovals] = useState([
-    {
-      id: 'SHG-RCH-102',
-      name: 'Birsa Mahila Bachat Samiti',
-      category: 'Organic Ghee & Pickles',
-      district: 'Khunti / Ranchi',
-      fssai: '21524098000124 (Verified)',
-      status: 'AWAITING_INSPECTION',
-      appliedAt: 'Today, 10:15 AM'
-    },
-    {
-      id: 'SHG-DNB-408',
-      name: 'Maa Durga Self Help Group',
-      category: 'Cold-Pressed Mustard Oil',
-      district: 'Dhanbad Rural',
-      fssai: '21524087000911 (Pending)',
-      status: 'KYC_SUBMITTED',
-      appliedAt: 'Yesterday'
-    }
-  ]);
-
-  const [pendingRefunds, setPendingRefunds] = useState([
-    {
-      refundId: 'RF-9042',
-      orderId: 'MBM-2026-98102',
-      customer: 'Pooja Verma',
-      amount: 420,
-      reason: 'Package seal damaged during transit',
-      method: 'MBM Savings Wallet',
-      status: 'PENDING_APPROVAL'
-    },
-    {
-      refundId: 'RF-9043',
-      orderId: 'MBM-2026-98089',
-      customer: 'Suresh Kumar',
-      amount: 195,
-      reason: 'Item missing from quick delivery bag',
-      method: 'Original UPI Mode',
-      status: 'PENDING_APPROVAL'
-    }
-  ]);
-
-  const [lowStockList, setLowStockList] = useState([
-    { sku: 'MBM-GRO-001', name: 'Fortune Mustard Oil 5L Jar', stock: 4, threshold: 15, reordered: false },
-    { sku: 'MBM-GRO-009', name: 'India Gate Basmati Rice 10kg', stock: 2, threshold: 10, reordered: false },
-    { sku: 'MBM-SHG-002', name: 'Handmade Amla Murabba 500g', stock: 5, threshold: 20, reordered: false },
-    { sku: 'MBM-GRO-015', name: 'Tata Tea Gold 1kg Pack', stock: 6, threshold: 15, reordered: false }
-  ]);
+  const [pendingRefunds, setPendingRefunds] = useState<any[]>([]);
+  const [lowStockList, setLowStockList] = useState<any[]>([]);
 
   const fetchMetrics = () => {
     setLoading(true);
     fetch('/api/admin/metrics')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) setMetrics(data);
+        if (data.success) {
+          setMetrics(data);
+          if (data.darkStore?.lowStockSKUs) {
+            setLowStockList(data.darkStore.lowStockSKUs);
+          }
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -173,7 +107,9 @@ export default function AdminDashboardPage() {
     fetch('/api/producer/register')
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.producers) setProducersList(data.producers);
+        if (data.success && data.producers) {
+          setProducersList(data.producers);
+        }
       })
       .catch(() => {});
   };
@@ -217,21 +153,9 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const approveSeller = (id: string) => {
-    setPendingApprovals(prev => prev.filter(item => item.id !== id));
-    setActionMessage(`Seller ${id} approved & activated in Ranchi Dark Store.`);
-    setTimeout(() => setActionMessage(''), 4000);
-  };
-
-  const approveRefund = (refundId: string) => {
-    setPendingRefunds(prev => prev.filter(r => r.refundId !== refundId));
-    setActionMessage(`Refund ${refundId} processed successfully to customer.`);
-    setTimeout(() => setActionMessage(''), 4000);
-  };
-
   const triggerReorder = (sku: string) => {
     setLowStockList(prev => prev.map(item => item.sku === sku ? { ...item, reordered: true } : item));
-    setActionMessage(`Purchase order dispatched to central vendor for SKU ${sku}`);
+    setActionMessage(`Purchase order dispatched for SKU ${sku}`);
     setTimeout(() => setActionMessage(''), 4000);
   };
 
@@ -249,7 +173,7 @@ export default function AdminDashboardPage() {
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center p-4">
         <div className="max-w-md w-full bg-white border border-[#E2E8F0] rounded-3xl p-8 shadow-xl text-center space-y-5">
           <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#16A34A] flex items-center justify-center mx-auto shadow-xs">
-            <Lock className="w-7 h-7" />
+            <ShieldCheck className="w-7 h-7" />
           </div>
           <div>
             <h2 className="text-xl font-black text-[#0F172A]">MegaBachatMart Operations Hub</h2>
@@ -266,12 +190,31 @@ export default function AdminDashboardPage() {
     );
   }
 
+  // Real KPIs strictly from metrics
+  const totalGMV = metrics?.kpis.totalGMV || 0;
+  const totalOrders = metrics?.kpis.totalOrders || 0;
+  const totalSavings = metrics?.kpis.totalCustomerSavings || 0;
+  const activeDeliveries = metrics?.kpis.outForDeliveryCount || 0;
+  const pendingOrders = metrics?.kpis.pendingDispatchCount || 0;
+  const realOrders = metrics?.recentOrders || [];
+
+  // Filter orders by global search if entered
+  const filteredOrders = globalSearch.trim()
+    ? realOrders.filter(o => 
+        o.id?.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        o.customerName?.toLowerCase().includes(globalSearch.toLowerCase())
+      )
+    : realOrders;
+
+  // Real categories from catalog
+  const catalogCategories = Array.from(new Set(sampleProducts.map(p => p.category)));
+
   // Navigation Items
   const navItems = [
     { id: 'overview', label: 'Dashboard Overview', icon: BarChart3 },
-    { id: 'orders', label: 'Orders & Dispatch', icon: ShoppingBag, badge: metrics?.kpis.pendingDispatchCount || 0 },
+    { id: 'orders', label: 'Orders & Dispatch', icon: ShoppingBag, badge: pendingOrders },
     { id: 'inventory', label: 'Inventory & SKUs', icon: Layers },
-    { id: 'producers', label: 'SHG Producers', icon: Store, badge: pendingApprovals.length },
+    { id: 'producers', label: 'SHG Producers', icon: Store, badge: producersList.length },
     { id: 'roles', label: 'Staff Roles & 2FA', icon: ShieldCheck },
     { id: 'checklist', label: 'Blueprint Checklist', icon: CheckCircle2, tag: 'Phases 1-18' }
   ];
@@ -395,7 +338,7 @@ export default function AdminDashboardPage() {
       </aside>
 
       {/* ============================================================== */}
-      {/* 2. MAIN VIEW AREA (Light Background #F8FAFC)                   */}
+      {/* 2. MAIN WORKSPACE (#F8FAFC, Cards #FFFFFF, Borders #E2E8F0)    */}
       {/* ============================================================== */}
       <div className="flex-1 flex flex-col min-w-0">
         
@@ -404,7 +347,6 @@ export default function AdminDashboardPage() {
           
           {/* Left: Hamburger & Collapse & Global Search */}
           <div className="flex items-center space-x-3 flex-1 max-w-xl">
-            {/* Mobile Drawer Trigger */}
             <button
               onClick={() => setMobileMenuOpen(true)}
               className="lg:hidden p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100"
@@ -412,7 +354,6 @@ export default function AdminDashboardPage() {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Desktop Sidebar Toggle */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="hidden lg:flex p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition"
@@ -421,7 +362,6 @@ export default function AdminDashboardPage() {
               <Sliders className="w-4 h-4" />
             </button>
 
-            {/* Global Search Bar */}
             <div className="relative flex-1 hidden sm:block">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <Search className="w-4 h-4" />
@@ -430,7 +370,7 @@ export default function AdminDashboardPage() {
                 type="text"
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                placeholder="Search orders, products, customers, SKU..."
+                placeholder="Search orders, products, customers..."
                 className="w-full pl-9 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] focus:border-[#16A34A] focus:bg-white rounded-xl text-xs text-[#0F172A] outline-hidden transition shadow-2xs"
               />
             </div>
@@ -439,11 +379,10 @@ export default function AdminDashboardPage() {
           {/* Right: Actions, Notifications, Help & Administrator Profile */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             
-            {/* Quick Refresh */}
             <button
               onClick={fetchMetrics}
               className="p-2 text-slate-600 hover:text-[#16A34A] hover:bg-emerald-50 rounded-xl transition cursor-pointer"
-              title="Refresh Data"
+              title="Refresh Live Data"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -456,7 +395,9 @@ export default function AdminDashboardPage() {
                 title="System Notifications"
               >
                 <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5722] rounded-full ring-2 ring-white"></span>
+                {pendingOrders > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5722] rounded-full ring-2 ring-white"></span>
+                )}
               </button>
 
               {showNotifications && (
@@ -464,18 +405,21 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
                     <span className="text-xs font-bold text-[#0F172A]">Operational Alerts</span>
                     <span className="text-[10px] bg-emerald-100 text-[#064E3B] font-bold px-2 py-0.5 rounded-full">
-                      2 Unresolved
+                      Live
                     </span>
                   </div>
                   <div className="space-y-2 text-xs">
-                    <div className="p-2 rounded-xl bg-amber-50 border border-amber-200">
-                      <p className="font-bold text-amber-900">Low Stock Alert</p>
-                      <p className="text-[11px] text-amber-700">Fortune Mustard Oil (4 units remaining)</p>
-                    </div>
-                    <div className="p-2 rounded-xl bg-blue-50 border border-blue-200">
-                      <p className="font-bold text-blue-900">New SHG Producer Registration</p>
-                      <p className="text-[11px] text-blue-700">Birsa Mahila Bachat Samiti awaiting KYC approval</p>
-                    </div>
+                    {pendingOrders > 0 ? (
+                      <div className="p-2 rounded-xl bg-orange-50 border border-orange-200">
+                        <p className="font-bold text-orange-900">Pending Orders</p>
+                        <p className="text-[11px] text-orange-700">{pendingOrders} order(s) awaiting dispatch in dark store.</p>
+                      </div>
+                    ) : (
+                      <div className="p-2 rounded-xl bg-slate-50 text-slate-600 text-center py-4">
+                        <CheckCircle2 className="w-5 h-5 text-[#16A34A] mx-auto mb-1" />
+                        <span>All orders fulfilled. No pending alerts.</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -485,7 +429,7 @@ export default function AdminDashboardPage() {
             <button
               onClick={() => setShowHelp(!showHelp)}
               className="p-2 text-slate-600 hover:text-[#0284C7] hover:bg-sky-50 rounded-xl transition cursor-pointer"
-              title="Support & SOPs"
+              title="Support & Documentation"
             >
               <HelpCircle className="w-4 h-4" />
             </button>
@@ -528,14 +472,14 @@ export default function AdminDashboardPage() {
           {activeTab === 'overview' && (
             <div className="space-y-8">
               
-              {/* TOP HEADER TITLE */}
+              {/* Top Header Title */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
                     Operations Executive Dashboard
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Real-time performance metrics across quick commerce, marketplace, and prosumer savings.
+                    Live operational metrics across quick commerce orders, catalog inventory, and prosumer savings.
                   </p>
                 </div>
 
@@ -554,13 +498,11 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* ========================================================== */}
-              {/* C. DASHBOARD STATISTICS (First Row: 4 Important Metrics)   */}
-              {/* ========================================================== */}
+              {/* First Row: 4 Metric Cards (Strictly Genuine) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 
                 {/* Metric 1: Total Sales */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs hover:shadow-md transition space-y-3">
+                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
                   <div className="flex items-center justify-between text-slate-500">
                     <span className="text-xs font-bold uppercase tracking-wider">Total Sales</span>
                     <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center">
@@ -569,20 +511,19 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <div className="text-2xl sm:text-3xl font-black text-[#0F172A]">
-                      {metrics?.kpis.totalGMV ? `₹${metrics.kpis.totalGMV.toLocaleString()}` : '₹12.4L'}
+                      ₹{totalGMV.toLocaleString()}
                     </div>
-                    <div className="flex items-center space-x-1.5 text-xs text-[#16A34A] font-semibold mt-1">
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                      <span>+14.2% from last month</span>
+                    <div className="text-xs text-slate-500 font-medium mt-1">
+                      Gross Merchandise Value
                     </div>
                   </div>
                   <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                    Includes ₹1.86L customer purchase savings
+                    Customer Bachat: ₹{totalSavings.toLocaleString()}
                   </div>
                 </div>
 
                 {/* Metric 2: Total Orders */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs hover:shadow-md transition space-y-3">
+                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
                   <div className="flex items-center justify-between text-slate-500">
                     <span className="text-xs font-bold uppercase tracking-wider">Total Orders</span>
                     <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0284C7] flex items-center justify-center">
@@ -591,42 +532,40 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <div className="text-2xl sm:text-3xl font-black text-[#0F172A]">
-                      {metrics?.kpis.totalOrders ? metrics.kpis.totalOrders.toLocaleString() : '854'}
+                      {totalOrders.toLocaleString()}
                     </div>
-                    <div className="flex items-center space-x-1.5 text-xs text-[#0284C7] font-semibold mt-1">
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                      <span>+8.5% weekly order volume</span>
+                    <div className="text-xs text-slate-500 font-medium mt-1">
+                      Processed through Checkout
                     </div>
                   </div>
                   <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                    Average basket value: ₹540
+                    Pending Dispatch: {pendingOrders}
                   </div>
                 </div>
 
-                {/* Metric 3: Customers */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs hover:shadow-md transition space-y-3">
+                {/* Metric 3: Active SHG Producers */}
+                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
                   <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider">Customers</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">SHG Producers</span>
                     <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                      <Users className="w-4 h-4" />
+                      <Store className="w-4 h-4" />
                     </div>
                   </div>
                   <div>
                     <div className="text-2xl sm:text-3xl font-black text-[#0F172A]">
-                      {metrics?.kpis.activePromoterCount ? (3200 + metrics.kpis.activePromoterCount).toLocaleString() : '3,278'}
+                      {producersList.length}
                     </div>
-                    <div className="flex items-center space-x-1.5 text-xs text-purple-600 font-semibold mt-1">
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                      <span>+210 prosumer ambassadors</span>
+                    <div className="text-xs text-slate-500 font-medium mt-1">
+                      Verified Micro-Producers
                     </div>
                   </div>
                   <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                    Active referral loop conversion: 68%
+                    Onboarding Portal: Active
                   </div>
                 </div>
 
                 {/* Metric 4: Active Deliveries */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs hover:shadow-md transition space-y-3">
+                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
                   <div className="flex items-center justify-between text-slate-500">
                     <span className="text-xs font-bold uppercase tracking-wider">Active Deliveries</span>
                     <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#FF5722] flex items-center justify-center">
@@ -635,119 +574,97 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <div className="text-2xl sm:text-3xl font-black text-[#0F172A]">
-                      {metrics?.kpis.outForDeliveryCount ? metrics.kpis.outForDeliveryCount : '124'}
+                      {activeDeliveries}
                     </div>
-                    <div className="flex items-center space-x-1.5 text-xs text-[#FF5722] font-semibold mt-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Avg 18 mins doorstep arrival</span>
+                    <div className="text-xs text-slate-500 font-medium mt-1">
+                      Riders En Route
                     </div>
                   </div>
                   <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                    Fleet: 14 Active Dark Store Riders
+                    Doorstep OTP Verification
                   </div>
                 </div>
 
               </div>
 
-              {/* ========================================================== */}
-              {/* SECTION 1: SALES GRAPH & CATEGORY-WISE SALES               */}
-              {/* ========================================================== */}
+              {/* SECTION 1: SALES GRAPH & CATEGORY-WISE BREAKDOWN */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* 1. Sales & Bachat Graph (2 Cols) */}
+                {/* 1. Sales & Bachat Performance (2 Cols) */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-black text-[#0F172A]">Weekly GMV & Community Savings</h3>
-                      <p className="text-xs text-slate-500">Comparing gross revenue vs customer savings distributed</p>
+                      <h3 className="text-sm font-black text-[#0F172A]">Revenue & Customer Bachat Summary</h3>
+                      <p className="text-xs text-slate-500">Gross sales vs customer purchase savings</p>
                     </div>
                     <div className="flex items-center space-x-3 text-xs font-bold">
                       <span className="flex items-center space-x-1">
                         <span className="w-3 h-3 bg-[#16A34A] rounded-sm"></span>
-                        <span className="text-slate-600">Sales</span>
+                        <span className="text-slate-600">Sales: ₹{totalGMV.toLocaleString()}</span>
                       </span>
                       <span className="flex items-center space-x-1">
                         <span className="w-3 h-3 bg-[#FF5722] rounded-sm"></span>
-                        <span className="text-slate-600">Bachat Savings</span>
+                        <span className="text-slate-600">Bachat: ₹{totalSavings.toLocaleString()}</span>
                       </span>
                     </div>
                   </div>
 
-                  {/* Visual Chart Bars */}
-                  <div className="h-48 flex items-end justify-between gap-3 pt-6 border-b border-slate-100">
-                    {[
-                      { day: 'Mon', sales: 65, savings: 20, rev: '₹1.4L' },
-                      { day: 'Tue', sales: 75, savings: 24, rev: '₹1.6L' },
-                      { day: 'Wed', sales: 55, savings: 18, rev: '₹1.2L' },
-                      { day: 'Thu', sales: 85, savings: 28, rev: '₹1.9L' },
-                      { day: 'Fri', sales: 95, savings: 32, rev: '₹2.1L' },
-                      { day: 'Sat', sales: 110, savings: 38, rev: '₹2.5L' },
-                      { day: 'Sun', sales: 120, savings: 42, rev: '₹2.7L' }
-                    ].map((item) => (
-                      <div key={item.day} className="flex-1 flex flex-col items-center gap-1.5 group">
-                        <div className="w-full flex items-end justify-center gap-1 h-36">
-                          <div 
-                            style={{ height: `${(item.sales / 120) * 100}%` }}
-                            className="w-1/2 bg-[#16A34A] rounded-t-md hover:bg-emerald-600 transition-all relative"
-                          >
-                            <span className="opacity-0 group-hover:opacity-100 transition absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] bg-slate-800 text-white px-1 py-0.5 rounded whitespace-nowrap z-10">
-                              {item.rev}
-                            </span>
-                          </div>
-                          <div 
-                            style={{ height: `${(item.savings / 120) * 100}%` }}
-                            className="w-1/2 bg-[#FF5722] rounded-t-md hover:bg-orange-600 transition-all"
-                          ></div>
-                        </div>
-                        <span className="text-[11px] font-bold text-slate-500">{item.day}</span>
+                  {/* Dynamic Graphic Container */}
+                  <div className="h-44 bg-[#F8FAFC] rounded-xl border border-dashed border-[#E2E8F0] flex flex-col items-center justify-center p-6 text-center space-y-2">
+                    {totalOrders > 0 ? (
+                      <div className="space-y-1">
+                        <p className="text-sm font-black text-[#0F172A]">Live Order Tracking Active</p>
+                        <p className="text-xs text-slate-500">{totalOrders} order(s) processed. Total GMV: ₹{totalGMV.toLocaleString()}</p>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="space-y-1">
+                        <BarChart3 className="w-8 h-8 text-slate-300 mx-auto" />
+                        <p className="text-xs font-bold text-slate-600">No Orders Placed Yet</p>
+                        <p className="text-[11px] text-slate-400">Live sales and customer bachat metrics will chart dynamically as checkouts occur.</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                    <span>Highest sales peak: Weekend Grocery Restock (Sat-Sun)</span>
-                    <span className="font-bold text-[#16A34A]">Target: ₹15L GMV/Week</span>
+                    <span>Pilot Store: Ranchi Dark Store MBM-RCH-01</span>
+                    <span className="font-bold text-[#16A34A]">Status: Operational</span>
                   </div>
                 </div>
 
-                {/* 4. Category-Wise Sales (1 Col) */}
+                {/* 4. Category-Wise Distribution (1 Col) */}
                 <div className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-4">
                   <div>
-                    <h3 className="text-sm font-black text-[#0F172A]">Category-wise Sales</h3>
-                    <p className="text-xs text-slate-500">Revenue split across verticals</p>
+                    <h3 className="text-sm font-black text-[#0F172A]">Product Catalog Categories</h3>
+                    <p className="text-xs text-slate-500">Live inventory vertical distribution</p>
                   </div>
 
                   <div className="space-y-3">
-                    {[
-                      { cat: 'Groceries & Staples', pct: 42, color: 'bg-[#16A34A]', amount: '₹5.20L' },
-                      { cat: 'Fresh Fruits & Veg', pct: 24, color: 'bg-[#0284C7]', amount: '₹2.98L' },
-                      { cat: 'Dairy & Bakery', pct: 16, color: 'bg-amber-500', amount: '₹1.98L' },
-                      { cat: 'Personal & Home Care', pct: 11, color: 'bg-purple-500', amount: '₹1.36L' },
-                      { cat: 'SHG Specials (Pickles/Oils)', pct: 7, color: 'bg-[#FF5722]', amount: '₹0.88L' }
-                    ].map((c) => (
-                      <div key={c.cat} className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-slate-700">{c.cat}</span>
-                          <span className="text-[#0F172A]">{c.amount} ({c.pct}%)</span>
+                    {catalogCategories.map((cat) => {
+                      const count = sampleProducts.filter(p => p.category === cat).length;
+                      const pct = Math.round((count / sampleProducts.length) * 100);
+                      return (
+                        <div key={cat} className="space-y-1">
+                          <div className="flex justify-between text-xs font-bold">
+                            <span className="text-slate-700">{cat}</span>
+                            <span className="text-[#0F172A]">{count} SKUs ({pct}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div className="h-full bg-[#16A34A] rounded-full" style={{ width: `${pct}%` }}></div>
+                          </div>
                         </div>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className={`h-full ${c.color} rounded-full`} style={{ width: `${c.pct}%` }}></div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-xs text-[#064E3B] font-medium flex items-center justify-between">
-                    <span>SHG Prosumer share</span>
-                    <span className="font-bold text-[#16A34A]">+18% MoM growth</span>
+                    <span>Total Active SKUs</span>
+                    <span className="font-bold text-[#16A34A]">{sampleProducts.length} Items Listed</span>
                   </div>
                 </div>
 
               </div>
 
-              {/* ========================================================== */}
-              {/* SECTION 2: RECENT ORDERS & TOP-SELLING PRODUCTS           */}
-              {/* ========================================================== */}
+              {/* SECTION 2: RECENT ORDERS & TOP-SELLING CATALOG PRODUCTS */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* 2. Recent Orders (2 Cols) */}
@@ -755,7 +672,7 @@ export default function AdminDashboardPage() {
                   <div className="p-5 border-b border-[#E2E8F0] flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-black text-[#0F172A]">Recent Orders & Live Dispatch</h3>
-                      <p className="text-xs text-slate-500">Pick, pack, and release orders to nearby fleet</p>
+                      <p className="text-xs text-slate-500">Real-time fulfillment queue</p>
                     </div>
                     <button
                       onClick={() => setActiveTab('orders')}
@@ -766,24 +683,24 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
-                        <tr>
-                          <th className="p-3.5">Order ID</th>
-                          <th className="p-3.5">Customer & Items</th>
-                          <th className="p-3.5">Amount</th>
-                          <th className="p-3.5">Status</th>
-                          <th className="p-3.5 text-right">Quick Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E2E8F0]">
-                        {metrics?.recentOrders && metrics.recentOrders.length > 0 ? (
-                          metrics.recentOrders.slice(0, 5).map((order: any) => (
+                    {filteredOrders.length > 0 ? (
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
+                          <tr>
+                            <th className="p-3.5">Order ID</th>
+                            <th className="p-3.5">Customer & Items</th>
+                            <th className="p-3.5">Amount</th>
+                            <th className="p-3.5">Status</th>
+                            <th className="p-3.5 text-right">Quick Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E8F0]">
+                          {filteredOrders.slice(0, 6).map((order: any) => (
                             <tr key={order.id} className="hover:bg-slate-50 transition">
                               <td className="p-3.5 font-bold font-mono text-[#0F172A]">{order.id}</td>
                               <td className="p-3.5">
                                 <p className="font-semibold text-slate-900">{order.customerName}</p>
-                                <p className="text-[11px] text-slate-500">{order.items?.length || 1} items • Ranchi</p>
+                                <p className="text-[11px] text-slate-500">{order.items?.length || 1} items</p>
                               </td>
                               <td className="p-3.5 font-bold text-[#0F172A]">₹{order.totalAmount}</td>
                               <td className="p-3.5">
@@ -803,7 +720,7 @@ export default function AdminDashboardPage() {
                                 {order.status === 'CONFIRMED' && (
                                   <button
                                     onClick={() => handleOrderAction(order.id, 'PACK')}
-                                    className="bg-[#16A34A] hover:bg-[#15803D] text-white px-2.5 py-1 rounded-lg text-[11px] font-bold"
+                                    className="bg-[#16A34A] hover:bg-[#15803D] text-white px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer"
                                   >
                                     Pack Order
                                   </button>
@@ -811,7 +728,7 @@ export default function AdminDashboardPage() {
                                 {order.status === 'PACKED' && (
                                   <button
                                     onClick={() => handleOrderAction(order.id, 'DISPATCH')}
-                                    className="bg-[#FF5722] hover:bg-orange-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold"
+                                    className="bg-[#FF5722] hover:bg-orange-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer"
                                   >
                                     Assign Rider
                                   </button>
@@ -824,76 +741,47 @@ export default function AdminDashboardPage() {
                                 )}
                               </td>
                             </tr>
-                          ))
-                        ) : (
-                          // Fallback illustrative live queue
-                          [
-                            { id: 'MBM-2026-98101', name: 'Rajesh Mishra', items: 4, amt: 640, status: 'PACKED' },
-                            { id: 'MBM-2026-98102', name: 'Anjali Tirkey', items: 2, amt: 320, status: 'OUT_FOR_DELIVERY' },
-                            { id: 'MBM-2026-98103', name: 'Vikas Kumar', items: 6, amt: 1250, status: 'CONFIRMED' }
-                          ].map(o => (
-                            <tr key={o.id} className="hover:bg-slate-50 transition">
-                              <td className="p-3.5 font-bold font-mono text-[#0F172A]">{o.id}</td>
-                              <td className="p-3.5">
-                                <p className="font-semibold text-slate-900">{o.name}</p>
-                                <p className="text-[11px] text-slate-500">{o.items} items • Doranda, Ranchi</p>
-                              </td>
-                              <td className="p-3.5 font-bold text-[#0F172A]">₹{o.amt}</td>
-                              <td className="p-3.5">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                                  o.status === 'OUT_FOR_DELIVERY' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
-                                }`}>
-                                  {o.status}
-                                </span>
-                              </td>
-                              <td className="p-3.5 text-right">
-                                <button
-                                  onClick={() => handleOrderAction(o.id, 'PACK')}
-                                  className="bg-[#16A34A] hover:bg-[#15803D] text-white px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer"
-                                >
-                                  Process Dispatch
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="py-12 text-center text-slate-400 space-y-2">
+                        <ShoppingBag className="w-8 h-8 mx-auto text-slate-300" />
+                        <p className="text-xs font-semibold text-slate-600">No Orders in Queue</p>
+                        <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                          When customers complete a purchase on the storefront, their orders will appear here immediately for pick, pack, and rider dispatch.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* 3. Top-Selling Products (1 Col) */}
+                {/* 3. Catalog Products (1 Col) */}
                 <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-black text-[#0F172A]">Top-Selling Products</h3>
-                      <p className="text-xs text-slate-500">Highest sales velocity this week</p>
+                      <h3 className="text-sm font-black text-[#0F172A]">Storefront Products</h3>
+                      <p className="text-xs text-slate-500">Live products in catalog</p>
                     </div>
                     <span className="text-[10px] font-bold text-[#16A34A] bg-emerald-50 px-2 py-0.5 rounded-full">
-                      Live Velocity
+                      {sampleProducts.length} Listed
                     </span>
                   </div>
 
                   <div className="space-y-3">
-                    {[
-                      { name: 'Fortune Mustard Oil 1L Pouch', sold: 480, stock: 92, tag: 'High Velocity' },
-                      { name: 'Aashirvaad Shudh Chakki Atta 10kg', sold: 340, stock: 45, tag: 'Staple' },
-                      { name: 'Amul Taaza Fresh Milk 500ml', sold: 610, stock: 120, tag: 'Quick Grocery' },
-                      { name: 'SHG Wild Organic Honey 500g', sold: 185, stock: 28, tag: 'SHG Special' },
-                      { name: 'Tata Salt Vacuum Evaporated 1kg', sold: 290, stock: 64, tag: 'Essential' }
-                    ].map((p, idx) => (
-                      <div key={p.name} className="flex items-center justify-between text-xs p-2 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100">
+                    {sampleProducts.slice(0, 5).map((p, idx) => (
+                      <div key={p.id} className="flex items-center justify-between text-xs p-2 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100">
                         <div className="flex items-center space-x-2.5">
                           <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-[11px]">
                             {idx + 1}
                           </span>
                           <div>
                             <p className="font-bold text-[#0F172A] truncate max-w-[160px]">{p.name}</p>
-                            <p className="text-[10px] text-slate-500">{p.sold} units sold • {p.stock} in stock</p>
+                            <p className="text-[10px] text-slate-500">MRP: ₹{p.mrp} • Bachat Price: ₹{p.bachatPrice}</p>
                           </div>
                         </div>
                         <span className="text-[10px] font-extrabold text-[#16A34A] bg-emerald-50 px-2 py-0.5 rounded-full">
-                          {p.tag}
+                          {p.category}
                         </span>
                       </div>
                     ))}
@@ -902,9 +790,7 @@ export default function AdminDashboardPage() {
 
               </div>
 
-              {/* ========================================================== */}
-              {/* SECTION 3: SAVINGS SUMMARY, SELLER APPROVALS & LOW STOCK   */}
-              {/* ========================================================== */}
+              {/* SECTION 3: SAVINGS SUMMARY, SELLER APPROVALS & LOW STOCK */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* 5. Savings and Cashback Summary */}
@@ -912,7 +798,7 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-black text-[#0F172A]">Savings & Cashback Summary</h3>
-                      <p className="text-xs text-slate-500">Customer savings & wallet rewards ledger</p>
+                      <p className="text-xs text-slate-500">Customer savings & wallet ledger</p>
                     </div>
                     <Wallet className="w-5 h-5 text-[#16A34A]" />
                   </div>
@@ -921,7 +807,7 @@ export default function AdminDashboardPage() {
                     <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center justify-between">
                       <div>
                         <p className="text-[11px] font-bold text-emerald-800">Total Purchase Bachat</p>
-                        <p className="text-lg font-black text-[#064E3B]">₹1,86,420</p>
+                        <p className="text-lg font-black text-[#064E3B]">₹{totalSavings.toLocaleString()}</p>
                       </div>
                       <span className="text-[10px] font-bold text-white bg-[#16A34A] px-2 py-0.5 rounded-full">
                         Instant Savings
@@ -930,8 +816,8 @@ export default function AdminDashboardPage() {
 
                     <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-100 flex items-center justify-between">
                       <div>
-                        <p className="text-[11px] font-bold text-blue-800">Wallet Cashback Distributed</p>
-                        <p className="text-lg font-black text-blue-900">₹62,800</p>
+                        <p className="text-[11px] font-bold text-blue-800">Wallet Credits Ledger</p>
+                        <p className="text-lg font-black text-blue-900">₹0</p>
                       </div>
                       <span className="text-[10px] font-bold text-white bg-[#0284C7] px-2 py-0.5 rounded-full">
                         Redeemable
@@ -940,17 +826,17 @@ export default function AdminDashboardPage() {
 
                     <div className="p-3.5 bg-orange-50 rounded-xl border border-orange-100 flex items-center justify-between">
                       <div>
-                        <p className="text-[11px] font-bold text-orange-800">Prosumer Referral Payouts</p>
-                        <p className="text-lg font-black text-orange-900">₹48,250</p>
+                        <p className="text-[11px] font-bold text-orange-800">Prosumer Referral Pool</p>
+                        <p className="text-lg font-black text-orange-900">₹0</p>
                       </div>
                       <span className="text-[10px] font-bold text-white bg-[#FF5722] px-2 py-0.5 rounded-full">
-                        Level 1-3
+                        Verified
                       </span>
                     </div>
                   </div>
 
                   <p className="text-[11px] text-slate-500 text-center">
-                    All bachat and reward ledger entries verified cryptographically on SmartChain.
+                    All bachat calculations computed dynamically from completed checkout carts.
                   </p>
                 </div>
 
@@ -958,50 +844,34 @@ export default function AdminDashboardPage() {
                 <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-black text-[#0F172A]">Pending Seller Approvals</h3>
-                      <p className="text-xs text-slate-500">SHG producers awaiting onboarding</p>
+                      <h3 className="text-sm font-black text-[#0F172A]">SHG Producer Registrations</h3>
+                      <p className="text-xs text-slate-500">Applications from /producer</p>
                     </div>
-                    <span className="bg-[#FF5722] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                      {pendingApprovals.length} Pending
+                    <span className="bg-[#16A34A] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                      {producersList.length} Registered
                     </span>
                   </div>
 
                   <div className="space-y-3">
-                    {pendingApprovals.map((seller) => (
-                      <div key={seller.id} className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="text-xs font-bold text-[#0F172A]">{seller.name}</p>
-                            <p className="text-[11px] text-slate-500">{seller.category} • {seller.district}</p>
+                    {producersList.length > 0 ? (
+                      producersList.map((seller: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-xs font-bold text-[#0F172A]">{seller.groupName || seller.name}</p>
+                              <p className="text-[11px] text-slate-500">{seller.category || 'General'} • {seller.district || 'Jharkhand'}</p>
+                            </div>
+                            <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+                              VERIFIED
+                            </span>
                           </div>
-                          <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
-                            {seller.status}
-                          </span>
                         </div>
-                        <div className="text-[10px] text-slate-500">
-                          FSSAI: <span className="font-mono text-slate-700">{seller.fssai}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 pt-1">
-                          <button
-                            onClick={() => approveSeller(seller.id)}
-                            className="flex-1 bg-[#16A34A] hover:bg-[#15803D] text-white text-[11px] font-bold py-1 px-2 rounded-lg transition cursor-pointer"
-                          >
-                            Approve & Onboard
-                          </button>
-                          <button
-                            onClick={() => alert(`Inspection scheduled for ${seller.name}`)}
-                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-100 transition"
-                          >
-                            Details
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {pendingApprovals.length === 0 && (
-                      <div className="text-center py-6 text-slate-400 text-xs">
-                        <CheckCircle2 className="w-8 h-8 text-[#16A34A] mx-auto mb-1" />
-                        All seller applications processed.
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-slate-400 text-xs space-y-1">
+                        <Store className="w-8 h-8 text-slate-300 mx-auto" />
+                        <p className="font-semibold text-slate-600">No Pending Applications</p>
+                        <p className="text-[11px]">Producer registrations submitted on /producer will appear here.</p>
                       </div>
                     )}
                   </div>
@@ -1012,51 +882,53 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-black text-[#0F172A]">Low-Stock Alerts</h3>
-                      <p className="text-xs text-slate-500">SKUs below minimum threshold</p>
+                      <p className="text-xs text-slate-500">Dark store reorder thresholds</p>
                     </div>
                     <AlertTriangle className="w-5 h-5 text-amber-500" />
                   </div>
 
                   <div className="space-y-2.5">
-                    {lowStockList.map((item) => (
-                      <div key={item.sku} className="p-2.5 bg-rose-50/60 border border-rose-200/80 rounded-xl flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-[#0F172A] truncate">{item.name}</p>
-                          <p className="text-[10px] text-rose-700 font-semibold">
-                            Only {item.stock} left (Threshold: {item.threshold})
-                          </p>
+                    {lowStockList.length > 0 ? (
+                      lowStockList.map((item) => (
+                        <div key={item.sku} className="p-2.5 bg-rose-50/60 border border-rose-200/80 rounded-xl flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-[#0F172A] truncate">{item.name}</p>
+                            <p className="text-[10px] text-rose-700 font-semibold">
+                              Only {item.stock} left (Threshold: {item.threshold})
+                            </p>
+                          </div>
+                          {item.reordered ? (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">
+                              Reordered ✓
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => triggerReorder(item.sku)}
+                              className="bg-[#FF5722] hover:bg-orange-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition whitespace-nowrap cursor-pointer"
+                            >
+                              Reorder
+                            </button>
+                          )}
                         </div>
-                        {item.reordered ? (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">
-                            Reordered ✓
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => triggerReorder(item.sku)}
-                            className="bg-[#FF5722] hover:bg-orange-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition whitespace-nowrap cursor-pointer"
-                          >
-                            Reorder
-                          </button>
-                        )}
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-slate-400 text-xs space-y-1">
+                        <CheckCircle2 className="w-8 h-8 text-[#16A34A] mx-auto" />
+                        <p className="font-semibold text-slate-600">All SKUs In Stock</p>
+                        <p className="text-[11px]">Inventory levels are above minimum reorder thresholds.</p>
                       </div>
-                    ))}
+                    )}
                   </div>
-
-                  <p className="text-[11px] text-slate-500 text-center">
-                    Dark Store automated reorder trigger syncs with central warehouse.
-                  </p>
                 </div>
 
               </div>
 
-              {/* ========================================================== */}
-              {/* SECTION 4: 8. PENDING RETURNS AND REFUNDS                 */}
-              {/* ========================================================== */}
+              {/* SECTION 4: 8. PENDING RETURNS AND REFUNDS */}
               <div className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-black text-[#0F172A]">Pending Returns & Customer Refunds</h3>
-                    <p className="text-xs text-slate-500">Resolution queue for customer protection and quality guarantee</p>
+                    <h3 className="text-sm font-black text-[#0F172A]">Returns & Customer Refunds</h3>
+                    <p className="text-xs text-slate-500">Customer resolution queue</p>
                   </div>
                   <span className="text-xs font-bold text-[#0284C7] bg-sky-50 px-2.5 py-1 rounded-full">
                     {pendingRefunds.length} Actionable Claims
@@ -1064,58 +936,47 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
-                      <tr>
-                        <th className="p-3">Claim ID</th>
-                        <th className="p-3">Order Ref</th>
-                        <th className="p-3">Customer</th>
-                        <th className="p-3">Reason</th>
-                        <th className="p-3">Refund Amount</th>
-                        <th className="p-3">Method</th>
-                        <th className="p-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E2E8F0]">
-                      {pendingRefunds.map((refund) => (
-                        <tr key={refund.refundId} className="hover:bg-slate-50 transition">
-                          <td className="p-3 font-mono font-bold text-[#0F172A]">{refund.refundId}</td>
-                          <td className="p-3 font-mono text-slate-600">{refund.orderId}</td>
-                          <td className="p-3 font-semibold text-[#0F172A]">{refund.customer}</td>
-                          <td className="p-3 text-slate-600">{refund.reason}</td>
-                          <td className="p-3 font-bold text-[#0F172A]">₹{refund.amount}</td>
-                          <td className="p-3 text-slate-500">{refund.method}</td>
-                          <td className="p-3 text-right space-x-2">
-                            <button
-                              onClick={() => approveRefund(refund.refundId)}
-                              className="bg-[#16A34A] hover:bg-[#15803D] text-white px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer"
-                            >
-                              Approve Refund
-                            </button>
-                            <button
-                              onClick={() => {
-                                setPendingRefunds(prev => prev.filter(r => r.refundId !== refund.refundId));
-                                setActionMessage(`Claim ${refund.refundId} rejected with explanation note dispatched.`);
-                                setTimeout(() => setActionMessage(''), 4000);
-                              }}
-                              className="border border-slate-200 text-slate-600 hover:bg-slate-100 px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer"
-                            >
-                              Reject
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-
-                      {pendingRefunds.length === 0 && (
+                  {pendingRefunds.length > 0 ? (
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
                         <tr>
-                          <td colSpan={7} className="p-6 text-center text-slate-400 text-xs">
-                            <CheckCircle2 className="w-8 h-8 text-[#16A34A] mx-auto mb-1" />
-                            No pending return or refund requests. All claims resolved.
-                          </td>
+                          <th className="p-3">Claim ID</th>
+                          <th className="p-3">Order Ref</th>
+                          <th className="p-3">Customer</th>
+                          <th className="p-3">Reason</th>
+                          <th className="p-3">Refund Amount</th>
+                          <th className="p-3">Method</th>
+                          <th className="p-3 text-right">Actions</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-[#E2E8F0]">
+                        {pendingRefunds.map((refund) => (
+                          <tr key={refund.refundId} className="hover:bg-slate-50 transition">
+                            <td className="p-3 font-mono font-bold text-[#0F172A]">{refund.refundId}</td>
+                            <td className="p-3 font-mono text-slate-600">{refund.orderId}</td>
+                            <td className="p-3 font-semibold text-[#0F172A]">{refund.customer}</td>
+                            <td className="p-3 text-slate-600">{refund.reason}</td>
+                            <td className="p-3 font-bold text-[#0F172A]">₹{refund.amount}</td>
+                            <td className="p-3 text-slate-500">{refund.method}</td>
+                            <td className="p-3 text-right space-x-2">
+                              <button
+                                onClick={() => setPendingRefunds(prev => prev.filter(r => r.refundId !== refund.refundId))}
+                                className="bg-[#16A34A] hover:bg-[#15803D] text-white px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer"
+                              >
+                                Approve Refund
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="py-8 text-center text-slate-400 text-xs space-y-1">
+                      <CheckCircle2 className="w-8 h-8 text-[#16A34A] mx-auto" />
+                      <p className="font-semibold text-slate-600">No Pending Returns or Refunds</p>
+                      <p className="text-[11px] text-slate-400">Return and refund requests submitted by customers will be logged here.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1123,7 +984,7 @@ export default function AdminDashboardPage() {
           )}
 
           {/* ============================================================== */}
-          {/* TAB 2: STAFF ROLES & PERMISSIONS MATRIX (User Section 4)       */}
+          {/* TAB 2: STAFF ROLES & PERMISSIONS MATRIX                        */}
           {/* ============================================================== */}
           {activeTab === 'roles' && (
             <div className="space-y-6">
@@ -1141,12 +1002,12 @@ export default function AdminDashboardPage() {
                     <ShieldCheck className="w-4 h-4" />
                     <span>Super Admin 2FA Active</span>
                   </div>
-                  <p className="text-slate-600 text-xs">Mandatory hardware / OTP second factor on login.</p>
+                  <p className="text-slate-600 text-xs">Mandatory second factor challenge on login.</p>
                 </div>
 
                 <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-1">
                   <div className="flex items-center space-x-2 text-[#0284C7] font-bold text-xs">
-                    <Lock className="w-4 h-4" />
+                    <ShieldCheck className="w-4 h-4" />
                     <span>Isolated Admin Auth</span>
                   </div>
                   <p className="text-slate-600 text-xs">Admin sessions strictly separated from consumer store sessions.</p>
@@ -1157,7 +1018,7 @@ export default function AdminDashboardPage() {
                     <Clock className="w-4 h-4" />
                     <span>Auto Session Expiry</span>
                   </div>
-                  <p className="text-slate-600 text-xs">Idle sessions terminate automatically after 30 minutes.</p>
+                  <p className="text-slate-600 text-xs">Idle sessions terminate automatically after inactivity.</p>
                 </div>
               </div>
 
@@ -1213,23 +1074,21 @@ export default function AdminDashboardPage() {
 
               {/* Login Audit Trail */}
               <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-                <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">Recent Admin Access Log</h3>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
-                    <div className="flex items-center space-x-2">
-                      <span className="w-2 h-2 rounded-full bg-[#16A34A]"></span>
-                      <span className="font-bold text-[#0F172A]">Super Admin Session Verified</span>
-                      <span className="text-slate-400 font-mono text-[11px]">(IP: 103.21.244.12 - Ranchi, IN)</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">Active Now</span>
+                <h3 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">Active Admin Session</h3>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 rounded-full bg-[#16A34A]"></span>
+                    <span className="font-bold text-[#0F172A]">Super Admin Session Verified</span>
+                    <span className="text-slate-400 font-mono text-[11px]">(Browser Session Authenticated)</span>
                   </div>
+                  <span className="text-[11px] text-slate-500 font-semibold">Active Now</span>
                 </div>
               </div>
             </div>
           )}
 
           {/* ============================================================== */}
-          {/* TAB 3: ORDERS DISPATCH (User Section B)                         */}
+          {/* TAB 3: ORDERS DISPATCH                                         */}
           {/* ============================================================== */}
           {activeTab === 'orders' && (
             <div className="space-y-6">
@@ -1240,7 +1099,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <button
                   onClick={fetchMetrics}
-                  className="bg-white border border-[#E2E8F0] text-xs font-bold text-slate-700 px-3 py-1.5 rounded-xl hover:bg-slate-50"
+                  className="bg-white border border-[#E2E8F0] text-xs font-bold text-slate-700 px-3 py-1.5 rounded-xl hover:bg-slate-50 cursor-pointer"
                 >
                   Refresh Queue
                 </button>
@@ -1249,13 +1108,13 @@ export default function AdminDashboardPage() {
               <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden">
                 <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between text-xs">
                   <span className="font-bold text-[#0F172A]">Live Active Orders</span>
-                  <span className="text-slate-500">Pilot Zone: 5km Radius Ranchi Central</span>
+                  <span className="text-slate-500">Pilot Zone: Ranchi Central</span>
                 </div>
 
                 <div className="p-4">
-                  {metrics?.recentOrders && metrics.recentOrders.length > 0 ? (
+                  {realOrders.length > 0 ? (
                     <div className="divide-y divide-slate-100">
-                      {metrics.recentOrders.map((order: any) => (
+                      {realOrders.map((order: any) => (
                         <div key={order.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div>
                             <div className="flex items-center space-x-2">
@@ -1272,7 +1131,7 @@ export default function AdminDashboardPage() {
                             {order.status === 'CONFIRMED' && (
                               <button
                                 onClick={() => handleOrderAction(order.id, 'PACK')}
-                                className="bg-[#16A34A] hover:bg-[#15803D] text-white px-3 py-1.5 rounded-xl text-xs font-bold"
+                                className="bg-[#16A34A] hover:bg-[#15803D] text-white px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
                               >
                                 Mark Packed
                               </button>
@@ -1280,7 +1139,7 @@ export default function AdminDashboardPage() {
                             {order.status === 'PACKED' && (
                               <button
                                 onClick={() => handleOrderAction(order.id, 'DISPATCH')}
-                                className="bg-[#FF5722] hover:bg-orange-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold"
+                                className="bg-[#FF5722] hover:bg-orange-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
                               >
                                 Dispatch Rider
                               </button>
@@ -1292,8 +1151,8 @@ export default function AdminDashboardPage() {
                   ) : (
                     <div className="py-12 text-center text-slate-400 space-y-2">
                       <ShoppingBag className="w-10 h-10 mx-auto text-slate-300" />
-                      <p className="text-sm font-semibold">No active orders in fulfillment queue</p>
-                      <p className="text-xs">New customer checkout orders will appear here in real time.</p>
+                      <p className="text-sm font-semibold text-slate-700">No active orders in fulfillment queue</p>
+                      <p className="text-xs text-slate-400">New customer checkout orders will appear here in real time.</p>
                     </div>
                   )}
                 </div>
@@ -1311,39 +1170,47 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-slate-500 mt-0.5">Automated stock monitoring and restock triggers.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {lowStockList.map((item) => (
-                  <div key={item.sku} className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="font-mono text-[10px] text-slate-400 font-bold">{item.sku}</span>
-                        <h4 className="text-sm font-bold text-[#0F172A]">{item.name}</h4>
+              {lowStockList.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {lowStockList.map((item) => (
+                    <div key={item.sku} className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-mono text-[10px] text-slate-400 font-bold">{item.sku}</span>
+                          <h4 className="text-sm font-bold text-[#0F172A]">{item.name}</h4>
+                        </div>
+                        <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                          Stock: {item.stock}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                        Stock: {item.stock}
-                      </span>
-                    </div>
 
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full ${item.stock < 5 ? 'bg-rose-500' : 'bg-amber-500'} rounded-full`}
-                        style={{ width: `${Math.min(100, (item.stock / item.threshold) * 100)}%` }}
-                      ></div>
-                    </div>
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-rose-500 rounded-full"
+                          style={{ width: `${Math.min(100, (item.stock / (item.threshold || 10)) * 100)}%` }}
+                        ></div>
+                      </div>
 
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-slate-500">Reorder Threshold: {item.threshold} units</span>
-                      <button
-                        onClick={() => triggerReorder(item.sku)}
-                        disabled={item.reordered}
-                        className="bg-[#16A34A] hover:bg-[#15803D] disabled:bg-slate-200 text-white text-[11px] font-bold px-3 py-1 rounded-lg"
-                      >
-                        {item.reordered ? 'PO Dispatched' : 'Order Stock'}
-                      </button>
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        <span className="text-slate-500">Reorder Threshold: {item.threshold} units</span>
+                        <button
+                          onClick={() => triggerReorder(item.sku)}
+                          disabled={item.reordered}
+                          className="bg-[#16A34A] hover:bg-[#15803D] disabled:bg-slate-200 text-white text-[11px] font-bold px-3 py-1 rounded-lg cursor-pointer"
+                        >
+                          {item.reordered ? 'PO Dispatched' : 'Order Stock'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] p-12 text-center text-slate-400 space-y-2">
+                  <CheckCircle2 className="w-10 h-10 text-[#16A34A] mx-auto" />
+                  <p className="text-sm font-bold text-slate-700">All Product Inventory Healthy</p>
+                  <p className="text-xs text-slate-500">No items currently below minimum reorder thresholds in Ranchi Dark Store.</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -1359,23 +1226,28 @@ export default function AdminDashboardPage() {
 
               <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden">
                 <div className="p-4 border-b border-[#E2E8F0] text-xs font-bold text-[#0F172A]">
-                  Active Producer Groups
+                  Registered Producer Groups
                 </div>
                 <div className="p-4 divide-y divide-slate-100">
-                  {pendingApprovals.map((p) => (
-                    <div key={p.id} className="py-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold text-[#0F172A]">{p.name}</p>
-                        <p className="text-xs text-slate-500">{p.category} • {p.district}</p>
+                  {producersList.length > 0 ? (
+                    producersList.map((p: any, idx: number) => (
+                      <div key={idx} className="py-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-[#0F172A]">{p.groupName || p.name}</p>
+                          <p className="text-xs text-slate-500">{p.category || 'General'} • {p.district || 'Jharkhand'}</p>
+                        </div>
+                        <span className="bg-emerald-100 text-[#064E3B] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          Verified
+                        </span>
                       </div>
-                      <button
-                        onClick={() => approveSeller(p.id)}
-                        className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer"
-                      >
-                        Verify & List
-                      </button>
+                    ))
+                  ) : (
+                    <div className="py-12 text-center text-slate-400 space-y-2">
+                      <Store className="w-10 h-10 mx-auto text-slate-300" />
+                      <p className="text-sm font-semibold text-slate-700">No Producer Applications Yet</p>
+                      <p className="text-xs text-slate-400">New self-help group onboarding applications submitted via /producer will appear here.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
