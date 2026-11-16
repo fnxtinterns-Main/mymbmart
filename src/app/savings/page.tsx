@@ -6,6 +6,7 @@ import { Navbar } from '@/components/Navbar';
 import { CartDrawer } from '@/components/CartDrawer';
 import { AuthModal } from '@/components/AuthModal';
 import { WithdrawModal } from '@/components/WithdrawModal';
+import { SmartChainExplorerModal } from '@/components/SmartChainExplorerModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
 import { initialUser, initialWallet, initialTransactions, monthlySavings, sampleProducts } from '@/lib/data';
@@ -34,6 +35,7 @@ export default function SavingsPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [cartItems] = useState<CartItem[]>([
     { product: sampleProducts[0], quantity: 1 },
     { product: sampleProducts[1], quantity: 1 },
@@ -397,6 +399,13 @@ export default function SavingsPage() {
                   </div>
                 ))}
               </div>
+
+              <button
+                onClick={() => setIsExplorerOpen(true)}
+                className="w-full mt-3 py-2 px-3 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition flex items-center justify-center space-x-1.5"
+              >
+                <span>Inspect Merkle Blocks & Audit Proofs →</span>
+              </button>
             </div>
 
           </div>
@@ -404,6 +413,11 @@ export default function SavingsPage() {
         </div>
 
       </main>
+
+      <SmartChainExplorerModal
+        isOpen={isExplorerOpen}
+        onClose={() => setIsExplorerOpen(false)}
+      />
 
       <CartDrawer
         isOpen={isCartOpen}

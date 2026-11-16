@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { ReferAndEarn } from '@/components/ReferAndEarn';
+import { PromoterTeamView } from '@/components/PromoterTeamView';
 import { CartDrawer } from '@/components/CartDrawer';
 import { AuthModal } from '@/components/AuthModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
@@ -68,8 +69,9 @@ export default function ReferPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-6">
+          <div className="lg:col-span-6 space-y-6">
             <ReferAndEarn user={user} />
+            <PromoterTeamView />
           </div>
 
           <div className="lg:col-span-6 space-y-4">

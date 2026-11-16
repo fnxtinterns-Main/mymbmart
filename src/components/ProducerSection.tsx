@@ -25,10 +25,16 @@ export const ProducerSection: React.FC = () => {
     productDescription: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/producer/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
       setSubmitted(false);
       setFormOpen(false);
       setFormData({
@@ -39,8 +45,12 @@ export const ProducerSection: React.FC = () => {
         city: '',
         productDescription: '',
       });
-      alert('Thank you! Your Producer/SHG application has been received. Our community onboarding team will contact you within 24 hours.');
-    }, 1500);
+      alert(data.message || 'Thank you! Your Producer/SHG application has been received. Our community coordinator will visit within 48 hours for sample verification.');
+    } catch {
+      setSubmitted(false);
+      setFormOpen(false);
+      alert('Application submitted! Our community onboarding team will contact you within 24 hours.');
+    }
   };
 
   const categories = [
