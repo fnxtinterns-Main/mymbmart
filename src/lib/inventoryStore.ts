@@ -691,6 +691,50 @@ export function createStockReservation(params: {
   return { success: true, message: 'Stock reserved successfully.', reservation: newReservation };
 }
 
+// Atomic reservation alias for routing engine
+export function atomicReserveStock(params: {
+  skuId: string;
+  skuCode?: string;
+  quantity: number;
+  orderId: string;
+  orderNumber: string;
+  ttlMinutes?: number;
+  storeId?: string;
+}): { success: boolean; message: string; reservation?: StockReservation } {
+  const bucket = inventoryStore.stockBuckets.find(
+    (b) => b.skuId === params.skuId || b.skuCode === params.skuCode || b.skuCode === params.skuId
+  );
+  if (!bucket) {
+    return { success: false, message: `SKU ${params.skuId} not found` };
+  }
+  return createStockReservation({
+    skuCode: bucket.skuCode,
+    orderId: params.orderId,
+    orderNumber: params.orderNumber,
+    quantity: params.quantity,
+    reservationType: 'SOFT',
+    ttlMinutes: params.ttlMinutes,
+    storeId: params.storeId || bucket.storeId,
+  });
+}
+
+// Release reservation function
+export function releaseStockReservation(reservationId: string, reason?: string): boolean {
+  const res = inventoryStore.reservations.find(r => r.id === reservationId);
+  if (!res || res.status !== 'ACTIVE') return false;
+  res.status = 'RELEASED';
+  const bucket = inventoryStore.stockBuckets.find(b => b.skuId === res.skuId && b.storeId === res.storeId);
+  if (bucket) {
+    if (res.reservationType === 'SOFT') {
+      bucket.reservedSoft = Math.max(0, bucket.reservedSoft - res.quantity);
+    } else {
+      bucket.reservedHard = Math.max(0, bucket.reservedHard - res.quantity);
+    }
+    bucket.updatedAt = new Date().toISOString();
+  }
+  return true;
+}
+
 // Stock Adjustment with Immutable Ledger Entry
 export function adjustStock(params: {
   skuCode: string;

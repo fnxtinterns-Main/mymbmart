@@ -345,3 +345,70 @@ model OtpVerification {
 
   @@index([identifier])
 }
+
+// ----------------------------------------------------
+// HYPERLOCAL ROUTING ENGINE MODELS
+// ----------------------------------------------------
+
+model ServiceablePincode {
+  id               String   @id @default(uuid())
+  pincode          String   @unique
+  city             String   @default("Ranchi")
+  state            String   @default("Jharkhand")
+  deliveryActive   Boolean  @default(true)
+  pickupActive     Boolean  @default(true)
+  deliveryRadiusKm Decimal  @default(5.0) @db.Decimal(4, 1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([pincode])
+}
+
+model RoutingRule {
+  id          String   @id @default(uuid())
+  name        String
+  priority    Int      @default(100)
+  conditions  Json     // Conditions like pincode matches, cart value threshold, SHG exclusivity
+  actions     Json     // Preferred shop boosts, filter overrides
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([priority, isActive])
+}
+
+model RoutingAuditLog {
+  id              String   @id @default(uuid())
+  orderId         String
+  attemptNumber   Int      @default(1)
+  pincode         String
+  fulfilmentType  String   // DELIVERY, PICKUP
+  candidateCount  Int
+  excludedShops   Json     // Array of { shop_id, filter, reason }
+  scoredShops     Json     // Array of { shop_id, score, factors }
+  selectedShopId  String?
+  selectionReason String   // HIGHEST_SCORE, CUSTOMER_CHOICE, NO_SHOP_AVAILABLE
+  reservationIds  Json?
+  latencyMs       Int
+  createdAt       DateTime @default(now())
+
+  @@index([orderId])
+  @@index([pincode])
+  @@index([createdAt])
+}
+
+model RoutingConfig {
+  id                    String   @id @default(uuid())
+  key                   String   @unique @default("DEFAULT")
+  weights               Json     // { distance: 0.25, rating: 0.15, ... }
+  acceptanceSlaMinutes  Int      @default(5)
+  pickingSlaMinutes     Int      @default(15)
+  softReservationTtlMin Int      @default(15)
+  maxRerouteAttempts    Int      @default(3)
+  closingBufferMinutes  Int      @default(15)
+  antiStarvationDays    Int      @default(7)
+  antiStarvationBonus   Decimal  @default(0.05) @db.Decimal(4, 2)
+  updatedBy             String   @default("Super Admin")
+  updatedAt             DateTime @updatedAt
+}
+

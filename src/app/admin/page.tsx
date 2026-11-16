@@ -54,9 +54,11 @@ import {
   Plus,
   Tag,
   Barcode,
-  ClipboardList
+  ClipboardList,
+  Compass
 } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
+import { RoutingAdminTab } from '@/components/RoutingAdminTab';
 
 interface AdminMetrics {
   kpis: {
@@ -102,7 +104,7 @@ export default function AdminDashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'orders' | 'dispatch_board' | 'pickup_slots' | 'inventory' | 'producers' | 'roles' | 'checklist'
+    'overview' | 'orders' | 'dispatch_board' | 'pickup_slots' | 'inventory' | 'routing' | 'producers' | 'roles' | 'checklist'
   >('overview');
   
   // Header modals
@@ -521,6 +523,7 @@ export default function AdminDashboardPage() {
     { id: 'dispatch_board', label: 'Dispatch Board (Kanban)', icon: Truck },
     { id: 'pickup_slots', label: 'Pickup Slots (Ranchi Central)', icon: Clock },
     { id: 'inventory', label: 'Inventory & SKUs', icon: Layers },
+    { id: 'routing', label: 'Hyperlocal Routing Engine', icon: Compass },
     { id: 'producers', label: 'SHG Producers', icon: Store, badge: producersList.length },
     { id: 'roles', label: 'Staff Roles & 2FA', icon: ShieldCheck },
     { id: 'checklist', label: 'Blueprint Checklist', icon: CheckCircle2, tag: 'Phases 1-18' }
@@ -2481,6 +2484,11 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          {/* ============================================================== */}
+          {/* TAB: HYPERLOCAL ROUTING ENGINE & DIAGNOSTICS                   */}
+          {/* ============================================================== */}
+          {activeTab === 'routing' && <RoutingAdminTab />}
 
           {/* ============================================================== */}
           {/* TAB 8: BLUEPRINT CHECKLIST (Phases 1-18)                        */}

@@ -1,0 +1,347 @@
+openapi: 3.1.0
+info:
+  title: MegaBachatMart Platform API
+  description: >
+    Complete Hyperlocal E-Commerce Platform API for MegaBachatMart (mymbmart.com).
+    Powers the Customer Storefront, Local Shop Partner Portal, SHG Producer Portal,
+    Enterprise Operations Admin, and VPC Internal Services.
+  version: 1.0.0
+  contact:
+    name: MegaBachatMart Engineering
+    email: api@mymbmart.com
+    url: https://mymbmart.com
+  license:
+    name: Proprietary
+    url: https://mymbmart.com/terms
+
+servers:
+  - url: https://api.megabachatmart.com/api/v1
+    description: Production API Gateway
+  - url: https://mymbmart.com/api/v1
+    description: Web Direct API
+  - url: http://localhost:3000/api/v1
+    description: Local Development Server
+
+tags:
+  - name: Auth & OTP
+    description: Shared authentication across all 5 applications
+  - name: Customer - Catalogue
+    description: Category tree, product listings, search & shop pricing
+  - name: Customer - Routing & Availability
+    description: Pre-checkout store availability and delivery ETA calculation
+  - name: Customer - Cart & Checkout
+    description: Server-side cart management and order creation
+  - name: Customer - Orders
+    description: Order lifecycle, delivery OTP, and pickup QR verification
+  - name: Customer - Payments
+    description: UPI, Card, Netbanking, and Pay-at-Store workflows
+  - name: Customer - Returns & Refunds
+    description: Return merchandise authorizations (RMA) and evidence submission
+  - name: Shop - Orders & Fulfilment
+    description: Shop acceptance, picking, packing, and dispatch transitions
+  - name: Shop - Inventory & GRN
+    description: Live stock, batch tracking (FEFO), ledger, and Goods Receipt Notes
+  - name: Shop - Wallet & Settlement
+    description: Commission calculations, payout history, and statements
+  - name: Seller - SHG Marketplace
+    description: Direct producer listings, host shop consignments, and payouts
+  - name: Admin - Hyperlocal Routing
+    description: Weighted scoring configuration, anti-starvation tuning, and audit logs
+  - name: Admin - Orders & Operations
+    description: Cross-store management, SLA breach escalations, and refunds
+  - name: Admin - Reporting
+    description: Daily sales, SKU velocity, SLA compliance, and SHG empowerment metrics
+  - name: Webhooks
+    description: Inbound webhooks from Razorpay, SMS DLR, and Email gateways
+
+paths:
+  /auth/send-otp:
+    post:
+      tags: [Auth & OTP]
+      summary: Send OTP for authentication or verification
+      operationId: sendOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mobile, purpose]
+              properties:
+                mobile:
+                  type: string
+                  example: "9876543210"
+                purpose:
+                  type: string
+                  enum: [REGISTRATION, LOGIN, PASSWORD_RESET, PICKUP_VERIFICATION, ACCOUNT_DELETION, MOBILE_CHANGE]
+                reference_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: OTP dispatched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  otp_id:
+                    type: string
+                    format: uuid
+                  expires_in_seconds:
+                    type: integer
+                    example: 300
+                  resend_after_seconds:
+                    type: integer
+                    example: 60
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/verify-otp:
+    post:
+      tags: [Auth & OTP]
+      summary: Verify OTP and exchange for access & refresh JWT
+      operationId: verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otp_id, otp]
+              properties:
+                otp_id:
+                  type: string
+                  format: uuid
+                otp:
+                  type: string
+                  example: "123456"
+                device_info:
+                  type: object
+      responses:
+        '200':
+          description: Verification successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  expires_in:
+                    type: integer
+                    example: 900
+                  customer:
+                    type: object
+
+  /routing/check-availability:
+    post:
+      tags: [Customer - Routing & Availability]
+      summary: Pre-checkout store availability and distance evaluation
+      operationId: checkRoutingAvailability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fulfilment_type, pincode, items]
+              properties:
+                fulfilment_type:
+                  type: string
+                  enum: [DELIVERY, PICKUP]
+                pincode:
+                  type: string
+                  example: "834001"
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [sku_id, quantity]
+                    properties:
+                      sku_id:
+                        type: string
+                      quantity:
+                        type: number
+      responses:
+        '200':
+          description: Serviceability and candidate store list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  serviceable:
+                    type: boolean
+                  available_shops:
+                    type: array
+                    items:
+                      type: object
+
+  /routing/route:
+    post:
+      tags: [Admin - Hyperlocal Routing]
+      summary: Primary order routing with atomic stock reservation
+      operationId: routeOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_id, pincode, items]
+              properties:
+                order_id:
+                  type: string
+                  format: uuid
+                fulfilment_type:
+                  type: string
+                  enum: [DELIVERY, PICKUP]
+                pincode:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Shop successfully assigned and stock reserved
+        '409':
+          description: Routing failure or stock collision
+
+  /routing/re-route:
+    post:
+      tags: [Admin - Hyperlocal Routing]
+      summary: Fallback re-routing on shop rejection or SLA breach
+      operationId: rerouteOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_id, reason, rejected_shop_id]
+              properties:
+                order_id:
+                  type: string
+                reason:
+                  type: string
+                  enum: [SHOP_REJECTED, SLA_EXPIRED, PICKING_OOS, SHOP_OFFLINE, RESERVATION_FAILED]
+                rejected_shop_id:
+                  type: string
+      responses:
+        '200':
+          description: Re-routing succeeded
+        '409':
+          description: Re-routing failed or max attempts exceeded
+
+  /admin/routing/config:
+    get:
+      tags: [Admin - Hyperlocal Routing]
+      summary: Retrieve current routing engine scoring weights and SLAs
+      responses:
+        '200':
+          description: Configuration settings
+    put:
+      tags: [Admin - Hyperlocal Routing]
+      summary: Update routing weights and thresholds
+      responses:
+        '200':
+          description: Updated configuration
+
+  /admin/routing/audit/{orderId}:
+    get:
+      tags: [Admin - Hyperlocal Routing]
+      summary: Retrieve decision trace and factor breakdown for an order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit logs for order
+
+  /admin/routing/why-no-shop:
+    get:
+      tags: [Admin - Hyperlocal Routing]
+      summary: Diagnostic probe explaining why hard filters rejected candidate shops
+      parameters:
+        - name: pincode
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: sku_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Diagnostic breakdown
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ServiceTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Service-Token
+
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, timestamp]
+          properties:
+            code:
+              type: string
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              example: "Invalid input parameters"
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+            request_id:
+              type: string
+              format: uuid
+            timestamp:
+              type: string
+              format: date-time
+
+  responses:
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ValidationError:
+      description: Bad request / Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
