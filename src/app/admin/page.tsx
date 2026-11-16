@@ -55,10 +55,12 @@ import {
   Tag,
   Barcode,
   ClipboardList,
-  Compass
+  Compass,
+  Rocket
 } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
 import { RoutingAdminTab } from '@/components/RoutingAdminTab';
+import { PilotPlaybookTab } from '@/components/PilotPlaybookTab';
 
 interface AdminMetrics {
   kpis: {
@@ -104,7 +106,7 @@ export default function AdminDashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'orders' | 'dispatch_board' | 'pickup_slots' | 'inventory' | 'routing' | 'producers' | 'roles' | 'checklist'
+    'overview' | 'orders' | 'dispatch_board' | 'pickup_slots' | 'inventory' | 'routing' | 'pilot' | 'producers' | 'roles' | 'checklist'
   >('overview');
   
   // Header modals
@@ -524,6 +526,7 @@ export default function AdminDashboardPage() {
     { id: 'pickup_slots', label: 'Pickup Slots (Ranchi Central)', icon: Clock },
     { id: 'inventory', label: 'Inventory & SKUs', icon: Layers },
     { id: 'routing', label: 'Hyperlocal Routing Engine', icon: Compass },
+    { id: 'pilot', label: 'Pilot Operations (Ranchi)', icon: Rocket, tag: 'Days 1-90' },
     { id: 'producers', label: 'SHG Producers', icon: Store, badge: producersList.length },
     { id: 'roles', label: 'Staff Roles & 2FA', icon: ShieldCheck },
     { id: 'checklist', label: 'Blueprint Checklist', icon: CheckCircle2, tag: 'Phases 1-18' }
@@ -2489,6 +2492,11 @@ export default function AdminDashboardPage() {
           {/* TAB: HYPERLOCAL ROUTING ENGINE & DIAGNOSTICS                   */}
           {/* ============================================================== */}
           {activeTab === 'routing' && <RoutingAdminTab />}
+
+          {/* ============================================================== */}
+          {/* TAB: PILOT OPERATIONS (RANCHI 90-DAY)                          */}
+          {/* ============================================================== */}
+          {activeTab === 'pilot' && <PilotPlaybookTab />}
 
           {/* ============================================================== */}
           {/* TAB 8: BLUEPRINT CHECKLIST (Phases 1-18)                        */}
