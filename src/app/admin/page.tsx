@@ -25,7 +25,19 @@ import {
   Check,
   Sliders,
   Store,
-  Wallet
+  Wallet,
+  Printer,
+  FileText,
+  MapPin,
+  Phone,
+  Calendar,
+  CreditCard,
+  Truck,
+  RotateCcw,
+  Zap,
+  Package,
+  Receipt,
+  Eye
 } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
 
@@ -89,6 +101,12 @@ export default function AdminDashboardPage() {
   const [pendingRefunds, setPendingRefunds] = useState<any[]>([]);
   const [lowStockList, setLowStockList] = useState<any[]>([]);
 
+  // Orders & Dispatch Filter States
+  const [orderFilterTab, setOrderFilterTab] = useState<string>('ALL');
+  const [fulfilmentFilter, setFulfilmentFilter] = useState<'ALL' | 'QUICK_COMMERCE' | 'STANDARD_ECOMMERCE'>('ALL');
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
+
   const fetchMetrics = () => {
     setLoading(true);
     fetch('/api/admin/metrics')
@@ -135,18 +153,21 @@ export default function AdminDashboardPage() {
     router.push('/admin/login');
   };
 
-  const handleOrderAction = async (orderId: string, action: 'PACK' | 'DISPATCH') => {
+  const handleOrderAction = async (orderId: string, action: string, reason?: string) => {
     try {
       const res = await fetch('/api/store/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, action }),
+        body: JSON.stringify({ orderId, action, reason }),
       });
       const data = await res.json();
       if (data.success) {
         setActionMessage(data.message);
         setTimeout(() => setActionMessage(''), 4000);
         fetchMetrics();
+        if (selectedOrder && (selectedOrder.id === orderId || selectedOrder.orderNumber === orderId)) {
+          setSelectedOrder(data.order);
+        }
       }
     } catch {
       alert('Order action failed');
@@ -1088,77 +1109,620 @@ export default function AdminDashboardPage() {
           )}
 
           {/* ============================================================== */}
-          {/* TAB 3: ORDERS DISPATCH                                         */}
+          {/* TAB 3: ORDERS DISPATCH (Comprehensive 10 Subsections)          */}
           {/* ============================================================== */}
-          {activeTab === 'orders' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-black text-[#0F172A]">Dark Store Order Fulfillment</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Live pick, pack, dispatch and OTP doorstep delivery tracking.</p>
-                </div>
-                <button
-                  onClick={fetchMetrics}
-                  className="bg-white border border-[#E2E8F0] text-xs font-bold text-slate-700 px-3 py-1.5 rounded-xl hover:bg-slate-50 cursor-pointer"
-                >
-                  Refresh Queue
-                </button>
-              </div>
+          {activeTab === 'orders' && (() => {
+            // Subsection filter helper
+            const filterBySubsection = (list: any[]) => {
+              if (orderFilterTab === 'NEW') return list.filter(o => o.status === 'NEW' || o.status === 'PLACED');
+              if (orderFilterTab === 'CONFIRMED') return list.filter(o => o.status === 'CONFIRMED');
+              if (orderFilterTab === 'PROCESSING') return list.filter(o => o.status === 'PROCESSING');
+              if (orderFilterTab === 'READY_FOR_DISPATCH') return list.filter(o => o.status === 'READY_FOR_DISPATCH' || o.status === 'PACKED');
+              if (orderFilterTab === 'OUT_FOR_DELIVERY') return list.filter(o => o.status === 'OUT_FOR_DELIVERY');
+              if (orderFilterTab === 'DELIVERED') return list.filter(o => o.status === 'DELIVERED');
+              if (orderFilterTab === 'CANCELLED') return list.filter(o => o.status === 'CANCELLED');
+              if (orderFilterTab === 'FAILED') return list.filter(o => o.status === 'FAILED');
+              if (orderFilterTab === 'RETURNS') return list.filter(o => o.status === 'RETURNED' || o.refundStatus === 'PENDING');
+              return list; // ALL
+            };
 
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden">
-                <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#0F172A]">Live Active Orders</span>
-                  <span className="text-slate-500">Pilot Zone: Ranchi Central</span>
+            // Channel filter helper
+            const filterByChannel = (list: any[]) => {
+              if (fulfilmentFilter === 'QUICK_COMMERCE') {
+                return list.filter(o => o.fulfilmentChannel === 'QUICK_COMMERCE' || o.items?.some((i: any) => i.fulfilmentType === 'QUICK_COMMERCE') || !o.fulfilmentChannel);
+              }
+              if (fulfilmentFilter === 'STANDARD_ECOMMERCE') {
+                return list.filter(o => o.fulfilmentChannel === 'STANDARD_ECOMMERCE' || o.items?.some((i: any) => i.fulfilmentType === 'STANDARD_ECOMMERCE'));
+              }
+              return list;
+            };
+
+            // Search filter helper
+            const filterBySearch = (list: any[]) => {
+              if (!orderSearchQuery.trim()) return list;
+              const q = orderSearchQuery.toLowerCase();
+              return list.filter(o => 
+                o.id?.toLowerCase().includes(q) ||
+                o.orderNumber?.toLowerCase().includes(q) ||
+                o.customerName?.toLowerCase().includes(q) ||
+                o.userPhone?.toLowerCase().includes(q) ||
+                o.deliveryAddress?.toLowerCase().includes(q)
+              );
+            };
+
+            const displayOrders = filterBySearch(filterByChannel(filterBySubsection(realOrders)));
+
+            // Subsection counts
+            const counts = {
+              ALL: realOrders.length,
+              NEW: realOrders.filter(o => o.status === 'NEW' || o.status === 'PLACED').length,
+              CONFIRMED: realOrders.filter(o => o.status === 'CONFIRMED').length,
+              PROCESSING: realOrders.filter(o => o.status === 'PROCESSING').length,
+              READY_FOR_DISPATCH: realOrders.filter(o => o.status === 'READY_FOR_DISPATCH' || o.status === 'PACKED').length,
+              OUT_FOR_DELIVERY: realOrders.filter(o => o.status === 'OUT_FOR_DELIVERY').length,
+              DELIVERED: realOrders.filter(o => o.status === 'DELIVERED').length,
+              CANCELLED: realOrders.filter(o => o.status === 'CANCELLED').length,
+              FAILED: realOrders.filter(o => o.status === 'FAILED').length,
+              RETURNS: realOrders.filter(o => o.status === 'RETURNED' || o.refundStatus === 'PENDING').length,
+            };
+
+            const subsections = [
+              { id: 'ALL', label: 'All Orders', count: counts.ALL },
+              { id: 'NEW', label: 'New Orders', count: counts.NEW },
+              { id: 'CONFIRMED', label: 'Confirmed Orders', count: counts.CONFIRMED },
+              { id: 'PROCESSING', label: 'Processing', count: counts.PROCESSING },
+              { id: 'READY_FOR_DISPATCH', label: 'Ready for Dispatch', count: counts.READY_FOR_DISPATCH },
+              { id: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', count: counts.OUT_FOR_DELIVERY },
+              { id: 'DELIVERED', label: 'Delivered', count: counts.DELIVERED },
+              { id: 'CANCELLED', label: 'Cancelled', count: counts.CANCELLED },
+              { id: 'FAILED', label: 'Failed Orders', count: counts.FAILED },
+              { id: 'RETURNS', label: 'Order Returns', count: counts.RETURNS },
+            ];
+
+            return (
+              <div className="space-y-6">
+                
+                {/* Header Title & Channel Mode */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
+                        Orders & Dispatch Control Center
+                      </h2>
+                      <span className="text-[10px] bg-emerald-100 text-[#064E3B] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                        Hybrid Dual-Fulfilment
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Intelligent dispatch routing between nearby dark stores (10–30 min quick grocery) and regional warehouses (1–3 day standard e-commerce).
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={fetchMetrics}
+                      className="bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition shadow-2xs flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                      <span>Refresh Live Orders</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="p-4">
-                  {realOrders.length > 0 ? (
-                    <div className="divide-y divide-slate-100">
-                      {realOrders.map((order: any) => (
-                        <div key={order.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-mono font-black text-sm text-[#0F172A]">{order.id}</span>
-                              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                                {order.status}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-700 mt-1 font-semibold">
-                              Customer: {order.customerName} • {order.items?.length || 1} Items • ₹{order.totalAmount}
-                            </p>
-                          </div>
+                {/* Fulfilment Channel Selector Bar */}
+                <div className="bg-white p-3 rounded-2xl border border-[#E2E8F0] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto text-xs font-bold">
+                    <span className="text-[11px] uppercase tracking-wider text-slate-400 font-extrabold px-2">Channel:</span>
+                    <button
+                      onClick={() => setFulfilmentFilter('ALL')}
+                      className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                        fulfilmentFilter === 'ALL'
+                          ? 'bg-[#064E3B] text-white shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      All Channels ({counts.ALL})
+                    </button>
+                    <button
+                      onClick={() => setFulfilmentFilter('QUICK_COMMERCE')}
+                      className={`px-3 py-1.5 rounded-xl transition flex items-center space-x-1 cursor-pointer ${
+                        fulfilmentFilter === 'QUICK_COMMERCE'
+                          ? 'bg-[#16A34A] text-white shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Zap className="w-3 h-3 text-amber-300" />
+                      <span>Quick Commerce (Dark Store • 10-30m)</span>
+                    </button>
+                    <button
+                      onClick={() => setFulfilmentFilter('STANDARD_ECOMMERCE')}
+                      className={`px-3 py-1.5 rounded-xl transition flex items-center space-x-1 cursor-pointer ${
+                        fulfilmentFilter === 'STANDARD_ECOMMERCE'
+                          ? 'bg-[#0284C7] text-white shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Package className="w-3 h-3" />
+                      <span>E-Commerce (Warehouse • 1-3d)</span>
+                    </button>
+                  </div>
+
+                  {/* Search within Orders */}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={orderSearchQuery}
+                      onChange={(e) => setOrderSearchQuery(e.target.value)}
+                      placeholder="Search ID, customer, phone..."
+                      className="w-full pl-8 pr-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] focus:border-[#16A34A] focus:bg-white rounded-xl text-xs text-[#0F172A] outline-hidden transition"
+                    />
+                  </div>
+                </div>
+
+                {/* 10 Subsections Tab Bar */}
+                <div className="bg-white p-1 rounded-2xl border border-[#E2E8F0] shadow-2xs flex items-center overflow-x-auto text-xs font-bold space-x-1">
+                  {subsections.map((tab) => {
+                    const active = orderFilterTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setOrderFilterTab(tab.id)}
+                        className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-all flex items-center space-x-1.5 cursor-pointer ${
+                          active
+                            ? 'bg-[#16A34A] text-white shadow-xs'
+                            : 'text-slate-600 hover:text-[#0F172A] hover:bg-slate-50'
+                        }`}
+                      >
+                        <span>{tab.label}</span>
+                        <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-full ${
+                          active 
+                            ? 'bg-white/25 text-white' 
+                            : tab.count > 0 
+                            ? 'bg-slate-100 text-slate-700' 
+                            : 'text-slate-300'
+                        }`}>
+                          {tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Orders Content Table */}
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden">
+                  <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>
+                      Showing {displayOrders.length} order(s) in <span className="text-[#16A34A]">{subsections.find(s => s.id === orderFilterTab)?.label}</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-normal">
+                      Click any order row or "Inspect" to view complete invoice, timeline & details
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    {displayOrders.length > 0 ? (
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
+                          <tr>
+                            <th className="p-3.5">Order ID & Date</th>
+                            <th className="p-3.5">Channel & Node</th>
+                            <th className="p-3.5">Customer & Phone</th>
+                            <th className="p-3.5">Items</th>
+                            <th className="p-3.5">Amount & Savings</th>
+                            <th className="p-3.5">Payment</th>
+                            <th className="p-3.5">Delivery Status</th>
+                            <th className="p-3.5 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E8F0]">
+                          {displayOrders.map((order: any) => {
+                            const isQuick = order.fulfilmentChannel === 'QUICK_COMMERCE' || order.items?.some((i: any) => i.fulfilmentType === 'QUICK_COMMERCE') || !order.fulfilmentChannel;
+                            return (
+                              <tr 
+                                key={order.id} 
+                                className="hover:bg-slate-50 transition cursor-pointer"
+                                onClick={() => setSelectedOrder(order)}
+                              >
+                                {/* Order ID */}
+                                <td className="p-3.5">
+                                  <div className="font-mono font-black text-[#0F172A]">{order.orderNumber || order.id}</div>
+                                  <div className="text-[10px] text-slate-400 font-semibold">{order.createdAt || 'Recent'}</div>
+                                </td>
+
+                                {/* Channel & Fulfilment Node */}
+                                <td className="p-3.5">
+                                  {isQuick ? (
+                                    <div className="space-y-0.5">
+                                      <span className="inline-flex items-center space-x-1 text-[10px] font-black uppercase text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                        <Zap className="w-2.5 h-2.5 text-emerald-600" />
+                                        <span>Quick Commerce</span>
+                                      </span>
+                                      <p className="text-[10px] text-slate-500 font-medium">Dark Store: Ranchi Central</p>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-0.5">
+                                      <span className="inline-flex items-center space-x-1 text-[10px] font-black uppercase text-blue-800 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                                        <Package className="w-2.5 h-2.5 text-blue-600" />
+                                        <span>Standard E-Commerce</span>
+                                      </span>
+                                      <p className="text-[10px] text-slate-500 font-medium">Warehouse: MBM-WH-01</p>
+                                    </div>
+                                  )}
+                                </td>
+
+                                {/* Customer Info */}
+                                <td className="p-3.5">
+                                  <p className="font-bold text-[#0F172A]">{order.userName || order.customerName}</p>
+                                  <p className="text-[10px] text-slate-500 font-mono">{order.userPhone || 'Registered'}</p>
+                                  <p className="text-[10px] text-slate-400 truncate max-w-[140px]">{order.deliveryAddress || 'Ranchi'}</p>
+                                </td>
+
+                                {/* Items Count */}
+                                <td className="p-3.5">
+                                  <span className="font-bold text-slate-800">{order.items?.length || 1} item(s)</span>
+                                  <p className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                                    {order.items?.[0]?.name || 'Grocery Order'}
+                                  </p>
+                                </td>
+
+                                {/* Financials */}
+                                <td className="p-3.5">
+                                  <div className="font-bold text-[#0F172A]">₹{order.totalPayable || order.totalAmount}</div>
+                                  <div className="text-[10px] text-[#16A34A] font-semibold">
+                                    Bachat: ₹{order.shoppingSavings || 0}
+                                  </div>
+                                </td>
+
+                                {/* Payment Mode */}
+                                <td className="p-3.5">
+                                  <span className="text-[10px] font-bold text-slate-700 uppercase bg-slate-100 px-1.5 py-0.5 rounded">
+                                    {order.paymentMethod || 'UPI / Online'}
+                                  </span>
+                                  <span className={`block text-[9px] font-extrabold mt-0.5 ${
+                                    order.paymentStatus === 'PAID' ? 'text-emerald-700' : 'text-amber-700'
+                                  }`}>
+                                    {order.paymentStatus || 'PAID'}
+                                  </span>
+                                </td>
+
+                                {/* Order Status */}
+                                <td className="p-3.5">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase inline-block ${
+                                    order.status === 'OUT_FOR_DELIVERY' 
+                                      ? 'bg-amber-100 text-amber-800'
+                                      : order.status === 'READY_FOR_DISPATCH' || order.status === 'PACKED'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : order.status === 'CONFIRMED'
+                                      ? 'bg-purple-100 text-purple-800'
+                                      : order.status === 'DELIVERED'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : order.status === 'CANCELLED'
+                                      ? 'bg-rose-100 text-rose-800'
+                                      : 'bg-slate-100 text-slate-700'
+                                  }`}>
+                                    {order.status}
+                                  </span>
+                                  {order.assignedRider && (
+                                    <p className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[120px]">
+                                      Rider: {order.assignedRider.name}
+                                    </p>
+                                  )}
+                                </td>
+
+                                {/* Actions */}
+                                <td className="p-3.5 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                                  {(order.status === 'NEW' || order.status === 'PLACED') && (
+                                    <button
+                                      onClick={() => handleOrderAction(order.id, 'CONFIRM')}
+                                      className="bg-[#16A34A] hover:bg-[#15803D] text-white px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+                                    >
+                                      Accept & Confirm
+                                    </button>
+                                  )}
+
+                                  {order.status === 'CONFIRMED' && (
+                                    <button
+                                      onClick={() => handleOrderAction(order.id, 'PROCESS')}
+                                      className="bg-[#0284C7] hover:bg-sky-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+                                    >
+                                      Pick & Prepare
+                                    </button>
+                                  )}
+
+                                  {order.status === 'PROCESSING' && (
+                                    <button
+                                      onClick={() => handleOrderAction(order.id, 'PACK')}
+                                      className="bg-[#064E3B] hover:bg-emerald-950 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+                                    >
+                                      Ready for Dispatch
+                                    </button>
+                                  )}
+
+                                  {(order.status === 'PACKED' || order.status === 'READY_FOR_DISPATCH') && (
+                                    <button
+                                      onClick={() => handleOrderAction(order.id, 'DISPATCH')}
+                                      className="bg-[#FF5722] hover:bg-orange-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+                                    >
+                                      Assign Rider
+                                    </button>
+                                  )}
+
+                                  {order.status === 'OUT_FOR_DELIVERY' && (
+                                    <button
+                                      onClick={() => handleOrderAction(order.id, 'DELIVER')}
+                                      className="bg-[#16A34A] hover:bg-[#15803D] text-white px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+                                    >
+                                      Verify OTP & Deliver
+                                    </button>
+                                  )}
+
+                                  <button
+                                    onClick={() => setSelectedOrder(order)}
+                                    className="border border-slate-200 text-slate-600 hover:bg-slate-100 px-2 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+                                    title="View Full Order & Invoice"
+                                  >
+                                    Inspect →
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="py-16 text-center text-slate-400 space-y-2">
+                        <ShoppingBag className="w-10 h-10 mx-auto text-slate-300" />
+                        <p className="text-sm font-bold text-slate-700">No Orders in this Section</p>
+                        <p className="text-xs text-slate-400 max-w-md mx-auto">
+                          There are currently no orders under <span className="font-semibold">{subsections.find(s => s.id === orderFilterTab)?.label}</span>. Newly placed checkouts will populate here automatically.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ========================================================== */}
+                {/* ORDER INSPECTION & PRINTABLE INVOICE MODAL                 */}
+                {/* ========================================================== */}
+                {selectedOrder && (
+                  <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-6 my-8 max-h-[90vh] overflow-y-auto">
+                      
+                      {/* Modal Header */}
+                      <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+                        <div>
                           <div className="flex items-center space-x-2">
-                            {order.status === 'CONFIRMED' && (
-                              <button
-                                onClick={() => handleOrderAction(order.id, 'PACK')}
-                                className="bg-[#16A34A] hover:bg-[#15803D] text-white px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
-                              >
-                                Mark Packed
-                              </button>
-                            )}
-                            {order.status === 'PACKED' && (
-                              <button
-                                onClick={() => handleOrderAction(order.id, 'DISPATCH')}
-                                className="bg-[#FF5722] hover:bg-orange-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
-                              >
-                                Dispatch Rider
-                              </button>
+                            <span className="font-mono font-black text-lg text-[#0F172A]">
+                              #{selectedOrder.orderNumber || selectedOrder.id}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                              selectedOrder.status === 'OUT_FOR_DELIVERY' 
+                                ? 'bg-amber-100 text-amber-800'
+                                : selectedOrder.status === 'DELIVERED'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}>
+                              {selectedOrder.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Placed on {selectedOrder.createdAt || 'Today'} • Invoice: <span className="font-mono">{selectedOrder.invoiceNumber || 'INV-MBM-2026-001'}</span>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => window.print()}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
+                            title="Print Customer Invoice"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Print Invoice</span>
+                          </button>
+                          <button
+                            onClick={() => setSelectedOrder(null)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition cursor-pointer"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Visual Order Timeline Tracker */}
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                          Fulfillment Progression Timeline
+                        </span>
+                        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs">
+                          {[
+                            { name: '1. Placed', done: true },
+                            { name: '2. Confirmed', done: ['CONFIRMED', 'PROCESSING', 'READY_FOR_DISPATCH', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(selectedOrder.status) },
+                            { name: '3. Picking', done: ['PROCESSING', 'READY_FOR_DISPATCH', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(selectedOrder.status) },
+                            { name: '4. Packed', done: ['READY_FOR_DISPATCH', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(selectedOrder.status) },
+                            { name: '5. Dispatched', done: ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(selectedOrder.status) },
+                            { name: '6. Delivered', done: selectedOrder.status === 'DELIVERED' }
+                          ].map((step, idx) => (
+                            <div key={idx} className={`p-2 rounded-xl border ${
+                              step.done 
+                                ? 'bg-emerald-100/70 border-emerald-300 text-emerald-900 font-bold' 
+                                : 'bg-white border-slate-200 text-slate-400'
+                            }`}>
+                              <p className="text-[10px]">{step.name}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Customer & Fulfillment Node Details */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        {/* Customer Card */}
+                        <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                            Customer & Delivery Address
+                          </span>
+                          <p className="font-black text-sm text-[#0F172A]">{selectedOrder.userName || selectedOrder.customerName}</p>
+                          <div className="space-y-1 text-slate-600">
+                            <p className="flex items-center space-x-1.5">
+                              <Phone className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{selectedOrder.userPhone || '9876543210'}</span>
+                            </p>
+                            <p className="flex items-start space-x-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                              <span>{selectedOrder.deliveryAddress || 'Ranchi Central, Jharkhand - 834001'}</span>
+                            </p>
+                            {selectedOrder.deliveryOtp && (
+                              <p className="text-[11px] font-bold text-[#16A34A] pt-1">
+                                Doorstep OTP: <span className="font-mono text-sm tracking-wider">{selectedOrder.deliveryOtp}</span>
+                              </p>
                             )}
                           </div>
                         </div>
-                      ))}
+
+                        {/* Assigned Fulfillment Node */}
+                        <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                            Fulfilment Assignment
+                          </span>
+                          <div className="space-y-1 text-slate-700">
+                            <p className="font-bold text-[#0F172A]">
+                              {selectedOrder.darkStore?.name || 'MegaBachatMart Ranchi Central Dark Store (MBM-RCH-01)'}
+                            </p>
+                            <p className="text-slate-500">
+                              Channel: {selectedOrder.fulfilmentChannel === 'STANDARD_ECOMMERCE' ? 'Standard E-Commerce (Regional Warehouse)' : 'Quick Commerce (10-30 min Dark Store)'}
+                            </p>
+                            <div className="pt-2 border-t border-slate-100">
+                              <p className="font-semibold text-slate-800">
+                                Assigned Rider: {selectedOrder.assignedRider?.name || 'Awaiting rider assignment'}
+                              </p>
+                              {selectedOrder.assignedRider && (
+                                <p className="text-slate-500">
+                                  {selectedOrder.assignedRider.phone} • {selectedOrder.assignedRider.vehicle}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Ordered Line Items Table */}
+                      <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+                        <div className="bg-slate-50 px-4 py-2.5 font-bold text-slate-700 border-b border-slate-200 flex justify-between">
+                          <span>Ordered Products</span>
+                          <span>{selectedOrder.items?.length || 1} Item(s)</span>
+                        </div>
+                        <div className="divide-y divide-slate-100 p-2">
+                          {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                            selectedOrder.items.map((item: any, idx: number) => (
+                              <div key={idx} className="p-2.5 flex items-center justify-between">
+                                <div>
+                                  <p className="font-bold text-[#0F172A]">{item.name}</p>
+                                  <p className="text-[10px] text-slate-400">Qty: {item.quantity} × ₹{item.unitPrice}</p>
+                                </div>
+                                <span className="font-bold text-[#0F172A]">₹{item.quantity * item.unitPrice}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-3 text-slate-500">
+                              Standard grocery items order.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Price Breakdown & Totals */}
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
+                        <div className="flex justify-between text-slate-600">
+                          <span>Total MRP Value:</span>
+                          <span className="font-mono">₹{selectedOrder.totalMRP || (selectedOrder.totalPayable || selectedOrder.totalAmount) + 80}</span>
+                        </div>
+                        <div className="flex justify-between text-[#16A34A] font-bold">
+                          <span>MegaBachat Customer Savings:</span>
+                          <span className="font-mono">- ₹{selectedOrder.shoppingSavings || 40}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Delivery & Packaging:</span>
+                          <span className="font-bold text-[#16A34A]">FREE</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-black text-[#0F172A] pt-2 border-t border-slate-200">
+                          <span>Grand Total Paid:</span>
+                          <span className="font-mono">₹{selectedOrder.totalPayable || selectedOrder.totalAmount}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 pt-1">
+                          Payment Mode: <span className="font-bold uppercase text-slate-700">{selectedOrder.paymentMethod || 'Online UPI'}</span> • Status: <span className="font-bold text-emerald-700">{selectedOrder.paymentStatus || 'PAID'}</span>
+                        </p>
+                      </div>
+
+                      {/* Modal Action Controls */}
+                      <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
+                        <div className="flex items-center space-x-2">
+                          {selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'DELIVERED' && (
+                            <button
+                              onClick={() => {
+                                handleOrderAction(selectedOrder.id, 'CANCEL', 'Cancelled by operations manager');
+                              }}
+                              className="text-xs font-bold text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 transition cursor-pointer"
+                            >
+                              Cancel Order
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          {(selectedOrder.status === 'NEW' || selectedOrder.status === 'PLACED') && (
+                            <button
+                              onClick={() => handleOrderAction(selectedOrder.id, 'CONFIRM')}
+                              className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer"
+                            >
+                              Accept & Confirm Order
+                            </button>
+                          )}
+
+                          {selectedOrder.status === 'CONFIRMED' && (
+                            <button
+                              onClick={() => handleOrderAction(selectedOrder.id, 'PROCESS')}
+                              className="bg-[#0284C7] hover:bg-sky-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer"
+                            >
+                              Move to Picking & Preparation
+                            </button>
+                          )}
+
+                          {selectedOrder.status === 'PROCESSING' && (
+                            <button
+                              onClick={() => handleOrderAction(selectedOrder.id, 'PACK')}
+                              className="bg-[#064E3B] hover:bg-emerald-950 text-white text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer"
+                            >
+                              Mark Ready for Dispatch
+                            </button>
+                          )}
+
+                          {(selectedOrder.status === 'PACKED' || selectedOrder.status === 'READY_FOR_DISPATCH') && (
+                            <button
+                              onClick={() => handleOrderAction(selectedOrder.id, 'DISPATCH')}
+                              className="bg-[#FF5722] hover:bg-orange-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer"
+                            >
+                              Assign & Dispatch Delivery Rider
+                            </button>
+                          )}
+
+                          {selectedOrder.status === 'OUT_FOR_DELIVERY' && (
+                            <button
+                              onClick={() => handleOrderAction(selectedOrder.id, 'DELIVER')}
+                              className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer"
+                            >
+                              Confirm Doorstep OTP Delivery
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
                     </div>
-                  ) : (
-                    <div className="py-12 text-center text-slate-400 space-y-2">
-                      <ShoppingBag className="w-10 h-10 mx-auto text-slate-300" />
-                      <p className="text-sm font-semibold text-slate-700">No active orders in fulfillment queue</p>
-                      <p className="text-xs text-slate-400">New customer checkout orders will appear here in real time.</p>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ============================================================== */}
           {/* TAB 4: INVENTORY & SKUs                                        */}

@@ -30,18 +30,36 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { orderId, action } = body; // action: 'PACK' | 'DISPATCH'
+    const { orderId, action, reason } = body;
 
     const order = getOrderById(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    if (action === 'PACK') {
-      updateOrderStatus(order.id, 'PACKED');
+    if (action === 'CONFIRM') {
+      updateOrderStatus(order.id, 'CONFIRMED');
       return NextResponse.json({
         success: true,
-        message: `Order #${order.orderNumber} successfully packed and staged for rider pick-up.`,
+        message: `Order #${order.orderNumber} confirmed by store manager.`,
+        order,
+      });
+    }
+
+    if (action === 'PROCESS') {
+      updateOrderStatus(order.id, 'PROCESSING');
+      return NextResponse.json({
+        success: true,
+        message: `Order #${order.orderNumber} is now being picked and prepared.`,
+        order,
+      });
+    }
+
+    if (action === 'PACK' || action === 'READY_FOR_DISPATCH') {
+      updateOrderStatus(order.id, 'READY_FOR_DISPATCH');
+      return NextResponse.json({
+        success: true,
+        message: `Order #${order.orderNumber} packed and staged for rider pick-up.`,
         order,
       });
     }
@@ -55,7 +73,34 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ error: 'Invalid action. Expected PACK or DISPATCH' }, { status: 400 });
+    if (action === 'DELIVER') {
+      updateOrderStatus(order.id, 'DELIVERED');
+      return NextResponse.json({
+        success: true,
+        message: `Order #${order.orderNumber} marked as successfully delivered.`,
+        order,
+      });
+    }
+
+    if (action === 'CANCEL') {
+      updateOrderStatus(order.id, 'CANCELLED', reason || 'Cancelled by admin operations');
+      return NextResponse.json({
+        success: true,
+        message: `Order #${order.orderNumber} has been cancelled.`,
+        order,
+      });
+    }
+
+    if (action === 'RETURN') {
+      updateOrderStatus(order.id, 'RETURNED', reason || 'Customer return requested');
+      return NextResponse.json({
+        success: true,
+        message: `Return recorded for Order #${order.orderNumber}.`,
+        order,
+      });
+    }
+
+    return NextResponse.json({ error: 'Invalid action specified.' }, { status: 400 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Dispatch error' }, { status: 500 });
   }

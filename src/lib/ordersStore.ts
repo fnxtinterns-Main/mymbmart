@@ -7,7 +7,22 @@ export interface OrderRecord {
   userPhone: string;
   deliveryAddress: string;
   pincode: string;
-  status: 'PLACED' | 'PACKED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+  status: 
+    | 'NEW' 
+    | 'PLACED' 
+    | 'CONFIRMED' 
+    | 'PROCESSING' 
+    | 'PACKED' 
+    | 'READY_FOR_DISPATCH' 
+    | 'OUT_FOR_DELIVERY' 
+    | 'DELIVERED' 
+    | 'CANCELLED' 
+    | 'FAILED' 
+    | 'RETURNED';
+  fulfilmentChannel?: 'QUICK_COMMERCE' | 'STANDARD_ECOMMERCE';
+  invoiceNumber?: string;
+  cancellationReason?: string;
+  refundStatus?: 'NONE' | 'PENDING' | 'PROCESSED';
   deliveryOtp: string;
   paymentMethod: string;
   paymentStatus: 'PAID' | 'PENDING' | 'COD';
@@ -73,21 +88,36 @@ export function getOrderById(idOrNumber: string) {
   );
 }
 
-export function updateOrderStatus(orderId: string, status: OrderRecord['status']) {
+export function updateOrderStatus(orderId: string, status: OrderRecord['status'], notes?: string) {
   const order = ordersStore.find((o) => o.id === orderId || o.orderNumber === orderId);
   if (!order) return null;
   order.status = status;
-  if (status === 'PACKED') {
-    const step = order.timeline.find((t) => t.step.includes('Packed'));
+  if (status === 'CONFIRMED') {
+    const step = order.timeline.find((t) => t.step.toLowerCase().includes('confirm') || t.step.toLowerCase().includes('placed'));
+    if (step) step.completed = true;
+  }
+  if (status === 'PROCESSING') {
+    const step = order.timeline.find((t) => t.step.toLowerCase().includes('process') || t.step.toLowerCase().includes('packed'));
+    if (step) step.completed = true;
+  }
+  if (status === 'PACKED' || status === 'READY_FOR_DISPATCH') {
+    const step = order.timeline.find((t) => t.step.toLowerCase().includes('pack'));
     if (step) step.completed = true;
   }
   if (status === 'OUT_FOR_DELIVERY') {
-    const step = order.timeline.find((t) => t.step.includes('Rider'));
+    const step = order.timeline.find((t) => t.step.toLowerCase().includes('rider') || t.step.toLowerCase().includes('out'));
     if (step) step.completed = true;
   }
   if (status === 'DELIVERED') {
     order.timeline.forEach((t) => (t.completed = true));
     order.cashbackCredited = true;
+  }
+  if (status === 'CANCELLED') {
+    if (notes) order.cancellationReason = notes;
+    order.refundStatus = order.paymentStatus === 'PAID' ? 'PENDING' : 'NONE';
+  }
+  if (status === 'RETURNED') {
+    order.refundStatus = 'PENDING';
   }
   return order;
 }
