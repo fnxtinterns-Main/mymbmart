@@ -105,15 +105,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       }
     } catch (e) {
       setIsCheckingOut(false);
-      onOrderSuccess({
-        orderNumber: 'MBM-2026-98124',
-        deliveryOtp: '4821',
-        totalPayable: finalPayable,
-        shoppingSavings,
-        cashbackEarnable: totalCashbackEarnable,
-      });
-      onClearCart();
-      onClose();
+      alert('Unable to connect to order server. Please check your network and try again.');
     }
   };
 

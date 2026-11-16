@@ -99,9 +99,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   className="bg-white hover:bg-emerald-50 text-brand-forest font-bold px-6 py-3 rounded-full border border-emerald-600 shadow-2xs transition-all text-xs sm:text-sm flex items-center space-x-1.5"
                 >
                   <span>Join Free</span>
-                  <span className="text-[9px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.2 rounded-full">
-                    Soon
-                  </span>
                 </button>
 
                 <button
@@ -109,9 +106,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   className="bg-brand-green hover:bg-brand-green-hover text-white font-bold px-6 py-3 rounded-full shadow-md shadow-emerald-600/20 transition-all text-xs sm:text-sm flex items-center space-x-1.5"
                 >
                   <span>View Savings</span>
-                  <span className="text-[9px] font-black uppercase bg-white/20 text-white px-1.5 py-0.2 rounded-full">
-                    Soon
-                  </span>
                 </button>
               </div>
 

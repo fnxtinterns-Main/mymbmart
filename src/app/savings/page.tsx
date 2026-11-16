@@ -80,9 +80,6 @@ export default function SavingsPage() {
             <div className="flex items-center space-x-2 text-xs font-bold text-brand-green uppercase tracking-wider">
               <Sparkles className="w-4 h-4" />
               <span>Personal Savings & Micro-Credit Passbook</span>
-              <span className="text-[10px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Coming Soon
-              </span>
             </div>
             <h1 className="text-3xl font-black text-brand-forest tracking-tight mt-1">
               Member Savings Dashboard
@@ -96,27 +93,6 @@ export default function SavingsPage() {
               {user.level || 'Standard'}
             </span>
           </div>
-        </div>
-
-        {/* Coming Soon Notice Banner */}
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-5 sm:p-6 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center space-x-1.5 bg-black/20 text-white text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full">
-              <span>🚀 Launching Soon</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black">
-              Smart Savings Passbook & Micro-Credit Wallet
-            </h2>
-            <p className="text-xs sm:text-sm text-white/90 max-w-2xl">
-              We are finalizing live UPI/bank withdrawals and Smart Chain cryptographic transaction verification. Below is an interactive live preview of your upcoming savings dashboard!
-            </p>
-          </div>
-          <button
-            onClick={() => setIsAuthOpen(true)}
-            className="bg-white text-brand-orange hover:bg-slate-100 font-black text-xs sm:text-sm px-5 py-3 rounded-full shadow-md shrink-0 transition"
-          >
-            Pre-Register for Early Access
-          </button>
         </div>
 
         {/* Dashboard Layout Matching Picture 3 Exactly */}

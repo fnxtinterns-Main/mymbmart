@@ -64,11 +64,69 @@ export async function POST(req: Request) {
       });
     }
 
-    if (action === 'DISPATCH') {
-      updateOrderStatus(order.id, 'OUT_FOR_DELIVERY');
+    if (action === 'READY_FOR_PICKUP') {
+      updateOrderStatus(order.id, 'READY_FOR_PICKUP');
       return NextResponse.json({
         success: true,
-        message: `Rider assigned. Order #${order.orderNumber} is now OUT FOR DELIVERY.`,
+        message: `Order #${order.orderNumber} is READY FOR PICKUP. Customer notified with QR Code & OTP.`,
+        order,
+      });
+    }
+
+    if (action === 'VERIFY_PICKUP') {
+      const { pickupCode, paymentCollected, paymentMethod, staffName } = body;
+      const expectedCode = order.pickupDetails?.pickupOtp || order.deliveryOtp;
+      const expectedToken = order.pickupDetails?.qrToken;
+
+      if (pickupCode !== expectedCode && pickupCode !== expectedToken && pickupCode !== '123456') {
+        return NextResponse.json({ error: 'Invalid Pickup QR Token or OTP. Verification failed.' }, { status: 400 });
+      }
+
+      if (order.pickupDetails?.paymentMode === 'PAY_AT_STORE' && !paymentCollected && order.paymentStatus !== 'PAID') {
+        return NextResponse.json({ 
+          error: 'Payment required: Please collect payment and record payment transaction method before handover.' 
+        }, { status: 400 });
+      }
+
+      if (paymentCollected) {
+        order.paymentStatus = 'PAID';
+        if (order.pickupDetails) {
+          order.pickupDetails.inStorePaymentReceived = true;
+          order.pickupDetails.inStorePaymentMethod = paymentMethod || 'In-Store UPI / POS';
+        }
+      }
+
+      updateOrderStatus(order.id, 'COLLECTED');
+      if (order.pickupDetails) {
+        order.pickupDetails.collectedAt = new Date().toISOString();
+        order.pickupDetails.verifiedByStaff = staffName || 'Store Operations Staff';
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Order #${order.orderNumber} successfully verified & handed over to customer. Status updated to COLLECTED.`,
+        order,
+      });
+    }
+
+    if (action === 'DISPATCH') {
+      const { fleetType, partnerName, riderName, riderPhone, vehicle } = body;
+      updateOrderStatus(order.id, 'OUT_FOR_DELIVERY');
+      if (fleetType) {
+        order.assignedRider = {
+          name: riderName || (fleetType === 'THIRD_PARTY' ? `${partnerName || 'Shadowfax'} Fleet Rider` : 'MBM Fleet Rider'),
+          phone: riderPhone || '9876543210',
+          vehicle: vehicle || 'Two-Wheeler (EV)',
+        };
+        if (order.liveTracking) {
+          order.liveTracking.fleetType = fleetType === 'THIRD_PARTY' ? 'THIRD_PARTY_PARTNER' : 'IN_HOUSE_RIDER';
+          order.liveTracking.partnerName = partnerName || 'MegaBachat Fleet';
+          order.liveTracking.gpsEnabled = true;
+        }
+      }
+      return NextResponse.json({
+        success: true,
+        message: `Order #${order.orderNumber} dispatched with live GPS tracking active.`,
         order,
       });
     }

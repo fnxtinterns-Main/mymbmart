@@ -10,16 +10,49 @@ export interface OrderRecord {
   status: 
     | 'NEW' 
     | 'PLACED' 
+    | 'ACCEPTED'
     | 'CONFIRMED' 
+    | 'PICKING'
+    | 'PACKING'
     | 'PROCESSING' 
     | 'PACKED' 
     | 'READY_FOR_DISPATCH' 
+    | 'READY_FOR_PICKUP'
     | 'OUT_FOR_DELIVERY' 
+    | 'AWAITING_COLLECTION'
     | 'DELIVERED' 
+    | 'COLLECTED'
+    | 'PICKUP_EXPIRED'
     | 'CANCELLED' 
+    | 'REJECTED'
     | 'FAILED' 
     | 'RETURNED';
+  fulfilmentType: 'HOME_DELIVERY' | 'SELF_PICKUP';
   fulfilmentChannel?: 'QUICK_COMMERCE' | 'STANDARD_ECOMMERCE';
+  pickupDetails?: {
+    storeId: string;
+    storeName: string;
+    storeAddress: string;
+    slotDate: string;
+    slotTime: string;
+    qrToken: string;
+    pickupOtp: string;
+    paymentMode: 'ONLINE' | 'PAY_AT_STORE';
+    inStorePaymentReceived?: boolean;
+    inStorePaymentMethod?: string;
+    collectedAt?: string;
+    verifiedByStaff?: string;
+  };
+  liveTracking?: {
+    gpsEnabled: boolean;
+    currentLat: number;
+    currentLng: number;
+    destinationLat: number;
+    destinationLng: number;
+    etaMinutes: number;
+    fleetType: 'IN_HOUSE_RIDER' | 'THIRD_PARTY_PARTNER';
+    partnerName?: string;
+  };
   invoiceNumber?: string;
   cancellationReason?: string;
   refundStatus?: 'NONE' | 'PENDING' | 'PROCESSED';

@@ -579,7 +579,7 @@ export default function Home() {
         onOrderSuccess={(orderData) => {
           setActiveOrder(orderData);
           setIsTrackingOpen(true);
-          setOrderToast(`Order #${orderData.orderNumber || ''} Confirmed! Secret OTP: ${orderData.deliveryOtp || '4821'}`);
+          setOrderToast(`Order #${orderData.orderNumber || ''} Confirmed! Secret OTP: ${orderData.deliveryOtp || ''}`);
           setTimeout(() => setOrderToast(null), 5000);
         }}
       />
