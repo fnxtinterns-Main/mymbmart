@@ -346,7 +346,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <Store className="w-4 h-4 text-emerald-200" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-900 leading-tight">Kirana or Retail Shop Owner?</p>
+                <p className="text-xs font-bold text-slate-900 leading-tight">Local Shop or Retail Owner?</p>
                 <p className="text-[10px] text-slate-500">Partner with MegaBachatMart to sell online</p>
               </div>
             </div>

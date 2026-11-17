@@ -192,7 +192,7 @@ export const MerchantOnboardingTab: React.FC = () => {
           </div>
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Merchant Onboarding & KYC Approvals</h2>
           <p className="text-sm text-emerald-200 mt-2 leading-relaxed">
-            Review registration submissions from local Kirana stores and SHG producers. Verify FSSAI licenses, Trade permits, and bank accounts. Upon approval, automatically generate credentials and dispatch them instantly via WhatsApp and Email.
+            Review registration submissions from local shops and SHG producers. Verify FSSAI licenses, Trade permits, and bank accounts. Upon approval, automatically generate credentials and dispatch them instantly via WhatsApp and Email.
           </p>
         </div>
         <div className="absolute right-4 -bottom-8 opacity-10 hidden sm:block">

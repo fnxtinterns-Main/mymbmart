@@ -126,10 +126,10 @@ export default function ShopRegistrationPage() {
           <div className="text-center space-y-3">
             <div className="inline-flex items-center space-x-2 bg-emerald-100 text-[#064E3B] px-3.5 py-1.5 rounded-full text-xs font-black">
               <Store className="w-4 h-4 text-emerald-700" />
-              <span>MegaBachatMart Merchant & Kirana Partner Program</span>
+              <span>MegaBachatMart Merchant & Shop Partner Program</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight">
-              Grow Your Kirana with Hyperlocal Orders
+              Grow Your Shop with Hyperlocal Orders
             </h1>
             <p className="text-sm text-slate-600 max-w-xl mx-auto">
               Join Ranchi’s leading zero-commission hyperlocal grocery network. Complete your digital KYC below to receive your Store ID and start listing products.

@@ -130,7 +130,7 @@ export default function ContactPage() {
                       className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-600 bg-white"
                     >
                       <option value="Customer">Customer Order & Delivery</option>
-                      <option value="Kirana_Partner">Kirana Shop Onboarding</option>
+                      <option value="Shop_Partner">Local Shop Onboarding</option>
                       <option value="SHG_Producer">SHG & Farmer Supplier</option>
                       <option value="Delivery_Fleet">Delivery Rider Application</option>
                     </select>

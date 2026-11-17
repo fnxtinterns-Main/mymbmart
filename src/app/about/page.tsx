@@ -6,7 +6,7 @@ import { ShieldCheck, HeartHandshake, Zap, Store, Award, Users, CheckCircle2, Ar
 
 export const metadata = {
   title: 'About Us | MegaBachatMart (mymbmart.com)',
-  description: 'Empowering local Kirana store owners, Self Help Groups (SHGs), and neighborhood shoppers with 20-min delivery, zero commissions, and community savings.',
+  description: 'Empowering local shop owners, Self Help Groups (SHGs), and neighborhood shoppers with 20-min delivery, zero commissions, and community savings.',
 };
 
 export default function AboutPage() {
@@ -26,7 +26,7 @@ export default function AboutPage() {
               About <span className="text-[#064E3B]">MegaBachatMart</span>
             </h1>
             <p className="text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-              Bachat Bhi. Kamai Bhi. Apni Community Ke Saath. India&apos;s first prosumer e-commerce platform built to protect local Kirana merchants and empower village women producers.
+              Bachat Bhi. Kamai Bhi. Apni Community Ke Saath. India&apos;s first prosumer e-commerce platform built to protect local shop merchants and empower village women producers.
             </p>
           </div>
 
@@ -36,9 +36,9 @@ export default function AboutPage() {
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
                 <Store className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">0% Commission for Kiranas</h3>
+              <h3 className="text-lg font-bold text-slate-900">0% Commission for Shops</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Predatory quick-commerce platforms charge 20% to 30% cut. We aggregate existing mom-and-pop stores at zero commission, driving sales directly to local neighborhoods.
+                Predatory quick-commerce platforms charge 20% to 30% cut. We aggregate existing mom-and-pop shops at zero commission, driving sales directly to local neighborhoods.
               </p>
             </div>
 
@@ -48,7 +48,7 @@ export default function AboutPage() {
               </div>
               <h3 className="text-lg font-bold text-slate-900">Direct SHG & Farmer Market</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Empowering women Self-Help Groups (SHGs) and tribal cooperatives across Jharkhand to sell authentic honey, pickles, cold-pressed oils, and spices with zero middlemen.
+                Empowering women Self-Help Groups (SHGs) and tribal cooperatives to sell authentic honey, pickles, cold-pressed oils, and spices with zero middlemen.
               </p>
             </div>
 

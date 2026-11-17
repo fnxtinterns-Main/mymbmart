@@ -61,7 +61,7 @@ export function WebMcpAgentRegistry() {
         execute: async () => ({
           platformCommission: '0%',
           settlementCycle: 'Daily T+1 guaranteed into bank account',
-          acceptedMerchants: ['Kirana / General Stores', 'Women Self-Help Groups (SHGs)', 'Farmer Cooperatives'],
+          acceptedMerchants: ['Local Retail Shops', 'Women Self-Help Groups (SHGs)', 'Farmer Cooperatives'],
           onboardingPortalUrl: 'https://partners.mymbmart.com',
           helpline: '+91 9801506511',
           officialEmail: 'support@mymbmart.com',

@@ -142,7 +142,7 @@ export default function PartnersHomePage() {
               </div>
 
               <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-                Empowering Local Kiranas, SHG Women & Farmers Across Jharkhand
+                Empowering Shops, SHG Women & Farmers
               </h1>
 
               <p className="text-sm sm:text-base text-emerald-100 leading-relaxed max-w-xl">
@@ -373,7 +373,7 @@ export default function PartnersHomePage() {
                               onChange={(e) => setQuickReg({ ...quickReg, partnerType: e.target.value })}
                               className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
                             >
-                              <option value="KIRANA_GENERAL">Kirana / Retail Store</option>
+                              <option value="KIRANA_GENERAL">Retail Shop / Store</option>
                               <option value="SHG_COOPERATIVE">SHG Women Cooperative</option>
                               <option value="ORGANIC_PRODUCE">Farmer / Fresh Produce</option>
                               <option value="DAIRY_SWEETS">Dairy & Bakery</option>
@@ -463,7 +463,7 @@ export default function PartnersHomePage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-black text-slate-900">Local Kirana Stores</h3>
+                  <h3 className="text-lg font-black text-slate-900">Local Shops</h3>
                   <p className="text-xs text-slate-500 mt-0.5">Grocery, Provision & Supermarkets</p>
                 </div>
 
@@ -514,7 +514,7 @@ export default function PartnersHomePage() {
                   href="/shop/register"
                   className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition flex items-center justify-center space-x-1.5"
                 >
-                  <span>Apply as Kirana Partner</span>
+                  <span>Apply as Shop Partner</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
@@ -832,7 +832,7 @@ export default function PartnersHomePage() {
                   partners.mymbmart.com
                 </span>
                 <p className="text-[11px] text-slate-600">
-                  <strong>Partner Hub:</strong> Homepage, Kirana onboarding, SHG portal, CSV inventory uploader, and order fulfillment.
+                  <strong>Partner Hub:</strong> Homepage, Shop onboarding, SHG portal, CSV inventory uploader, and order fulfillment.
                 </p>
                 <div className="text-[10px] text-slate-400 font-mono">
                   Directory: <code>/public_html/partners</code>

@@ -5,7 +5,7 @@ export function getHomepageMarkdown(): string {
   return `# MegaBachatMart (mymbmart.com)
 
 > **Bachat Bhi. Kamai Bhi. Apni Community Ke Saath.**
-> India's premier community-first hyperlocal quick-commerce network. Delivering fresh groceries, staples, and authentic SHG products in 20-30 minutes with 0% commission for local Kiranas.
+> India's premier community-first hyperlocal quick-commerce network. Delivering fresh groceries, staples, and authentic SHG products in 20-30 minutes with 0% commission for local shops.
 
 ---
 

@@ -93,7 +93,7 @@ const jsonLd = {
       "logo": "https://mymbmart.com/images/LOgo.jpeg",
       "image": "https://mymbmart.com/images/LOgo.jpeg",
       "description":
-        "India's premier hyperlocal quick-commerce marketplace connecting neighborhood Kiranas, Self-Help Groups (SHGs), and local farmers with 20-minute delivery and 0% partner commissions.",
+        "India's premier hyperlocal quick-commerce marketplace connecting neighborhood shops, Self-Help Groups (SHGs), and local farmers with 20-minute delivery and 0% partner commissions.",
       "telephone": "+91-651-0000000",
       "email": "support@mymbmart.com",
       "sameAs": [
@@ -238,7 +238,7 @@ const jsonLd = {
       "@id": "https://mymbmart.com/#service-quick-commerce",
       "name": "Hyperlocal 20-Minute Quick Commerce Delivery",
       "provider": { "@id": "https://mymbmart.com/#organization" },
-      "areaServed": "Ranchi Central & Jharkhand Polygons",
+      "areaServed": "Ranchi Central & Surrounding Delivery Hubs",
       "description": "Zero emission electric delivery within 20 to 30 minutes from micro dark stores."
     },
     {
@@ -250,7 +250,7 @@ const jsonLd = {
           "name": "What is MegaBachatMart?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "MegaBachatMart is a community-first hyperlocal marketplace and quick-commerce network that connects local Kiranas, Self-Help Groups (SHGs), and farmers with 20-minute delivery, 0% commissions, and prosumer savings."
+            "text": "MegaBachatMart is a community-first hyperlocal marketplace and quick-commerce network that connects local shops, Self-Help Groups (SHGs), and farmers with 20-minute delivery, 0% commissions, and prosumer savings."
           }
         },
         {
@@ -258,7 +258,7 @@ const jsonLd = {
           "name": "How can shop owners join MegaBachatMart?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Local Kiranas and SHGs can visit partners.mymbmart.com, submit their basic trade documentation, receive verified portal credentials within 24 hours, and start listing products with bulk CSV or instant photo upload."
+            "text": "Local shops and SHGs can visit partners.mymbmart.com, submit their basic trade documentation, receive verified portal credentials within 24 hours, and start listing products with bulk CSV or instant photo upload."
           }
         },
         {

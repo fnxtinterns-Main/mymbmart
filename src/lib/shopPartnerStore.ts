@@ -658,7 +658,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
   // Bulk Ingestion: Validates CSV and automatically injects products into live storefront catalog and inventory store
   public ingestBulkCsvProducts(shopId: string, rows: CsvProductRow[]): IngestionResult {
     const shop = this.accounts.find((a) => a.shopId === shopId);
-    const shopName = shop ? shop.shopName : 'Authorized Local Kirana Partner';
+    const shopName = shop ? shop.shopName : 'Authorized Local Shop Partner';
     const pincode = shop ? shop.pincode : '834001';
 
     const errors: string[] = [];

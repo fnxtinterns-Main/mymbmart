@@ -31,7 +31,7 @@ export default function TermsPage() {
           <section className="space-y-3 text-xs leading-relaxed">
             <h2 className="text-base font-bold text-slate-900">2. Hyperlocal Marketplace & Merchant SLA</h2>
             <p>
-              MegaBachatMart functions as a hyperlocal fulfillment aggregator connecting local verified retail merchants (Kiranas), Self-Help Groups (SHGs), and primary agricultural cooperatives to neighborhood consumers. Merchants agree to maintain authentic, unadulterated stock with valid FSSAI licenses where applicable.
+              MegaBachatMart functions as a hyperlocal fulfillment aggregator connecting local verified retail shops, Self-Help Groups (SHGs), and primary agricultural cooperatives to neighborhood consumers. Merchants agree to maintain authentic, unadulterated stock with valid FSSAI licenses where applicable.
             </p>
             <p>
               Order fulfillment SLAs require merchants to accept or route assigned neighborhood orders within 2 minutes during active store operating hours.
