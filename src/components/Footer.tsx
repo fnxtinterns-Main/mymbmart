@@ -27,7 +27,7 @@ export const Footer: React.FC = () => {
             <div className="relative w-44 h-12 bg-white p-2 rounded-xl">
               <Image
                 src="/images/LOgo.jpeg"
-                alt="MEGA BACHAT MART"
+                alt="MegaBachatMart"
                 fill
                 className="object-contain"
               />
@@ -95,7 +95,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-emerald-800/80 text-center text-xs text-emerald-300/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 MEGA BACHAT MART (mymbmart.com). All rights reserved.</p>
+          <p>© 2026 MegaBachatMart (mymbmart.com). All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px]">
             <Link href="/about" className="hover:text-white transition">About Us</Link>
             <Link href="/contact" className="hover:text-white transition">Contact</Link>

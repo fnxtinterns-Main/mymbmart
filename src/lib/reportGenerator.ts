@@ -94,7 +94,7 @@ export function generateMasterPlatformReportCsv(partners: any[] = []): string {
   const defaultPartners = partners.length > 0 ? partners : [
     {
       shopId: 'MBM-SHP-834006-03',
-      shopName: 'Chotanagpur Tribal & Kirana Hub',
+      shopName: 'Chotanagpur Tribal & Retail Hub',
       ownerName: 'Sunita Soren',
       phone: '9431109876',
       pincode: '834006',
@@ -108,7 +108,7 @@ export function generateMasterPlatformReportCsv(partners: any[] = []): string {
     },
     {
       shopId: 'MBM-SHP-834001-01',
-      shopName: 'Ranchi Central Kirana & General Store',
+      shopName: 'Ranchi Central Retail & General Store',
       ownerName: 'Manoj Kumar Gupta',
       phone: '9835012345',
       pincode: '834001',

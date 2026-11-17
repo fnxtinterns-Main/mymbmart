@@ -241,7 +241,7 @@ export default function ShopRegistrationPage() {
                         type="text"
                         name="shopName"
                         required
-                        placeholder="e.g. Gupta Kirana & General Store"
+                        placeholder="e.g. Gupta Daily Grocery & General Store"
                         value={formData.shopName}
                         onChange={handleChange}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
@@ -333,7 +333,7 @@ export default function ShopRegistrationPage() {
                         onChange={handleChange}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
                       >
-                        <option value="KIRANA_GENERAL">Kirana & Daily Grocery</option>
+                        <option value="KIRANA_GENERAL">Daily Grocery & Retail Store</option>
                         <option value="SUPERMARKET">Supermarket / Provision Store</option>
                         <option value="ORGANIC_PRODUCE">Farm Fresh & Organic Vegetables</option>
                         <option value="DAIRY_SWEETS">Dairy & Bakery Products</option>

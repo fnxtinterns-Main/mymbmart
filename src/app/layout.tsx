@@ -5,13 +5,13 @@ import { WebMcpAgentRegistry } from '@/components/WebMcpAgentRegistry';
 export const metadata: Metadata = {
   metadataBase: new URL("https://mymbmart.com"),
   title: {
-    default: "MEGA BACHAT MART | Bachat Bhi. Kamai Bhi. - Shop Smart. Save More.",
-    template: "%s | MEGA BACHAT MART",
+    default: "MegaBachatMart | Bachat Bhi. Kamai Bhi. - Shop Smart. Save More.",
+    template: "%s | MegaBachatMart",
   },
   description:
     "India's community-driven e-commerce & quick commerce platform. 20-minute grocery delivery from local dark stores, marketplace shopping, 3-tier promoter referral rewards, and rural SHG empowerment in Ranchi.",
   keywords: [
-    "Mega Bachat Mart",
+    "MegaBachatMart",
     "mymbmart",
     "quick commerce Ranchi",
     "online grocery shopping",
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     "organic food Ranchi",
     "fresh vegetables Ranchi",
   ],
-  authors: [{ name: "Mega Bachat Mart Team", url: "https://mymbmart.com" }],
-  creator: "Mega Bachat Mart",
-  publisher: "Mega Bachat Mart",
+  authors: [{ name: "MegaBachatMart Team", url: "https://mymbmart.com" }],
+  creator: "MegaBachatMart",
+  publisher: "MegaBachatMart",
   robots: {
     index: true,
     follow: true,
@@ -36,11 +36,11 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "MEGA BACHAT MART | Bachat Bhi. Kamai Bhi.",
+    title: "MegaBachatMart | Bachat Bhi. Kamai Bhi.",
     description:
       "Shop Smart. Save More. 20-minute grocery delivery from dark stores, savings passbook, and 3-tier promoter team rewards.",
     url: "https://mymbmart.com",
-    siteName: "MEGA BACHAT MART",
+    siteName: "MegaBachatMart",
     locale: "en_IN",
     type: "website",
     images: [
@@ -48,13 +48,13 @@ export const metadata: Metadata = {
         url: "/images/LOgo.jpeg",
         width: 800,
         height: 600,
-        alt: "MEGA BACHAT MART Logo",
+        alt: "MegaBachatMart Logo",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MEGA BACHAT MART | Bachat Bhi. Kamai Bhi.",
+    title: "MegaBachatMart | Bachat Bhi. Kamai Bhi.",
     description: "Shop Smart. Save More. 20-minute grocery delivery & promoter rewards.",
     images: ["/images/LOgo.jpeg"],
   },
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MEGA BACHAT MART",
+    title: "MegaBachatMart",
   },
 };
 
@@ -171,7 +171,7 @@ const jsonLd = {
     {
       "@type": "OnlineStore",
       "@id": "https://mymbmart.com/#store",
-      "name": "MEGA BACHAT MART",
+      "name": "MegaBachatMart",
       "url": "https://mymbmart.com",
       "logo": "https://mymbmart.com/images/LOgo.jpeg",
       "image": "https://mymbmart.com/images/LOgo.jpeg",
@@ -275,7 +275,7 @@ const jsonLd = {
       "@type": "WebSite",
       "@id": "https://mymbmart.com/#website",
       "url": "https://mymbmart.com",
-      "name": "MEGA BACHAT MART",
+      "name": "MegaBachatMart",
       "publisher": { "@id": "https://mymbmart.com/#organization" },
       "potentialAction": {
         "@type": "SearchAction",

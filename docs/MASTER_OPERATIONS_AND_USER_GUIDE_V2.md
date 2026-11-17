@@ -19,7 +19,7 @@ related: [megabachatmart_master_technical_srs.md, megabachatmart_v2_consolidated
 MegaBachatMart is an **agent-ready, dual-commerce hyperlocal marketplace** engineered for Tier-2 and Tier-3 Indian cities (launched in Ranchi Central, Pincode `834001`). The platform bridges the gap between quick-commerce speed and neighborhood retail by uniting:
 1. **20–30 Minute Quick-Commerce Home Delivery** powered by local neighborhood partner Kiranas.
 2. **Dark Store Collection Counter (Self-Pickup)** offering scheduled 30-minute collection slots with zero delivery fees.
-3. **Hyperlocal Kirana Digitalization** with zero unfair commissions, instant bulk CSV inventory onboarding, and working capital credit lines.
+3. **Hyperlocal Shop Digitalization** with zero unfair commissions, instant bulk CSV inventory onboarding, and working capital credit lines.
 4. **Authentic Rural Self-Help Group (SHG) & Farmer Supply Chains** providing direct farm produce, cold-pressed oils, and tribal handicrafts.
 5. **Autonomous AI Agent Readiness** allowing in-browser WebMCP and external LLM crawlers to discover inventory, verify serviceability, and read token-efficient content.
 
@@ -33,7 +33,7 @@ MegaBachatMart is an **agent-ready, dual-commerce hyperlocal marketplace** engin
             ▼                                 ▼               ▼
 ┌───────────────────────┐         ┌───────────────────────┐ ┌───────────────────────┐
 │     1. CONSUMER       │         │  2. MERCHANT PARTNER  │ │    3. SHG PRODUCER    │
-│  - Browse Local SKUs  │         │  - Local Kirana Store │ │  - Artisanal Goods    │
+│  - Browse Local SKUs  │         │  - Local Shop Store   │ │  - Artisanal Goods    │
 │  - 20-min Quick Deliv │         │  - Bulk CSV Ingestion │ │  - Direct Farm Supply │
 │  - Dark Store Pickup  │         │  - 20-min Dispatch    │ │  - Community Pricing  │
 │  - Wallet & Cashback  │         │  - Partner Portal Deck│ │  - Producer Portal    │
@@ -111,7 +111,7 @@ Administrators supervise the platform, approve merchant KYC, monitor delivery fl
 ---
 
 ### 3.3 Merchant Partner & Kirana Store Login (Partner Deck)
-Local Kirana owners access their operational deck using the Store ID and temporary password dispatched to them by the Admin after KYC approval.
+Local shop owners access their operational deck using the Store ID and temporary password dispatched to them by the Admin after KYC approval.
 - **URL:** `https://partners.mymbmart.com` (or `/shop/login`)
 - **Credentials:**
   - **Store ID / Mobile:** Generated Store ID (e.g., `MBM-SHP-834006-03` or registered mobile `9431109876`).

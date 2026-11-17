@@ -1,13 +1,13 @@
 # MegaBachatMart
 
-> Hyperlocal Quick-Commerce & Community Prosumer Marketplace uniting neighborhood Kirana merchants, women Self-Help Groups (SHGs), and local farmers with 20-minute delivery and 0% partner commissions.
+> Hyperlocal Quick-Commerce & Community Prosumer Marketplace uniting neighborhood retail shops, women Self-Help Groups (SHGs), and local farmers with 20-minute delivery and 0% partner commissions.
 
 ## Overview
 MegaBachatMart (mymbmart.com) operates as a decentralized, prosumer-first quick-commerce network. Rather than deploying monopolistic dark stores that cannibalize small businesses, MegaBachatMart digitally empowers existing neighborhood retail stores with an append-only SmartChain audit ledger, instant PhonePe UPI integration, closed-loop wallet micro-credits, and an intelligent polygon routing engine.
 
 ## Key Subdomains & Interfaces
 - [Storefront](https://mymbmart.com/): Consumer web application for browsing groceries, Staples, FMCG goods, and authentic tribal SHG items.
-- [Partner Portal](https://partners.mymbmart.com/): Dedicated merchant desk for Kirana store owners, SHG collectives, and farmers to manage live orders, upload bulk inventory via CSV, and monitor daily payouts.
+- [Partner Portal](https://partners.mymbmart.com/): Dedicated merchant desk for shop owners, SHG collectives, and farmers to manage live orders, upload bulk inventory via CSV, and monitor daily payouts.
 - [Admin Console](https://admin.mymbmart.com/): Operations command center for order dispatch, rider tracking, merchant KYC approvals, and automated financial settlements.
 - [API Documentation](https://mymbmart.com/api-docs): OpenAPI 3.1 specification for partner integrations, inventory sync, and order dispatch webhooks.
 

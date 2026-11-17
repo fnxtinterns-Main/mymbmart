@@ -29,13 +29,13 @@ export async function POST(req: Request) {
       paymentMethod,
       gateway: 'RAZORPAY_UPI_HYBRID',
       upiPayload: {
-        vpa: 'pay-mymbmart@icici',
-        payeeName: 'Mega Bachat Mart Jharkhand',
+        vpa: '9801506511@ybl',
+        payeeName: 'MegaBachatMart',
         upiUri,
         supportedApps: [
-          { name: 'Google Pay', scheme: `gpay://upi/pay?pa=pay-mymbmart@icici&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
-          { name: 'PhonePe', scheme: `phonepe://pay?pa=pay-mymbmart@icici&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
-          { name: 'Paytm', scheme: `paytmmp://pay?pa=pay-mymbmart@icici&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
+          { name: 'Google Pay', scheme: `gpay://upi/pay?pa=9801506511@ybl&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
+          { name: 'PhonePe', scheme: `phonepe://pay?pa=9801506511@ybl&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
+          { name: 'Paytm', scheme: `paytmmp://pay?pa=9801506511@ybl&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
         ]
       },
       paymentOptions: [

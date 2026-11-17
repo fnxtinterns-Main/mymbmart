@@ -197,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative w-32 sm:w-44 h-10 sm:h-12">
               <Image
                 src="/images/LOgo.jpeg"
-                alt="MEGA BACHAT MART"
+                alt="MegaBachatMart"
                 fill
                 priority
                 className="object-contain object-left group-hover:scale-102 transition-transform"

@@ -534,7 +534,7 @@ export default function AdminDashboardPage() {
     { id: 'dispatch_board', label: 'Dispatch Board (Kanban)', icon: Truck },
     { id: 'pickup_slots', label: 'Pickup Slots (Ranchi Central)', icon: Clock },
     { id: 'inventory', label: 'Inventory & SKUs', icon: Layers },
-    { id: 'merchants', label: 'Merchant Onboarding & KYC', icon: UserCheck, tag: 'Kirana' },
+    { id: 'merchants', label: 'Merchant Onboarding & KYC', icon: UserCheck, tag: 'Shops' },
     { id: 'routing', label: 'Hyperlocal Routing Engine', icon: Compass },
     { id: 'pilot', label: 'Pilot Operations (Ranchi)', icon: Rocket, tag: 'Days 1-90' },
     { id: 'producers', label: 'SHG Producers', icon: Store, badge: producersList.length },
@@ -2509,7 +2509,7 @@ export default function AdminDashboardPage() {
           )}
 
           {/* ============================================================== */}
-          {/* TAB: MERCHANT ONBOARDING & KYC (KIRANA APPROVALS)              */}
+          {/* TAB: MERCHANT ONBOARDING & KYC (SHOP APPROVALS)              */}
           {/* ============================================================== */}
           {activeTab === 'merchants' && <MerchantOnboardingTab />}
 

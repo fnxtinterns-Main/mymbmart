@@ -35,7 +35,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="relative w-full aspect-[1024/339]">
             <Image
               src="/images/hero_banner.jpg"
-              alt="MEGA BACHAT MART - Bachat Bhi. Kamai Bhi! Shop Smart. Save More."
+              alt="MegaBachatMart - Bachat Bhi. Kamai Bhi! Shop Smart. Save More."
               fill
               priority
               className="object-cover object-center group-hover:scale-[1.01] transition-transform duration-500"
@@ -44,7 +44,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <Link
               href="/shop"
               className="absolute inset-0 z-10"
-              aria-label="Shop Now at MEGA BACHAT MART"
+              aria-label="Shop Now at MegaBachatMart"
             />
           </div>
         </div>
@@ -81,7 +81,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               {/* Supporting Copy in English */}
               <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-xl font-normal">
-                <strong>MEGA BACHAT MART</strong> is India's community e-commerce movement where households save on everyday groceries, 
+                <strong>MegaBachatMart</strong> is India's community e-commerce movement where households save on everyday groceries, 
                 Self Help Groups (SHGs) and women entrepreneurs sell direct, and every member earns referral micro-credit.
               </p>
 

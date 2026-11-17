@@ -1,6 +1,6 @@
 // MegaBachatMart — Master Product Image Bank & Persistent Custom Image Registry
 // Solves:
-// 1. Automatic high-resolution product images for all Kirana, FMCG, and SHG products (no need for merchants to paste image URLs).
+// 1. Automatic high-resolution product images for all grocery, retail, FMCG, and SHG products (no need for merchants to paste image URLs).
 // 2. Persistent storage for merchant-uploaded photos (upload once, never have to re-upload every time).
 // 3. Ability to change or upload new photos anytime from the Merchant Portal.
 

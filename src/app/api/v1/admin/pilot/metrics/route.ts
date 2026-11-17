@@ -26,7 +26,7 @@ export async function GET() {
     partners: [
       {
         id: 'shop-rch-01',
-        name: 'Sharma Kirana Store',
+        name: 'Sharma Retail Store',
         type: 'KIRANA_SHOP',
         pincode: '834001',
         onboardingStage: 'GO_LIVE',
@@ -59,7 +59,7 @@ export async function GET() {
         name: 'Jharkhand Mahila Samakhya SHG',
         type: 'SHG_PRODUCER',
         pincode: '834008',
-        hostShop: 'Sharma Kirana Store',
+        hostShop: 'Sharma Retail Store',
         onboardingStage: 'GO_LIVE',
         activeSkus: 8,
         monthlyIncomeIncrease: '+₹4,200/member',

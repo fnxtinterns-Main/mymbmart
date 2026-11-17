@@ -203,7 +203,7 @@ export default function Home() {
 
             </div>
 
-            {/* Right 4 Cols: MEGA BACHAT MART Plus Benefits (Picture 5 replica) */}
+            {/* Right 4 Cols: MegaBachatMart Plus Benefits (Picture 5 replica) */}
             <div className="lg:col-span-4 bg-gradient-to-b from-brand-mint via-white to-emerald-50/50 rounded-3xl p-6 sm:p-7 border border-emerald-200 shadow-sm flex flex-col justify-between space-y-6">
               <div className="space-y-4">
                 <div>
@@ -211,7 +211,7 @@ export default function Home() {
                     Prosumer Privilege
                   </span>
                   <h3 className="text-xl font-black text-brand-forest mt-2">
-                    MEGA BACHAT MART Plus Benefits
+                    MegaBachatMart Plus Benefits
                   </h3>
                   <p className="text-xs text-slate-600 mt-1">
                     Free community membership that pays you back as you shop.
@@ -248,7 +248,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 3. Section 3: What is MEGA BACHAT MART? */}
+        {/* 3. Section 3: What is MegaBachatMart? */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-br from-brand-mint via-white to-emerald-50/60 rounded-3xl p-8 sm:p-12 border border-emerald-200/90 shadow-sm relative overflow-hidden">
             <div className="max-w-3xl space-y-4">
@@ -256,10 +256,10 @@ export default function Home() {
                 Community E-Commerce Movement
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-brand-forest tracking-tight leading-tight">
-                What is MEGA BACHAT MART?
+                What is MegaBachatMart?
               </h2>
               <p className="text-slate-700 text-sm sm:text-base leading-relaxed">
-                <strong>MEGA BACHAT MART</strong> is a community-driven e-commerce initiative designed to reduce everyday household consumption expenditure.
+                <strong>MegaBachatMart</strong> is a community-driven e-commerce initiative designed to reduce everyday household consumption expenditure.
                 We eliminate corporate middlemen and excessive distribution margins, connecting consumers directly to local producers.
               </p>
               <p className="text-slate-600 text-xs sm:text-sm">
@@ -294,7 +294,7 @@ export default function Home() {
               The PROSUMER REVOLUTION
             </h2>
             <p className="text-sm text-slate-600">
-              You are not just a passive consumer. In MEGA BACHAT MART, you participate in 3 core pillars:
+              You are not just a passive consumer. In MegaBachatMart, you participate in 3 core pillars:
             </p>
           </div>
 
@@ -496,14 +496,14 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 6. Section 5: Who is MEGA BACHAT MART For? */}
+        {/* 6. Section 5: Who is MegaBachatMart For? */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="text-xs font-bold text-brand-forest uppercase tracking-wider">
               Empowerment For Every Community Segment
             </span>
             <h2 className="text-3xl font-black text-brand-forest tracking-tight">
-              Who is MEGA BACHAT MART For?
+              Who is MegaBachatMart For?
             </h2>
           </div>
 
@@ -547,7 +547,7 @@ export default function Home() {
               Your Spending. Your Earnings. Your Community.
             </h2>
             <p className="text-emerald-100 text-sm sm:text-base max-w-2xl mx-auto">
-              Join <strong>MEGA BACHAT MART</strong> today. Be a Prosumer. Lower household expenditure, empower local makers, and build community prosperity together.
+              Join <strong>MegaBachatMart</strong> today. Be a Prosumer. Lower household expenditure, empower local makers, and build community prosperity together.
             </p>
             <div className="flex flex-wrap justify-center gap-4 pt-2">
               <button

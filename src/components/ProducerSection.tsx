@@ -63,7 +63,7 @@ export const ProducerSection: React.FC = () => {
     {
       title: 'SHOP OWNERS & MERCHANTS',
       tagColor: 'bg-brand-forest',
-      items: ['Kirana & General Store', 'Daily Essentials Listing', 'Local Delivery Network', 'Repeat Customers'],
+      items: ['Retail & General Store', 'Daily Essentials Listing', 'Local Delivery Network', 'Repeat Customers'],
       action: 'Join as Seller',
     },
     {
@@ -256,7 +256,7 @@ export const ProducerSection: React.FC = () => {
                   >
                     <option value="SHG">Self Help Group (SHG)</option>
                     <option value="WOMEN_ENTREPRENEUR">Women Entrepreneur</option>
-                    <option value="SHOP_MERCHANT">Kirana / Merchant</option>
+                    <option value="SHOP_MERCHANT">Local Shop / Merchant</option>
                     <option value="CLOUD_KITCHEN">Cloud Kitchen / Home Chef</option>
                   </select>
                 </div>

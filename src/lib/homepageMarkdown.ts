@@ -13,7 +13,7 @@ export function getHomepageMarkdown(): string {
 - **Corporate Entity:** MegaBachatMart Technologies Private Limited
 - **Headquarters & Central Dark Store:** Main Road, Ranchi Central, Jharkhand - 834001, India
 - **Delivery Promise:** 20 to 30 minutes via zero-emission electric vehicles within 3 km neighborhood polygons.
-- **Merchant Commission:** 0% platform commission for Kirana merchants & village Self-Help Groups (SHGs).
+- **Merchant Commission:** 0% platform commission for local shop merchants & village Self-Help Groups (SHGs).
 - **Payment Method:** PhonePe Merchant UPI (\`9801506511@ybl\` / FUTURENXT) & Cash on Delivery (COD).
 - **Settlement Cycle:** Guaranteed Daily T+1 automated bank disbursements.
 
@@ -21,7 +21,7 @@ export function getHomepageMarkdown(): string {
 
 ## 2. Key Portals & Subdomains
 - **Storefront:** https://mymbmart.com
-- **Partner Desk & Kirana Portal:** https://partners.mymbmart.com (or https://mymbmart.com/partners)
+- **Partner Desk & Shop Portal:** https://partners.mymbmart.com (or https://mymbmart.com/partners)
 - **Operations & Admin Console:** https://admin.mymbmart.com (or https://mymbmart.com/admin)
 - **Producer / SHG Registry:** https://mymbmart.com/producer
 - **Savings Passbook:** https://mymbmart.com/savings

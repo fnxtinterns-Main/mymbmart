@@ -202,7 +202,7 @@ let routingConfigHistory: Array<{ timestamp: string; config: RoutingConfig; chan
 export const registeredCandidateShops: CandidateShop[] = [
   {
     id: 'shop-rch-01',
-    name: 'Sharma Kirana Store',
+    name: 'Sharma Retail Store',
     code: 'MBM-RCH-SHARMA',
     status: 'ACTIVE',
     kycStatus: 'VERIFIED',
@@ -336,7 +336,7 @@ export const registeredCandidateShops: CandidateShop[] = [
 // SEED SHOP LISTINGS (Catalog pricing & on-hand inventory)
 // ----------------------------------------------------
 export const registeredShopListings: ShopItemListing[] = [
-  // Sharma Kirana
+  // Sharma Retail Store
   { shopId: 'shop-rch-01', skuId: 'MB-GRO-AASH-5K', skuCode: 'MB-GRO-AASH-5K', productName: 'Aashirvaad Shudh Chakki Atta 5kg', price: 245, stockOnHand: 45, stockReserved: 2, status: 'LIVE', hasValidBatch: true },
   { shopId: 'shop-rch-01', skuId: 'MB-GRO-FORT-1L', skuCode: 'MB-GRO-FORT-1L', productName: 'Fortune Premium Kachi Ghani Mustard Oil 1L', price: 155, stockOnHand: 30, stockReserved: 0, status: 'LIVE', hasValidBatch: true },
   { shopId: 'shop-rch-01', skuId: 'MB-SHG-AMLA-500G', skuCode: 'MB-SHG-AMLA-500G', productName: 'Organic Amla & Mango Murabba 500g', price: 175, stockOnHand: 18, stockReserved: 1, status: 'LIVE', hasValidBatch: true },

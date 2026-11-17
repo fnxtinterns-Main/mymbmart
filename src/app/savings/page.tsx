@@ -316,7 +316,7 @@ export default function SavingsPage() {
 
           </div>
 
-          {/* Right Column (4 cols): MEGA BACHAT MART Plus Benefits (Picture 3) */}
+          {/* Right Column (4 cols): MegaBachatMart Plus Benefits (Picture 3) */}
           <div className="lg:col-span-4 space-y-6">
             
             {/* Plus Benefits Card */}
@@ -326,7 +326,7 @@ export default function SavingsPage() {
                   Membership Club
                 </span>
                 <h3 className="text-2xl font-black tracking-tight mt-1">
-                  MEGA BACHAT MART Plus Benefits
+                  MegaBachatMart Plus Benefits
                 </h3>
               </div>
 

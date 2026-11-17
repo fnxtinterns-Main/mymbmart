@@ -83,7 +83,7 @@ export default function ShopPartnerPortalPage() {
         // Fallback for demonstration if direct link opened
         const fallback = {
           shopId: 'MBM-SHP-834006-03',
-          shopName: 'Chotanagpur Tribal & Kirana Hub',
+          shopName: 'Chotanagpur Tribal & Retail Hub',
           ownerName: 'Sunita Soren',
           phone: '9431109876',
           email: 'chotanagpurtribalhub@gmail.com',

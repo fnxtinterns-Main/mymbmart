@@ -192,7 +192,7 @@ export const PilotPlaybookTab: React.FC = () => {
           <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-sm text-[#0F172A]">Active Pilot Partner Cohort (Ranchi Metro)</h3>
-              <span className="text-xs text-slate-400">Target: 3–5 Kirana Stores + 2–3 SHG Groups</span>
+              <span className="text-xs text-slate-400">Target: 3–5 Retail Shops + 2–3 SHG Groups</span>
             </div>
 
             <div className="overflow-x-auto">
@@ -215,7 +215,7 @@ export const PilotPlaybookTab: React.FC = () => {
                         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                           p.type === 'KIRANA_SHOP' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-[#064E3B]'
                         }`}>
-                          {p.type === 'KIRANA_SHOP' ? 'Kirana Partner' : 'SHG Producer'}
+                          {p.type === 'KIRANA_SHOP' ? 'Shop Partner' : 'SHG Producer'}
                         </span>
                       </td>
                       <td className="py-3 font-mono">{p.pincode}</td>

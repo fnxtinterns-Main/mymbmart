@@ -1,4 +1,4 @@
-# MEGA BACHAT MART - Hostinger Production Configuration
+# MegaBachatMart - Hostinger Production Configuration
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /

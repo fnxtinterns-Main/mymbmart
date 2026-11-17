@@ -32,7 +32,7 @@ export const ReferAndEarn: React.FC<ReferAndEarnProps> = ({ user }) => {
 
   const shareOnWhatsApp = () => {
     const text = encodeURIComponent(
-      `🚨 PROSUMER REVOLUTION HAS BEGUN! 🚨\n\nUntil now you were only a CONSUMER. Now become a PROSUMER.\n\n🛒 MEGA BACHAT MART - www.mymbmart.com\n✅ Daily essential savings (10-30%)\n✅ Direct from Women Entrepreneurs & SHGs\n✅ Refer friends & earn MICRO-CREDITS!\n\nUse my Referral Code: *${user.referralCode}*\n\n👉 Join Free: https://www.mymbmart.com?ref=${user.referralCode}`
+      `🚨 PROSUMER REVOLUTION HAS BEGUN! 🚨\n\nUntil now you were only a CONSUMER. Now become a PROSUMER.\n\n🛒 MegaBachatMart - www.mymbmart.com\n✅ Daily essential savings (10-30%)\n✅ Direct from Women Entrepreneurs & SHGs\n✅ Refer friends & earn MICRO-CREDITS!\n\nUse my Referral Code: *${user.referralCode}*\n\n👉 Join Free: https://www.mymbmart.com?ref=${user.referralCode}`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
