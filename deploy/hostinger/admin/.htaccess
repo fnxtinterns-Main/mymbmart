@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Reverse Proxy to Next.js if mod_proxy is enabled
+  <IfModule mod_proxy.c>
+    RewriteRule ^$ http://127.0.0.1:3000/admin [P,L]
+    RewriteRule ^(.*)$ http://127.0.0.1:3000/admin/$1 [P,L]
+  </IfModule>
+
+  # 2. Fallback: If reverse proxy is not enabled, transparently redirect to main domain /admin
+  RewriteCond %{HTTP_HOST} ^admin\.mymbmart\.com$ [NC]
+  RewriteRule ^$ https://mymbmart.com/admin [R=301,L]
+  RewriteRule ^(.*)$ https://mymbmart.com/admin/$1 [R=301,L]
+</IfModule>
