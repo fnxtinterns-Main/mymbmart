@@ -18,12 +18,9 @@ import {
   ChevronDown,
   LogIn,
   LogOut,
-  Building2,
-  Download,
-  Smartphone
+  Building2
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
-import { InstallAppModal } from '@/components/InstallAppModal';
 
 interface NavbarProps {
   user?: UserProfile | null;
@@ -46,7 +43,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [installModalOpen, setInstallModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const initialNotifications = [
@@ -255,16 +251,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right Action Icons: Notifications, User Account, Cart */}
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             
-            {/* Install / Download App Button */}
-            <button
-              onClick={() => setInstallModalOpen(true)}
-              className="hidden sm:flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#064E3B] font-bold text-xs px-3 py-1.5 rounded-full transition shadow-2xs cursor-pointer"
-              title="Install Official App"
-            >
-              <Download className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Install App</span>
-            </button>
-
             {/* Notification Bell with Floating Dropdown */}
             <div className="relative" ref={notifRef}>
               <button 
@@ -548,23 +534,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Store className="w-5 h-5 text-brand-blue" />
               <span>Producer / SHG</span>
             </Link>
-
-            <button
-              onClick={() => { setMobileMenuOpen(false); setInstallModalOpen(true); }}
-              className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 transition cursor-pointer"
-            >
-              <Download className="w-5 h-5 text-emerald-600" />
-              <span>Install App on Phone</span>
-            </button>
           </div>
         )}
       </div>
-
-      {/* PWA Install Modal */}
-      <InstallAppModal
-        isOpen={installModalOpen}
-        onClose={() => setInstallModalOpen(false)}
-      />
     </header>
   );
 };
