@@ -49,10 +49,10 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-emerald-200">
               <li><Link href="/shop" className="hover:text-white transition">Community Store</Link></li>
+              <li><Link href="/partners" className="hover:text-white transition font-bold text-emerald-300">Partner Hub & Kiranas</Link></li>
               <li><Link href="/producer" className="hover:text-white transition">Producer & SHG Portal</Link></li>
               <li><Link href="/savings" className="hover:text-white transition">Savings & Passbook</Link></li>
               <li><Link href="/refer" className="hover:text-white transition">Referral & Level Plan</Link></li>
-              <li><span className="text-emerald-400/80">Student & Family Membership Tiers</span></li>
             </ul>
           </div>
 

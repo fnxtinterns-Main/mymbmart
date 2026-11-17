@@ -1,21 +1,25 @@
 {
   "name": "MegaBachatMart",
-  "short_name": "mymbmart",
-  "description": "Bachat Bhi. Kamai Bhi. Apni Community Ke Saath.",
+  "short_name": "MegaBachatMart",
+  "description": "Hyperlocal 20-min quick grocery delivery, dark store pickup & SHG marketplace.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0D2C6C",
+  "orientation": "portrait",
+  "background_color": "#F8FAFC",
+  "theme_color": "#064E3B",
+  "categories": ["shopping", "food", "lifestyle"],
   "icons": [
     {
       "src": "/images/LOgo.jpeg",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     },
     {
       "src": "/images/LOgo.jpeg",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     }
   ]
 }
