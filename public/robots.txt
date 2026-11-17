@@ -1,0 +1,32 @@
+# MegaBachatMart Robots Policy & Agent Directives
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+# Content Signals (Search Allowed, AI Model Training Prohibited without license)
+Content-Signal: search=yes, ai-train=no
+
+# Permitted LLM Crawlers for Real-time Retrieval & Fact-checking
+User-agent: GPTBot
+Allow: /
+Allow: /shop
+Allow: /savings
+Allow: /refer
+Allow: /producer
+Allow: /partners
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# Canonical Discovery
+Sitemap: https://mymbmart.com/sitemap.xml

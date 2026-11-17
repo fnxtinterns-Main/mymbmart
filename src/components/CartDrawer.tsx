@@ -86,7 +86,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const finalPayable = Math.max(0, totalBachatPrice + totalDeliveryFee - creditDeduction);
 
   const handleCopyUpiId = () => {
-    navigator.clipboard?.writeText('futurenxt@ybl');
+    navigator.clipboard?.writeText('9801506511@ybl');
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 3000);
   };
@@ -323,7 +323,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <span className="text-slate-500">UPI ID:</span>
                       <div className="flex items-center space-x-1.5">
                         <code className="font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px]">
-                          futurenxt@ybl
+                          9801506511@ybl
                         </code>
                         <button
                           type="button"
@@ -339,7 +339,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                   {/* 1-Tap Pay via UPI button for Mobile users */}
                   <a
-                    href={`upi://pay?pa=futurenxt@ybl&pn=FUTURENXT&am=${finalPayable}&cu=INR&tn=MegaBachatMart%20Order`}
+                    href={`upi://pay?pa=9801506511@ybl&pn=FUTURENXT&am=${finalPayable}&cu=INR&tn=MegaBachatMart%20Order`}
                     className="w-full bg-[#5F259F] hover:bg-[#4E1E83] text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 transition shadow-xs"
                   >
                     <Smartphone className="w-4 h-4" />

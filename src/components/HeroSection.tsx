@@ -69,10 +69,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               {/* Headline */}
               <div className="space-y-2">
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-none text-slate-900">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-none text-slate-900">
                   <span className="text-brand-forest">Bachat Bhi. </span>
                   <span className="text-brand-orange drop-shadow-2xs">Kamai Bhi!</span>
-                </h2>
+                  <span className="sr-only"> — MegaBachatMart Hyperlocal Quick Commerce & Community SHG Marketplace</span>
+                </h1>
                 <p className="text-lg sm:text-xl font-bold text-brand-charcoal">
                   Shop Smart. Save More. Together.
                 </p>

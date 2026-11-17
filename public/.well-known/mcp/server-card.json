@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "megabachatmart-mcp-server",
+  "version": "1.0.0",
+  "title": "MegaBachatMart Hyperlocal Quick-Commerce MCP Server",
+  "description": "Exposes real-time product availability, hyperlocal routing, store inventory, and partner onboarding tools for autonomous agents.",
+  "endpoint": "https://mymbmart.com/api/v1/openapi.json",
+  "homepage": "https://mymbmart.com",
+  "documentation": "https://mymbmart.com/api-docs",
+  "author": {
+    "name": "MegaBachatMart Technologies Private Limited",
+    "email": "support@mymbmart.com",
+    "url": "https://mymbmart.com"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": false,
+    "logging": true
+  },
+  "tools": [
+    {
+      "name": "search_catalog",
+      "description": "Search grocery, staples, and SHG products with live prices and stock.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "description": "Product or brand keyword" },
+          "category": { "type": "string", "description": "Optional category filter" }
+        }
+      }
+    },
+    {
+      "name": "check_serviceability",
+      "description": "Check if a delivery pincode or GPS location is serviceable within 20 minutes.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pincode": { "type": "string", "description": "6-digit Indian postal code" }
+        },
+        "required": ["pincode"]
+      }
+    },
+    {
+      "name": "get_merchant_payout_terms",
+      "description": "Retrieve zero-commission terms, KYC criteria, and T+1 daily settlement policy for partner shops.",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  ]
+}

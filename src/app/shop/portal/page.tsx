@@ -31,6 +31,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { CsvProductRow } from '@/lib/shopPartnerStore';
 import { productImageLibrary } from '@/lib/productImageLibrary';
+import { generateShopReportCsv, triggerCsvDownload } from '@/lib/reportGenerator';
 
 export default function ShopPartnerPortalPage() {
   const router = useRouter();
@@ -40,6 +41,27 @@ export default function ShopPartnerPortalPage() {
   // Photo Upload States
   const [photoToast, setPhotoToast] = useState<string | null>(null);
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+
+  // Generate and Download Shop Report (Sales, Refunds, Credit Line)
+  const handleDownloadShopReport = () => {
+    if (!partner) return;
+    const csv = generateShopReportCsv({
+      shopId: partner.shopId,
+      shopName: partner.shopName,
+      ownerName: partner.ownerName,
+      pincode: partner.pincode,
+      dateRange: 'Live Operational Shift',
+      grossSales: 4890,
+      totalOrders: partner.totalOrdersFulfilled || 14,
+      refundsDeducted: 140,
+      creditLineLimit: 100000,
+      creditLineUtilized: 24500,
+      creditLineAvailable: 75500,
+      commissionSaved: 1220,
+      netPayoutTransferred: 4750,
+    });
+    triggerCsvDownload(`MBM_Shop_Financial_Report_${partner.shopId}_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  };
 
   // CSV States
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -360,6 +382,15 @@ export default function ShopPartnerPortalPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 relative z-10">
+                <button
+                  onClick={handleDownloadShopReport}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-white font-black px-4 py-2.5 rounded-2xl text-xs transition flex items-center space-x-1.5 shadow-md shadow-emerald-950/20 cursor-pointer"
+                  title="Download Sales, Refunds, and Credit Line Audit CSV"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Generate Shop Report</span>
+                </button>
+
                 <Link
                   href="/shop"
                   target="_blank"
@@ -437,6 +468,76 @@ export default function ShopPartnerPortalPage() {
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Store Rating</span>
               <div className="text-2xl font-black text-amber-500 mt-1">★ {partner?.rating || 4.9}</div>
               <p className="text-[10px] text-slate-400 mt-0.5">Verified Ranchi customers</p>
+            </div>
+          </div>
+
+          {/* FINANCIAL COCKPIT: SALES, REFUND, AND WORKING CAPITAL CREDIT LINE */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Card 1: Today's Sales & GMV */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Today&apos;s Store Sales</span>
+                  <span className="text-2xl font-black text-slate-900 mt-1 block">₹4,890.00</span>
+                </div>
+                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200">
+                  12 Orders Delivered
+                </span>
+              </div>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Monthly Gross GMV</span>
+                <span className="font-bold text-slate-900">₹34,500.00</span>
+              </div>
+              <div className="text-[11px] text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 font-semibold flex items-center justify-between">
+                <span>0% Commission Kept:</span>
+                <span className="font-bold">₹1,220 saved today</span>
+              </div>
+            </div>
+
+            {/* Card 2: B2B Working Capital Credit Line */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Working Capital Credit Line</span>
+                  <span className="text-2xl font-black text-teal-800 mt-1 block">₹75,500 Avail.</span>
+                </div>
+                <span className="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-teal-200">
+                  0% Interest (14 Days)
+                </span>
+              </div>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Total Approved Khata Limit</span>
+                <span className="font-bold text-slate-900">₹1,00,000.00</span>
+              </div>
+              <div className="text-[11px] text-slate-600 flex items-center justify-between">
+                <span>In-Use for Wholesale Restock:</span>
+                <span className="font-bold text-amber-700">₹24,500.00</span>
+              </div>
+            </div>
+
+            {/* Card 3: Refunds & Net Payout */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Customer Refunds</span>
+                  <span className="text-2xl font-black text-slate-900 mt-1 block">₹140.00</span>
+                </div>
+                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200">
+                  0.28% Return Rate
+                </span>
+              </div>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Next Bank Payout (T+1)</span>
+                <span className="font-black text-emerald-700">₹4,750.00 Tomorrow</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleDownloadShopReport}
+                className="w-full text-center py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer flex items-center justify-center space-x-1.5"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Download Itemized Tax & Audit CSV ↓</span>
+              </button>
             </div>
           </div>
 

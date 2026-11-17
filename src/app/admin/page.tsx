@@ -63,6 +63,7 @@ import { sampleProducts } from '@/lib/data';
 import { RoutingAdminTab } from '@/components/RoutingAdminTab';
 import { PilotPlaybookTab } from '@/components/PilotPlaybookTab';
 import { MerchantOnboardingTab } from '@/components/admin/MerchantOnboardingTab';
+import { generateMasterPlatformReportCsv, triggerCsvDownload } from '@/lib/reportGenerator';
 
 interface AdminMetrics {
   kpis: {
@@ -137,6 +138,12 @@ export default function AdminDashboardPage() {
   const [paymentCollectedCheckbox, setPaymentCollectedCheckbox] = useState(false);
   const [inStorePaymentMethod, setInStorePaymentMethod] = useState('UPI_QR');
   const [verificationError, setVerificationError] = useState('');
+
+  // Download All Partners Consolidated Audit Report
+  const handleDownloadMasterReport = () => {
+    const csv = generateMasterPlatformReportCsv();
+    triggerCsvDownload(`MBM_Master_Platform_Consolidated_Report_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  };
 
   // Hybrid Dispatch Rider Assignment Modal State
   const [assignRiderOrder, setAssignRiderOrder] = useState<any | null>(null);
@@ -799,10 +806,20 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <span className="text-xs font-semibold text-slate-500 bg-white border border-[#E2E8F0] px-3 py-1.5 rounded-xl shadow-2xs">
                     Live Node: Ranchi MBM-RCH-01
                   </span>
+
+                  <button
+                    onClick={handleDownloadMasterReport}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                    title="Download Consolidated All-Partners Report (Sales, Refunds, Credit Line)"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    <span>Generate Master Report</span>
+                  </button>
+
                   <Link
                     href="/shop"
                     target="_blank"

@@ -1,0 +1,31 @@
+# MegaBachatMart
+
+> Hyperlocal Quick-Commerce & Community Prosumer Marketplace uniting neighborhood Kirana merchants, women Self-Help Groups (SHGs), and local farmers with 20-minute delivery and 0% partner commissions.
+
+## Overview
+MegaBachatMart (mymbmart.com) operates as a decentralized, prosumer-first quick-commerce network. Rather than deploying monopolistic dark stores that cannibalize small businesses, MegaBachatMart digitally empowers existing neighborhood retail stores with an append-only SmartChain audit ledger, instant PhonePe UPI integration, closed-loop wallet micro-credits, and an intelligent polygon routing engine.
+
+## Key Subdomains & Interfaces
+- [Storefront](https://mymbmart.com/): Consumer web application for browsing groceries, Staples, FMCG goods, and authentic tribal SHG items.
+- [Partner Portal](https://partners.mymbmart.com/): Dedicated merchant desk for Kirana store owners, SHG collectives, and farmers to manage live orders, upload bulk inventory via CSV, and monitor daily payouts.
+- [Admin Console](https://admin.mymbmart.com/): Operations command center for order dispatch, rider tracking, merchant KYC approvals, and automated financial settlements.
+- [API Documentation](https://mymbmart.com/api-docs): OpenAPI 3.1 specification for partner integrations, inventory sync, and order dispatch webhooks.
+
+## Core Capabilities & Services
+- [Community Store & Catalog](https://mymbmart.com/shop): Browse fresh farm produce, groceries, staples, and SHG specials with real-time stock status.
+- [Savings Passbook](https://mymbmart.com/savings): Transparent savings ledger showing monthly grocery expenditure discounts and cumulative family savings.
+- [Referral & Rewards](https://mymbmart.com/refer): Multi-tier promoter micro-credit rewards program powered by RBI PPI-compliant closed-loop credits.
+- [Producer & SHG Hub](https://mymbmart.com/producer): Producer cooperative verification portal ensuring ethical sourcing and direct market linkage.
+
+## Technical Specifications & Architecture
+- Routing Engine: Sub-50ms deterministic shop selection scoring based on geographic distance, fill rate, inventory depth, and merchant SLA score.
+- Payments: Official PhonePe Merchant UPI (`9801506511@ybl` / FUTURENXT) supporting instant UPI deep-linking and T+1 automated merchant payouts.
+- Deliveries: 20 to 30-minute hyper-local electric fleet dispatches verified via 4-digit secret delivery OTP.
+- Data Governance: DPDP Act 2023 compliant data protection and RBI PPI closed-loop wallet compliance.
+
+## Official Contact & Verification
+- Corporate Entity: MegaBachatMart Technologies Private Limited
+- Operational Headquarters: Main Road, Birsa Munda Chowk, Ranchi Central, Jharkhand - 834001, India
+- Official Email: support@mymbmart.com
+- Customer & Partner Helpline: +91 9801506511
+- Machine-Readable OpenMCP: https://mymbmart.com/.well-known/mcp/server-card.json

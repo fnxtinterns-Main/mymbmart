@@ -84,8 +84,10 @@ export const Footer: React.FC = () => {
               Transparent Digital Chain Architecture
             </p>
             <div className="pt-2 text-[11px] text-emerald-300/80 space-y-1">
-              <p>Email: support@mymbmart.com</p>
-              <p>Website: www.mymbmart.com</p>
+              <p>Email: <a href="mailto:support@mymbmart.com" className="hover:text-white underline">support@mymbmart.com</a></p>
+              <p>Helpline: +91 9801506511</p>
+              <p>UPI Account: 9801506511@ybl</p>
+              <p>Headquarters: Ranchi Central, Jharkhand</p>
             </div>
           </div>
 
@@ -94,10 +96,12 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-emerald-800/80 text-center text-xs text-emerald-300/80 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 MEGA BACHAT MART (mymbmart.com). All rights reserved.</p>
-          <div className="flex space-x-6 text-[11px]">
-            <span className="hover:text-white cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-white cursor-pointer">Terms & Conditions</span>
-            <span className="hover:text-white cursor-pointer">Community Rules</span>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px]">
+            <Link href="/about" className="hover:text-white transition">About Us</Link>
+            <Link href="/contact" className="hover:text-white transition">Contact</Link>
+            <Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition">Terms & Conditions</Link>
+            <Link href="/refund-policy" className="hover:text-white transition">Refund & Returns</Link>
           </div>
         </div>
 

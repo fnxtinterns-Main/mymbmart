@@ -25,16 +25,16 @@ import { UserProfile } from '@/lib/types';
 interface NavbarProps {
   user?: UserProfile | null;
   isLoggedIn?: boolean;
-  cartCount: number;
-  onOpenCart: () => void;
-  onOpenAuth: () => void;
+  cartCount?: number;
+  onOpenCart?: () => void;
+  onOpenAuth?: () => void;
   onOpenWithdraw?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   user,
   isLoggedIn = false,
-  cartCount,
+  cartCount = 0,
   onOpenCart,
   onOpenAuth,
 }) => {
@@ -366,7 +366,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Shopping Cart Button with Red/Orange Badge (Picture 5) */}
             <button
-              onClick={onOpenCart}
+              onClick={onOpenCart || (() => router.push('/shop'))}
               className="relative flex items-center space-x-1.5 bg-slate-50 hover:bg-brand-mint border border-slate-200 hover:border-emerald-300 text-brand-forest font-bold px-3 py-2 rounded-full transition shadow-2xs"
             >
               <ShoppingCart className="w-5 h-5 text-brand-forest" />
@@ -439,7 +439,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                     <div className="border-t border-slate-100 mt-1 pt-1 space-y-1">
                       <button
-                        onClick={() => { onOpenAuth(); setUserDropdown(false); }}
+                        onClick={() => { if (onOpenAuth) { onOpenAuth(); } else { router.push('/login'); } setUserDropdown(false); }}
                         className="w-full text-left px-4 py-2 text-xs text-slate-600 font-medium hover:bg-slate-50 flex items-center space-x-2"
                       >
                         <LogIn className="w-3.5 h-3.5" />
@@ -465,7 +465,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             ) : (
               <button
-                onClick={onOpenAuth}
+                onClick={onOpenAuth || (() => router.push('/login'))}
                 className="flex items-center space-x-1.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-md shadow-orange-500/20 transition active:scale-95 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
