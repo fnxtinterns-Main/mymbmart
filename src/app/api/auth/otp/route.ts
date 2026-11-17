@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import { initialUser, initialWallet } from '@/lib/data';
+import { sendOtpEmail } from '@/lib/emailService';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,36 +83,10 @@ export async function POST(req: Request) {
 
     // 2. SEND OTP ACTION
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
 
-    if (identifier.includes('@') && smtpUser && smtpPass) {
+    if (identifier.includes('@')) {
       try {
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || 'smtp.gmail.com',
-          port: Number(process.env.SMTP_PORT) || 587,
-          secure: false,
-          auth: {
-            user: smtpUser,
-            pass: smtpPass,
-          },
-        });
-
-        await transporter.sendMail({
-          from: process.env.SMTP_FROM || '"MegaBachatMart" <noreply@mymbmart.com>',
-          to: identifier,
-          subject: `Your MegaBachatMart Login Code: ${generatedOtp}`,
-          text: `Your MegaBachatMart verification code is ${generatedOtp}. Valid for 10 minutes.`,
-          html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; color: #064E3B;">
-              <h2 style="color: #064E3B;">MegaBachatMart - Verification Code</h2>
-              <p>Your 6-digit one-time password (OTP) is:</p>
-              <h1 style="color: #FF5722; font-size: 36px; letter-spacing: 5px;">${generatedOtp}</h1>
-              <p>Valid for 10 minutes. Do not share this OTP with anyone.</p>
-              <p style="color: #64748B; font-size: 12px;">Shop Smart. Save More. Bachat Bhi. Kamai Bhi!</p>
-            </div>
-          `,
-        });
+        await sendOtpEmail(identifier, generatedOtp);
       } catch (mailErr) {
         console.warn('SMTP mail delivery failed, falling back to instant OTP:', mailErr);
       }

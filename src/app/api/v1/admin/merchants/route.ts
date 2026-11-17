@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { shopPartnerStore, ApplicationStatus } from '@/lib/shopPartnerStore';
+import { sendPartnerApprovalEmail } from '@/lib/emailService';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,22 @@ export async function POST(req: Request) {
 
       if (!result.success) {
         return NextResponse.json({ success: false, message: result.message }, { status: 400 });
+      }
+
+      // Dispatch official approval credentials email via SMTP
+      if (result.application?.email && result.account) {
+        try {
+          await sendPartnerApprovalEmail({
+            email: result.application.email,
+            ownerName: result.application.ownerName,
+            shopName: result.application.shopName,
+            shopId: result.account.shopId,
+            password: result.application.generatedPassword || customPassword || 'MBM#Partner@2026',
+            pincode: result.application.pincode,
+          });
+        } catch (emailErr) {
+          console.warn('[Merchants] Failed to dispatch approval email:', emailErr);
+        }
       }
 
       return NextResponse.json({
