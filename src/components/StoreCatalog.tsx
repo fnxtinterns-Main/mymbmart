@@ -60,13 +60,34 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
     distanceKm: 2.8,
   });
 
+  // Deep-link query param synchronization (?cat=... or ?q=...)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get('cat');
+      const qParam = params.get('q');
+      if (catParam) {
+        setSelectedFilter(catParam);
+      }
+      if (qParam) {
+        setSearchQuery(qParam);
+      }
+    }
+  }, []);
+
   const filterTabs = [
     { id: 'All', label: 'All Products', icon: '🛍️' },
-    { id: 'QUICK', label: '⚡ 20-Min Quick Commerce', icon: '⚡' },
-    { id: 'Groceries', label: 'Groceries & Staples', icon: '🌾' },
+    { id: 'QUICK', label: '⚡ 20-Min Quick', icon: '⚡' },
+    { id: 'Groceries', label: 'Grocers & Staples', icon: '🌾' },
+    { id: 'Fruits & Vegetables', label: 'Fruits & Vegetables', icon: '🥦' },
+    { id: 'Dairy & Bakery', label: 'Dairy Products', icon: '🥛' },
+    { id: 'FMCG', label: 'FMCG & Foods', icon: '🍿' },
+    { id: 'Consumables', label: 'Consumables & Care', icon: '🧴' },
+    { id: 'Stationery', label: 'Stationery & Office', icon: '📚' },
+    { id: 'Bullion', label: 'Bullion (Gold & Silver)', icon: '🪙' },
     { id: 'SHG Specials', label: 'SHG Handcrafted', icon: '🍯' },
-    { id: 'Daily Essentials', label: 'Daily Needs', icon: '🥛' },
-    { id: 'Spices', label: 'Pure Oils & Spices', icon: '🌶️' },
+    { id: 'Spices', label: 'Pure Spices & Oils', icon: '🌶️' },
+    { id: 'Home & Kitchen', label: 'Home & Kitchen', icon: '🍳' },
     { id: 'MARKETPLACE', label: '📦 Marketplace (2-4 Days)', icon: '📦' },
   ];
 
@@ -146,10 +167,29 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
     const isMarketplace = p.category === 'Home & Kitchen';
     
     let matchesFilter = true;
-    if (selectedFilter === 'All') matchesFilter = true;
-    else if (selectedFilter === 'QUICK') matchesFilter = !isMarketplace;
-    else if (selectedFilter === 'MARKETPLACE') matchesFilter = isMarketplace;
-    else matchesFilter = p.category === selectedFilter;
+    if (selectedFilter === 'All') {
+      matchesFilter = true;
+    } else if (selectedFilter === 'QUICK') {
+      matchesFilter = !isMarketplace;
+    } else if (selectedFilter === 'MARKETPLACE') {
+      matchesFilter = isMarketplace;
+    } else if (selectedFilter === 'Groceries' || selectedFilter === 'Grocers') {
+      matchesFilter = p.category === 'Groceries' || p.category === 'Grocers' || p.category === 'Daily Essentials';
+    } else if (selectedFilter === 'Fruits & Vegetables' || selectedFilter === 'Fruits') {
+      matchesFilter = p.category === 'Fruits & Vegetables' || p.category === 'Fresh Produce';
+    } else if (selectedFilter === 'Dairy & Bakery' || selectedFilter === 'Dairy' || selectedFilter === 'Dairy Products') {
+      matchesFilter = p.category === 'Dairy & Bakery' || p.category === 'Dairy Products';
+    } else if (selectedFilter === 'FMCG') {
+      matchesFilter = p.category === 'FMCG' || p.category === 'Snacks & Pickles';
+    } else if (selectedFilter === 'Consumables') {
+      matchesFilter = p.category === 'Consumables' || p.category === 'Daily Essentials';
+    } else if (selectedFilter === 'Stationery') {
+      matchesFilter = p.category === 'Stationery';
+    } else if (selectedFilter === 'Bullion') {
+      matchesFilter = p.category === 'Bullion';
+    } else {
+      matchesFilter = p.category.toLowerCase() === selectedFilter.toLowerCase();
+    }
 
     const matchesQuery = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||

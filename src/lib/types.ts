@@ -38,10 +38,25 @@ export interface Transaction {
   description: string;
 }
 
+export type ProductCategory = 
+  | 'Groceries' 
+  | 'Grocers'
+  | 'Fruits & Vegetables'
+  | 'Dairy & Bakery' 
+  | 'FMCG' 
+  | 'Consumables' 
+  | 'Stationery' 
+  | 'Bullion' 
+  | 'SHG Specials' 
+  | 'Spices' 
+  | 'Daily Essentials' 
+  | 'Home & Kitchen'
+  | string;
+
 export interface ProductItem {
   id: string;
   name: string;
-  category: 'Groceries' | 'SHG Specials' | 'Daily Essentials' | 'Snacks & Pickles' | 'Spices' | 'Home & Kitchen';
+  category: ProductCategory;
   unit: string;
   mrp: number;
   bachatPrice: number;
@@ -52,6 +67,16 @@ export interface ProductItem {
   isSHG: boolean;
   producerName?: string;
   inStock: boolean;
+  fulfilmentType?: 'QUICK_COMMERCE' | 'STANDARD_MARKETPLACE' | string;
+  deliveryEta?: string;
+  sku?: string;
+  stockQuantity?: number;
+  cashbackPct?: number;
+  referralPct?: number;
+  shopName?: string;
+  shopPincode?: string;
+  batchNumber?: string;
+  expiryDate?: string;
 }
 
 export interface CartItem {

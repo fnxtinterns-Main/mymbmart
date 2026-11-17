@@ -3128,10 +3128,15 @@ export default function AdminDashboardPage() {
                     onChange={(e) => setAddSkuForm({ ...addSkuForm, category: e.target.value })}
                     className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl font-medium outline-hidden"
                   >
-                    <option value="Groceries">Groceries</option>
-                    <option value="Daily Essentials">Daily Essentials</option>
+                    <option value="Groceries">Grocers & Staples</option>
+                    <option value="Fruits & Vegetables">Fresh Fruits & Vegetables</option>
+                    <option value="Dairy & Bakery">Dairy Products</option>
+                    <option value="FMCG">FMCG & Packaged Foods</option>
+                    <option value="Consumables">Consumables & Care</option>
+                    <option value="Stationery">Stationery & Office</option>
+                    <option value="Bullion">Bullion (Gold & Silver)</option>
                     <option value="SHG Specials">SHG Specials</option>
-                    <option value="Personal Care">Personal Care</option>
+                    <option value="Spices">Spices & Oils</option>
                     <option value="Home & Kitchen">Home & Kitchen</option>
                   </select>
                 </div>

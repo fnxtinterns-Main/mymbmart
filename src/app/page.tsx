@@ -147,23 +147,26 @@ export default function Home() {
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-5 gap-2 sm:gap-4 text-center">
+                <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-2 sm:gap-3 text-center">
                   {[
-                    { label: 'Groceries', emoji: '🥦', href: '/shop?cat=Groceries' },
+                    { label: 'Grocers', emoji: '🌾', href: '/shop?cat=Groceries' },
+                    { label: 'Fruits & Veggies', emoji: '🥦', href: '/shop?cat=Fruits%20%26%20Vegetables' },
+                    { label: 'Dairy & Bakery', emoji: '🥛', href: '/shop?cat=Dairy%20%26%20Bakery' },
+                    { label: 'FMCG Foods', emoji: '🍿', href: '/shop?cat=FMCG' },
+                    { label: 'Consumables', emoji: '🧴', href: '/shop?cat=Consumables' },
+                    { label: 'Stationery', emoji: '📚', href: '/shop?cat=Stationery' },
+                    { label: 'Bullion (Gold)', emoji: '🪙', href: '/shop?cat=Bullion' },
                     { label: 'SHG Specials', emoji: '🍯', href: '/shop?cat=SHG%20Specials' },
-                    { label: 'Spices & Oils', emoji: '🌶️', href: '/shop?cat=Spices' },
-                    { label: 'Home & Kitchen', emoji: '🍳', href: '/shop?cat=Home%20%26%20Kitchen' },
-                    { label: 'Daily Needs', emoji: '🧺', href: '/shop?cat=Daily%20Essentials' },
                   ].map((cat, i) => (
                     <Link
                       key={i}
                       href={cat.href}
-                      className="group flex flex-col items-center p-3 rounded-2xl bg-slate-50 hover:bg-brand-mint/60 border border-slate-100 hover:border-emerald-300 transition-all"
+                      className="group flex flex-col items-center p-2.5 sm:p-3 rounded-2xl bg-slate-50 hover:bg-brand-mint/60 border border-slate-100 hover:border-emerald-300 transition-all shadow-2xs hover:shadow-xs"
                     >
-                      <div className="w-12 h-12 rounded-2xl bg-white shadow-2xs flex items-center justify-center text-2xl group-hover:scale-110 transition-transform mb-2">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white shadow-2xs flex items-center justify-center text-xl sm:text-2xl group-hover:scale-110 transition-transform mb-1.5">
                         {cat.emoji}
                       </div>
-                      <span className="text-[11px] sm:text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-brand-forest">
+                      <span className="text-[10px] sm:text-[11px] font-bold text-slate-800 line-clamp-1 group-hover:text-brand-forest">
                         {cat.label}
                       </span>
                     </Link>

@@ -82,7 +82,7 @@ export interface ShopPartnerAccount {
 export interface CsvProductRow {
   productId: string;
   productName: string;
-  category: 'Groceries' | 'SHG Specials' | 'Daily Essentials' | 'Snacks & Pickles' | 'Spices' | 'Home & Kitchen';
+  category: string;
   unit: string;
   mrp: number;
   bachatPrice: number;
