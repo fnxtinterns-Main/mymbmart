@@ -5,6 +5,7 @@
 import { ProductItem } from './types';
 import { inventoryStore } from './inventoryStore';
 import { addCatalogProducts, getCatalogProducts } from './catalog';
+import { productImageLibrary } from './productImageLibrary';
 
 export type BusinessType = 
   | 'KIRANA_GENERAL' 
@@ -682,7 +683,12 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
           discountPercent: discountPct,
           cashbackAmount: cashback,
           referralRewardAmount: referral,
-          image: row.imageUrl || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=80',
+          image: productImageLibrary.resolveImage({
+            productId: row.productId,
+            productName: row.productName,
+            category: row.category,
+            explicitUrl: row.imageUrl,
+          }),
           isSHG: Boolean(isSHG),
           producerName: `Sold by: ${shopName} (${pincode})`,
           inStock: row.stockQuantity > 0,

@@ -23,16 +23,23 @@ import {
   RefreshCw,
   Clock,
   ShieldCheck,
-  Check
+  Check,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { CsvProductRow } from '@/lib/shopPartnerStore';
+import { productImageLibrary } from '@/lib/productImageLibrary';
 
 export default function ShopPartnerPortalPage() {
   const router = useRouter();
   const [partner, setPartner] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Photo Upload States
+  const [photoToast, setPhotoToast] = useState<string | null>(null);
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
 
   // CSV States
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -166,7 +173,14 @@ export default function ShopPartnerPortalPage() {
       const stock = parseInt(getColVal('stockQuantity'), 10) || 10;
       const expiry = getColVal('expiryDate') || '2027-12-31';
       const batch = getColVal('batchNumber') || `BATCH-${Date.now()}`;
-      const img = getColVal('imageUrl') || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=80';
+      const explicitImg = getColVal('imageUrl');
+      const img = explicitImg && explicitImg.length > 5 && !explicitImg.includes('photo-1540420773420-3366772f4999')
+        ? explicitImg
+        : productImageLibrary.resolveImage({
+            productId: pid,
+            productName: name,
+            category: cat,
+          });
       const ret = getColVal('isReturnable').toLowerCase() !== 'false';
 
       if (!name) {
@@ -199,6 +213,42 @@ export default function ShopPartnerPortalPage() {
 
     setParseErrors(errors);
     setParsedRows(rows);
+  };
+
+  // Upload or Change Real Photo for a Product
+  const handleUploadProductPhoto = async (productId: string, productName: string, file: File) => {
+    setUploadingPhotoFor(productId);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+        const res = await fetch('/api/products/image-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId,
+            productName,
+            imageData: base64,
+          }),
+        });
+        const data = await res.json();
+        setUploadingPhotoFor(null);
+        if (data.success) {
+          // Update live state
+          setMyProducts((prev) =>
+            prev.map((item) => (item.id === productId ? { ...item, image: data.imageUrl } : item))
+          );
+          setPhotoToast(`📸 Photo updated and permanently saved for "${productName}"! You will not need to upload it again when restocking.`);
+          setTimeout(() => setPhotoToast(null), 6000);
+        } else {
+          alert(data.message || 'Failed to upload photo.');
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      setUploadingPhotoFor(null);
+      alert('Photo upload failed: ' + err.message);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -329,6 +379,39 @@ export default function ShopPartnerPortalPage() {
               </div>
             </div>
           )}
+
+          {/* Photo Upload Toast Notification */}
+          {photoToast && (
+            <div className="bg-emerald-600 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-200 shrink-0" />
+                <span>{photoToast}</span>
+              </div>
+              <button onClick={() => setPhotoToast(null)} className="text-emerald-200 hover:text-white ml-3">
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Educational Banner: Smart Auto-Image Bank */}
+          <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50/60 border border-emerald-200/80 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start space-x-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                <ImageIcon className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-extrabold text-emerald-950 flex items-center space-x-2">
+                  <span>Smart Product Image Bank & Persistent Photos Active</span>
+                  <span className="bg-emerald-200/60 text-emerald-900 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                    Zero Hassle
+                  </span>
+                </h3>
+                <p className="text-xs text-emerald-800/90 leading-relaxed max-w-3xl">
+                  <strong>You never have to copy-paste image URLs!</strong> Our system automatically links verified high-resolution photos for standard items (Fortune Oil, Tata Tea, Aashirvaad Atta, Dettol, Biscuits, Dal, SHG items). When you upload custom photos for any product below, they are <strong>permanently remembered</strong> so you won&apos;t have to re-upload photos every time you restock.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Quick Metrics Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -617,30 +700,57 @@ export default function ShopPartnerPortalPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {myProducts.map((p) => (
-                  <div key={p.id} className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white hover:border-emerald-300 transition">
+                  <div key={p.id} className="border border-slate-200 rounded-2xl p-4 space-y-3 bg-white hover:border-emerald-300 transition shadow-2xs">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
+                      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200 group">
                         <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                        <label 
+                          className="absolute inset-0 bg-black/50 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                          title="Click to change photo"
+                        >
+                          <Camera className="w-4 h-4" />
+                          <span className="text-[8px] font-bold mt-0.5">Edit</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={uploadingPhotoFor === p.id}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadProductPhoto(p.id, p.name, file);
+                            }}
+                          />
+                        </label>
                       </div>
-                      <div className="truncate">
+                      <div className="truncate flex-1 min-w-0">
                         <h4 className="text-xs font-bold text-slate-900 truncate">{p.name}</h4>
                         <span className="text-[10px] text-slate-500">{p.unit} • {p.category}</span>
+                        <div className="mt-1 flex items-center space-x-1.5">
+                          <span className="text-slate-400 line-through text-[10px]">₹{p.mrp}</span>
+                          <span className="font-black text-slate-900 text-xs">₹{p.bachatPrice}</span>
+                          <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                            {p.discountPercent}% OFF
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                      <div>
-                        <span className="text-slate-400 line-through text-[11px]">₹{p.mrp}</span>
-                        <span className="font-black text-slate-900 ml-1.5">₹{p.bachatPrice}</span>
-                      </div>
-                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        {p.discountPercent}% OFF
-                      </span>
-                    </div>
-
-                    <div className="text-[10px] text-slate-500 flex items-center justify-between">
-                      <span>Status: <strong className="text-emerald-700">IN STOCK</strong></span>
-                      <span className="font-mono text-slate-400">{p.sku}</span>
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <label className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-xl border border-emerald-200 transition cursor-pointer">
+                        <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{uploadingPhotoFor === p.id ? 'Saving Photo...' : 'Upload / Change Photo'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploadingPhotoFor === p.id}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadProductPhoto(p.id, p.name, file);
+                          }}
+                        />
+                      </label>
+                      <span className="font-mono text-[10px] text-slate-400">{p.sku || p.id}</span>
                     </div>
                   </div>
                 ))}

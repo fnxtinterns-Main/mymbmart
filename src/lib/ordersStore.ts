@@ -59,6 +59,7 @@ export interface OrderRecord {
   deliveryOtp: string;
   paymentMethod: string;
   paymentStatus: 'PAID' | 'PENDING' | 'COD';
+  upiTransactionId?: string;
   totalMRP: number;
   totalPayable: number;
   shoppingSavings: number;

@@ -114,6 +114,7 @@ export async function POST(req: Request) {
       deliveryOtp,
       paymentMethod,
       paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PAID',
+      upiTransactionId: body.upiTransactionId || undefined,
       totalMRP,
       totalPayable,
       shoppingSavings,
