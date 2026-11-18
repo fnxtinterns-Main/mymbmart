@@ -350,7 +350,7 @@ Transactional receipts, KYC credentials, and dispatch alerts are routed through 
 - **SMTP Host:** `smtp.hostinger.com`
 - **Port:** `465` (SSL) / `587` (TLS)
 - **Official From Address:** `support@mymbmart.com`
-- **Authentication Password:** `Mymbmart@99`
+- **Authentication Password:** Configured securely in `.env` (`SMTP_PASS`)
 - **Testing Endpoint:** `POST /api/admin/test-smtp` allows administrators to trigger a diagnostic handshake and confirm mail delivery.
 
 ---

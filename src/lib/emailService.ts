@@ -7,13 +7,16 @@ import type { Transporter } from 'nodemailer';
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.hostinger.com';
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 465;
 const SMTP_USER = process.env.SMTP_USER || 'support@mymbmart.com';
-const SMTP_PASS = process.env.SMTP_PASS || 'Mymbmart@99';
+const SMTP_PASS = process.env.SMTP_PASS || '';
 const SMTP_FROM = process.env.SMTP_FROM || 'MegaBachatMart Support <support@mymbmart.com>';
 const IS_SECURE = process.env.SMTP_SECURE === 'true' || SMTP_PORT === 465;
 
 let cachedTransporter: Transporter | null = null;
 
 export function getEmailTransporter(): Transporter {
+  if (!process.env.SMTP_PASS) {
+    console.warn('[EmailService] Notice: SMTP_PASS is not set in environment variables (.env). Outbound transactional emails will fail until configured.');
+  }
   if (!cachedTransporter) {
     cachedTransporter = nodemailer.createTransport({
       host: SMTP_HOST,
