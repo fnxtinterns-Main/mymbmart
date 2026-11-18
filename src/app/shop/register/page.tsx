@@ -16,7 +16,15 @@ import {
   Mail, 
   MapPin, 
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Camera,
+  Image as ImageIcon,
+  Trash2,
+  Paperclip,
+  FileCheck,
+  RefreshCw,
+  Eye,
+  FileUp
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -46,14 +54,139 @@ export default function ShopRegistrationPage() {
     bankName: '',
     bankAccountNumber: '',
     ifscCode: '',
-    // Document URLs (Simulated digital upload storage)
+    // Document URLs (Attached verification proofs)
     documents: {
-      tradeLicenseUrl: 'https://images.unsplash.com/photo-1607344645866-009c320c5ab8?w=800&auto=format&fit=crop&q=80',
-      fssaiCertUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=80',
-      panCardUrl: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=800&auto=format&fit=crop&q=80',
-      storePhotoUrl: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80',
+      tradeLicenseUrl: '',
+      fssaiCertUrl: '',
+      panCardUrl: '',
+      storePhotoUrl: '',
     }
   });
+
+  // Track file metadata & preview for uploaded documents
+  const [docUploads, setDocUploads] = useState<{
+    [key: string]: {
+      fileName: string;
+      previewUrl: string;
+      isPdf: boolean;
+      uploading: boolean;
+    };
+  }>({});
+
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    docKey: 'fssaiCertUrl' | 'tradeLicenseUrl' | 'panCardUrl' | 'storePhotoUrl'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg(`File "${file.name}" exceeds 10MB limit. Please upload a smaller file.`);
+      return;
+    }
+
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const localPreview = URL.createObjectURL(file);
+
+    setDocUploads((prev) => ({
+      ...prev,
+      [docKey]: {
+        fileName: file.name,
+        previewUrl: localPreview,
+        isPdf,
+        uploading: true,
+      },
+    }));
+
+    try {
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+      uploadData.append('docType', docKey);
+
+      const res = await fetch('/api/v1/shop/upload-doc', {
+        method: 'POST',
+        body: uploadData,
+      });
+
+      const data = await res.json();
+      if (data.success && data.url) {
+        setFormData((prev) => ({
+          ...prev,
+          documents: {
+            ...prev.documents,
+            [docKey]: data.url,
+          },
+        }));
+        setDocUploads((prev) => ({
+          ...prev,
+          [docKey]: {
+            ...prev[docKey],
+            uploading: false,
+            previewUrl: data.url,
+          },
+        }));
+      } else {
+        // Fallback to base64 data URL
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          setFormData((prev) => ({
+            ...prev,
+            documents: {
+              ...prev.documents,
+              [docKey]: base64,
+            },
+          }));
+          setDocUploads((prev) => ({
+            ...prev,
+            [docKey]: {
+              ...prev[docKey],
+              uploading: false,
+            },
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      console.warn('Direct upload notice, falling back to base64 encoding:', err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setFormData((prev) => ({
+          ...prev,
+          documents: {
+            ...prev.documents,
+            [docKey]: base64,
+          },
+        }));
+        setDocUploads((prev) => ({
+          ...prev,
+          [docKey]: {
+            ...prev[docKey],
+            uploading: false,
+          },
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveDoc = (
+    docKey: 'fssaiCertUrl' | 'tradeLicenseUrl' | 'panCardUrl' | 'storePhotoUrl'
+  ) => {
+    setDocUploads((prev) => {
+      const updated = { ...prev };
+      delete updated[docKey];
+      return updated;
+    });
+    setFormData((prev) => ({
+      ...prev,
+      documents: {
+        ...prev.documents,
+        [docKey]: '',
+      },
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -428,12 +561,284 @@ export default function ShopRegistrationPage() {
                     </div>
                   </div>
 
-                  {/* Document preview simulation */}
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
-                    <span className="text-xs font-bold text-slate-800">Digital KYC Document Verification</span>
-                    <p className="text-[11px] text-slate-500">
-                      Standard Trade License and FSSAI certificate images are pre-linked for demonstration. Official review will verify these on state portals.
-                    </p>
+                  {/* Document Upload Section */}
+                  <div className="space-y-4 pt-2">
+                    <div className="border-t border-slate-100 pt-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
+                            <FileUp className="w-4 h-4 text-emerald-600" />
+                            <span>Upload Verification Documents & Storefront Photo</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Attach clear photos or PDF copies of your licenses and store premises for 2-hour onboarding approval.
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200 hidden sm:inline-block">
+                          JPG, PNG, PDF up to 10MB
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* 1. FSSAI License */}
+                      <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
+                            <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>FSSAI License / Certificate</span>
+                          </span>
+                          {docUploads['fssaiCertUrl'] ? (
+                            <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Attached</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                              Optional / Fast-Track
+                            </span>
+                          )}
+                        </div>
+
+                        {docUploads['fssaiCertUrl'] ? (
+                          <div className="relative rounded-xl border border-slate-200 overflow-hidden bg-slate-50 p-2 flex items-center justify-between">
+                            <div className="flex items-center space-x-2.5 overflow-hidden">
+                              {docUploads['fssaiCertUrl'].isPdf ? (
+                                <div className="w-10 h-10 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                  PDF
+                                </div>
+                              ) : (
+                                <img
+                                  src={docUploads['fssaiCertUrl'].previewUrl}
+                                  alt="FSSAI"
+                                  className="w-10 h-10 object-cover rounded-lg border border-slate-200 shrink-0"
+                                />
+                              )}
+                              <div className="truncate text-left">
+                                <p className="text-xs font-bold text-slate-800 truncate">
+                                  {docUploads['fssaiCertUrl'].fileName}
+                                </p>
+                                <p className="text-[10px] text-slate-400">
+                                  {docUploads['fssaiCertUrl'].uploading ? 'Uploading...' : 'Ready for admin verification'}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDoc('fssaiCertUrl')}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title="Remove document"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="block border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-3.5 text-center cursor-pointer transition bg-slate-50/50 hover:bg-emerald-50/30">
+                            <input
+                              type="file"
+                              accept="image/*,application/pdf"
+                              onChange={(e) => handleFileUpload(e, 'fssaiCertUrl')}
+                              className="hidden"
+                            />
+                            <Camera className="w-5 h-5 text-slate-400 mx-auto mb-1" />
+                            <span className="text-xs font-bold text-slate-700 block">Click to upload or take photo</span>
+                            <span className="text-[10px] text-slate-400">PDF, JPG, PNG up to 10MB</span>
+                          </label>
+                        )}
+                      </div>
+
+                      {/* 2. Municipal Trade License */}
+                      <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
+                            <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Trade License Copy</span>
+                          </span>
+                          {docUploads['tradeLicenseUrl'] ? (
+                            <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Attached</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                              Optional / Fast-Track
+                            </span>
+                          )}
+                        </div>
+
+                        {docUploads['tradeLicenseUrl'] ? (
+                          <div className="relative rounded-xl border border-slate-200 overflow-hidden bg-slate-50 p-2 flex items-center justify-between">
+                            <div className="flex items-center space-x-2.5 overflow-hidden">
+                              {docUploads['tradeLicenseUrl'].isPdf ? (
+                                <div className="w-10 h-10 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                  PDF
+                                </div>
+                              ) : (
+                                <img
+                                  src={docUploads['tradeLicenseUrl'].previewUrl}
+                                  alt="Trade License"
+                                  className="w-10 h-10 object-cover rounded-lg border border-slate-200 shrink-0"
+                                />
+                              )}
+                              <div className="truncate text-left">
+                                <p className="text-xs font-bold text-slate-800 truncate">
+                                  {docUploads['tradeLicenseUrl'].fileName}
+                                </p>
+                                <p className="text-[10px] text-slate-400">
+                                  {docUploads['tradeLicenseUrl'].uploading ? 'Uploading...' : 'Ready for admin verification'}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDoc('tradeLicenseUrl')}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title="Remove document"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="block border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-3.5 text-center cursor-pointer transition bg-slate-50/50 hover:bg-emerald-50/30">
+                            <input
+                              type="file"
+                              accept="image/*,application/pdf"
+                              onChange={(e) => handleFileUpload(e, 'tradeLicenseUrl')}
+                              className="hidden"
+                            />
+                            <Camera className="w-5 h-5 text-slate-400 mx-auto mb-1" />
+                            <span className="text-xs font-bold text-slate-700 block">Click to upload or take photo</span>
+                            <span className="text-[10px] text-slate-400">PDF, JPG, PNG up to 10MB</span>
+                          </label>
+                        )}
+                      </div>
+
+                      {/* 3. PAN Card */}
+                      <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
+                            <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Proprietor / Firm PAN Card</span>
+                          </span>
+                          {docUploads['panCardUrl'] ? (
+                            <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Attached</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                              Optional / Fast-Track
+                            </span>
+                          )}
+                        </div>
+
+                        {docUploads['panCardUrl'] ? (
+                          <div className="relative rounded-xl border border-slate-200 overflow-hidden bg-slate-50 p-2 flex items-center justify-between">
+                            <div className="flex items-center space-x-2.5 overflow-hidden">
+                              {docUploads['panCardUrl'].isPdf ? (
+                                <div className="w-10 h-10 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0">
+                                  PDF
+                                </div>
+                              ) : (
+                                <img
+                                  src={docUploads['panCardUrl'].previewUrl}
+                                  alt="PAN Card"
+                                  className="w-10 h-10 object-cover rounded-lg border border-slate-200 shrink-0"
+                                />
+                              )}
+                              <div className="truncate text-left">
+                                <p className="text-xs font-bold text-slate-800 truncate">
+                                  {docUploads['panCardUrl'].fileName}
+                                </p>
+                                <p className="text-[10px] text-slate-400">
+                                  {docUploads['panCardUrl'].uploading ? 'Uploading...' : 'Ready for admin verification'}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDoc('panCardUrl')}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title="Remove document"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="block border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-3.5 text-center cursor-pointer transition bg-slate-50/50 hover:bg-emerald-50/30">
+                            <input
+                              type="file"
+                              accept="image/*,application/pdf"
+                              onChange={(e) => handleFileUpload(e, 'panCardUrl')}
+                              className="hidden"
+                            />
+                            <Camera className="w-5 h-5 text-slate-400 mx-auto mb-1" />
+                            <span className="text-xs font-bold text-slate-700 block">Click to upload or take photo</span>
+                            <span className="text-[10px] text-slate-400">PDF, JPG, PNG up to 10MB</span>
+                          </label>
+                        )}
+                      </div>
+
+                      {/* 4. Storefront Photo */}
+                      <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
+                            <Store className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Storefront / Premises Photo</span>
+                          </span>
+                          {docUploads['storePhotoUrl'] ? (
+                            <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Attached</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                              Optional / Fast-Track
+                            </span>
+                          )}
+                        </div>
+
+                        {docUploads['storePhotoUrl'] ? (
+                          <div className="relative rounded-xl border border-slate-200 overflow-hidden bg-slate-50 p-2 flex items-center justify-between">
+                            <div className="flex items-center space-x-2.5 overflow-hidden">
+                              <img
+                                src={docUploads['storePhotoUrl'].previewUrl}
+                                alt="Storefront"
+                                className="w-10 h-10 object-cover rounded-lg border border-slate-200 shrink-0"
+                              />
+                              <div className="truncate text-left">
+                                <p className="text-xs font-bold text-slate-800 truncate">
+                                  {docUploads['storePhotoUrl'].fileName}
+                                </p>
+                                <p className="text-[10px] text-slate-400">
+                                  {docUploads['storePhotoUrl'].uploading ? 'Uploading...' : 'Ready for admin verification'}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDoc('storePhotoUrl')}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title="Remove document"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="block border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-3.5 text-center cursor-pointer transition bg-slate-50/50 hover:bg-emerald-50/30">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileUpload(e, 'storePhotoUrl')}
+                              className="hidden"
+                            />
+                            <Camera className="w-5 h-5 text-slate-400 mx-auto mb-1" />
+                            <span className="text-xs font-bold text-slate-700 block">Click to upload or take photo</span>
+                            <span className="text-[10px] text-slate-400">JPG, PNG, WEBP with storefront signboard</span>
+                          </label>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -542,6 +947,23 @@ export default function ShopRegistrationPage() {
                       <div><strong className="text-slate-900">Trade License:</strong> {formData.tradeLicenseNumber}</div>
                       <div><strong className="text-slate-900">PAN Number:</strong> {formData.panNumber}</div>
                       <div><strong className="text-slate-900">Bank:</strong> {formData.bankName} ({formData.ifscCode})</div>
+                      <div className="sm:col-span-2 pt-2 border-t border-slate-200/60">
+                        <strong className="text-slate-900 block mb-1.5">Attached Documents:</strong>
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${formData.documents.fssaiCertUrl ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
+                            {formData.documents.fssaiCertUrl ? '✓ FSSAI Certificate' : '— FSSAI Pending'}
+                          </span>
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${formData.documents.tradeLicenseUrl ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
+                            {formData.documents.tradeLicenseUrl ? '✓ Trade License' : '— Trade License Pending'}
+                          </span>
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${formData.documents.panCardUrl ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
+                            {formData.documents.panCardUrl ? '✓ PAN Card' : '— PAN Pending'}
+                          </span>
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold ${formData.documents.storePhotoUrl ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}`}>
+                            {formData.documents.storePhotoUrl ? '✓ Storefront Photo' : '— Store Photo Pending'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
