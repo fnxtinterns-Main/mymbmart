@@ -180,7 +180,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       const google = (window as any).google;
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '1029863217785-2d0b296lb9i57kugmh5v92oin5q6bbcs.apps.googleusercontent.com';
 
       if (google && google.accounts && google.accounts.oauth2 && clientId) {
         const client = google.accounts.oauth2.initTokenClient({
@@ -188,21 +188,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           scope: 'email profile openid',
           callback: async (tokenResponse: any) => {
             if (tokenResponse && tokenResponse.access_token) {
-              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-              });
-              const googleUser = await userInfoRes.json();
-              await completeSocialLogin('/api/auth/google', { user: googleUser });
+              try {
+                const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const googleUser = await userInfoRes.json();
+                await completeSocialLogin('/api/auth/google', { user: googleUser });
+              } catch (fetchErr) {
+                setSocialLoading(null);
+                setErrorMsg('Failed to retrieve Google profile details.');
+              }
             } else {
               setSocialLoading(null);
             }
+          },
+          error_callback: (err: any) => {
+            console.warn('Google Auth popup closed or blocked:', err);
+            setSocialLoading(null);
           },
         });
         client.requestAccessToken();
         return;
       }
 
-      // Interactive simulation if credentials are not yet configured in env
+      // Interactive test sign-in if script not loaded yet
       setTimeout(async () => {
         await completeSocialLogin('/api/auth/google', {
           user: {
