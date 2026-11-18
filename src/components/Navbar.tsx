@@ -194,13 +194,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           
           {/* Logo & Brand Identity */}
           <Link href="/" className="flex items-center space-x-2 shrink-0 group">
-            <div className="relative w-32 sm:w-44 h-10 sm:h-12">
+            <div 
+              className="relative w-32 sm:w-44 h-10 sm:h-12"
+              style={{ position: 'relative', width: '176px', height: '48px', maxWidth: '100%' }}
+            >
               <Image
                 src="/images/LOgo.jpeg"
                 alt="MegaBachatMart"
                 fill
                 priority
                 className="object-contain object-left group-hover:scale-102 transition-transform"
+                style={{ objectFit: 'contain', objectPosition: 'left' }}
               />
             </div>
           </Link>

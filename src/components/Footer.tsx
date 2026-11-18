@@ -24,12 +24,16 @@ export const Footer: React.FC = () => {
           
           {/* Brand info */}
           <div className="space-y-4">
-            <div className="relative w-44 h-12 bg-white p-2 rounded-xl">
+            <div 
+              className="relative w-44 h-12 bg-white p-2 rounded-xl"
+              style={{ position: 'relative', width: '176px', height: '48px', maxWidth: '100%' }}
+            >
               <Image
                 src="/images/LOgo.jpeg"
                 alt="MegaBachatMart"
                 fill
                 className="object-contain"
+                style={{ objectFit: 'contain' }}
               />
             </div>
             <p className="text-xs text-emerald-200 leading-relaxed">

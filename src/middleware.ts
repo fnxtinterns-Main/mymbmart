@@ -33,12 +33,13 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  // Helper to add RFC 8288 Link header on responses
+  // Helper to add RFC 8288 Link header and prevent stale CDN caching on page responses
   const applyAgentHeaders = (res: NextResponse) => {
     res.headers.set(
       'Link',
       '<https://mymbmart.com/llms.txt>; rel="alternate"; type="text/plain", <https://mymbmart.com/>; rel="alternate"; type="text/markdown"'
     );
+    res.headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
     return res;
   };
 
