@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { CsvProductRow } from '@/lib/shopPartnerStore';
+import type { CsvProductRow } from '@/lib/shopPartnerStore';
 import { productImageLibrary } from '@/lib/productImageLibrary';
 import { generateShopReportCsv, triggerCsvDownload } from '@/lib/reportGenerator';
 

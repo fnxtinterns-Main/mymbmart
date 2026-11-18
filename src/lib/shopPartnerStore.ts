@@ -6,6 +6,8 @@ import { ProductItem } from './types';
 import { inventoryStore } from './inventoryStore';
 import { addCatalogProducts, getCatalogProducts } from './catalog';
 import { productImageLibrary } from './productImageLibrary';
+import fs from 'fs';
+import path from 'path';
 
 export type BusinessType = 
   | 'KIRANA_GENERAL' 
@@ -103,6 +105,34 @@ export interface IngestionResult {
 
 // Initial realistic seed applications for Ranchi Central
 const INITIAL_APPLICATIONS: ShopApplication[] = [
+  {
+    id: 'app-rch-083',
+    applicationNumber: 'APP-RCH-2026-083',
+    shopName: 'Test Store',
+    ownerName: 'RAJ',
+    phone: '9874561230',
+    email: 'test@test.com',
+    address: 'Near Overbridge, Main Road',
+    city: 'Ranchi',
+    state: 'Jharkhand',
+    pincode: '834001',
+    businessType: 'KIRANA_GENERAL',
+    yearsInBusiness: 2,
+    fssaiNumber: '12345678901234',
+    tradeLicenseNumber: 'RMC/TL/2026/8341',
+    panNumber: 'AAAPR1234K',
+    bankName: 'State Bank of India',
+    bankAccountNumber: '3987110023415',
+    ifscCode: 'SBIN0000167',
+    documents: {
+      tradeLicenseUrl: 'https://images.unsplash.com/photo-1607344645866-009c320c5ab8?w=800&auto=format&fit=crop&q=80',
+      fssaiCertUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=80',
+      panCardUrl: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=800&auto=format&fit=crop&q=80',
+      storePhotoUrl: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80',
+    },
+    status: 'PENDING_REVIEW',
+    submittedAt: '2026-11-18T06:14:00.000Z',
+  },
   {
     id: 'app-rch-081',
     applicationNumber: 'APP-RCH-2026-081',
@@ -229,9 +259,63 @@ const INITIAL_ACCOUNTS: ShopPartnerAccount[] = [
 class ShopPartnerStore {
   public applications: ShopApplication[] = [...INITIAL_APPLICATIONS];
   public accounts: ShopPartnerAccount[] = [...INITIAL_ACCOUNTS];
+  private dataDir = path.join(process.cwd(), 'data');
+  private dataFile = path.join(process.cwd(), 'data', 'shop_partner_store.json');
+
+  constructor() {
+    this.loadFromFile();
+  }
+
+  private loadFromFile(): void {
+    try {
+      if (typeof window === 'undefined' && fs.existsSync(this.dataFile)) {
+        const raw = fs.readFileSync(this.dataFile, 'utf-8');
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.applications) && parsed.applications.length > 0) {
+          const existingIds = new Set(parsed.applications.map((a: ShopApplication) => a.id));
+          const missingInitials = INITIAL_APPLICATIONS.filter((a) => !existingIds.has(a.id));
+          this.applications = [...parsed.applications, ...missingInitials];
+        }
+        if (Array.isArray(parsed.accounts) && parsed.accounts.length > 0) {
+          const existingIds = new Set(parsed.accounts.map((a: ShopPartnerAccount) => a.shopId));
+          const missingInitials = INITIAL_ACCOUNTS.filter((a) => !existingIds.has(a.shopId));
+          this.accounts = [...parsed.accounts, ...missingInitials];
+        }
+      } else if (typeof window === 'undefined') {
+        this.saveToFile();
+      }
+    } catch (err) {
+      console.error('Failed to load shop partner data from disk:', err);
+    }
+  }
+
+  private saveToFile(): void {
+    try {
+      if (typeof window === 'undefined') {
+        if (!fs.existsSync(this.dataDir)) {
+          fs.mkdirSync(this.dataDir, { recursive: true });
+        }
+        fs.writeFileSync(
+          this.dataFile,
+          JSON.stringify(
+            {
+              applications: this.applications,
+              accounts: this.accounts,
+            },
+            null,
+            2
+          ),
+          'utf-8'
+        );
+      }
+    } catch (err) {
+      console.error('Failed to save shop partner data to disk:', err);
+    }
+  }
 
   // Retrieve applications with optional status filter
   public getApplications(filter?: ApplicationStatus | 'ALL'): ShopApplication[] {
+    this.loadFromFile();
     if (!filter || filter === 'ALL') {
       return [...this.applications].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
     }
@@ -241,6 +325,7 @@ class ShopPartnerStore {
   }
 
   public getApplicationById(id: string): ShopApplication | undefined {
+    this.loadFromFile();
     return this.applications.find((app) => app.id === id || app.applicationNumber === id);
   }
 
@@ -305,6 +390,7 @@ class ShopPartnerStore {
     };
 
     this.applications.unshift(newApp);
+    this.saveToFile();
     return newApp;
   }
 
@@ -424,6 +510,8 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       this.accounts.push(account);
     }
 
+    this.saveToFile();
+
     return {
       success: true,
       message: `Shop approved successfully! Credentials dispatched to WhatsApp (${app.phone}) and Email (${app.email}).`,
@@ -440,6 +528,8 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
     app.status = 'REJECTED';
     app.reviewedAt = new Date().toISOString();
     app.reviewNotes = reason;
+
+    this.saveToFile();
 
     return { success: true, message: `Application ${app.applicationNumber} has been rejected.` };
   }
@@ -781,6 +871,8 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       shop.totalStockUnits += totalUnits;
     }
 
+    this.saveToFile();
+
     return {
       success: importedCount > 0,
       totalProcessed: rows.length,
@@ -799,6 +891,5 @@ const globalForShopPartner = globalThis as unknown as {
 export const shopPartnerStore =
   globalForShopPartner.shopPartnerStoreInstance || new ShopPartnerStore();
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForShopPartner.shopPartnerStoreInstance = shopPartnerStore;
-}
+// Always attach to globalThis regardless of NODE_ENV so all route handlers share one instance
+globalForShopPartner.shopPartnerStoreInstance = shopPartnerStore;

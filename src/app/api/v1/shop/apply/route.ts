@@ -28,47 +28,53 @@ export async function POST(req: Request) {
       documents,
     } = body;
 
-    // Validation
-    if (!shopName || !ownerName || !phone || !email || !address || !pincode) {
+    // Validation for essential fields
+    if (!shopName || !ownerName || !phone) {
       return NextResponse.json(
-        { success: false, message: 'Shop name, owner name, phone, email, address, and pincode are required.' },
+        { success: false, message: 'Shop name, owner name, and contact phone number are required.' },
         { status: 400 }
       );
     }
 
-    if (!fssaiNumber || !tradeLicenseNumber) {
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
       return NextResponse.json(
-        { success: false, message: 'FSSAI registration number and Trade License number are mandatory for verification.' },
+        { success: false, message: 'Please enter a valid 10-digit mobile number (e.g. 9845612300).' },
         { status: 400 }
       );
     }
 
-    if (!bankAccountNumber || !ifscCode) {
-      return NextResponse.json(
-        { success: false, message: 'Bank account number and IFSC code are required for merchant settlement payouts.' },
-        { status: 400 }
-      );
-    }
+    const effectivePincode = pincode || '834001';
+    const effectiveEmail = email && String(email).trim() !== '' 
+      ? String(email).trim() 
+      : `${cleanPhone}@partner.mymbmart.com`;
+    const effectiveAddress = address && String(address).trim() !== '' 
+      ? String(address).trim() 
+      : `Main Market Area, Pincode ${effectivePincode}`;
+    const effectiveTradeLicense = tradeLicenseNumber || 'PENDING_VERIF';
+    const effectiveBankAcc = bankAccountNumber || 'PENDING_ONBOARDING';
+    const effectiveIfsc = ifscCode || 'SBIN000000';
+    const effectiveFssai = fssaiNumber || 'PENDING_VERIF';
 
     const application = shopPartnerStore.submitApplication({
-      shopName,
-      ownerName,
-      phone,
-      email,
-      address,
+      shopName: String(shopName).trim(),
+      ownerName: String(ownerName).trim(),
+      phone: cleanPhone,
+      email: effectiveEmail,
+      address: effectiveAddress,
       city: city || 'Ranchi',
       state: state || 'Jharkhand',
-      pincode,
+      pincode: effectivePincode,
       businessType: businessType || 'KIRANA_GENERAL',
       yearsInBusiness: Number(yearsInBusiness) || 1,
-      fssaiNumber,
-      tradeLicenseNumber,
-      gstin,
-      panNumber: panNumber || 'ABCDE1234F',
+      fssaiNumber: effectiveFssai,
+      tradeLicenseNumber: effectiveTradeLicense,
+      gstin: gstin || 'UNREGISTERED',
+      panNumber: panNumber || 'PENDING',
       bankName: bankName || 'State Bank of India',
-      bankAccountNumber,
-      ifscCode,
-      documents,
+      bankAccountNumber: effectiveBankAcc,
+      ifscCode: effectiveIfsc,
+      documents: documents || {},
     });
 
     return NextResponse.json({

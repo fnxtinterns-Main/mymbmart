@@ -26,7 +26,7 @@ import {
   CreditCard,
   MessageSquare
 } from 'lucide-react';
-import { ShopApplication, ShopPartnerAccount } from '@/lib/shopPartnerStore';
+import type { ShopApplication, ShopPartnerAccount } from '@/lib/shopPartnerStore';
 
 export const MerchantOnboardingTab: React.FC = () => {
   const [applications, setApplications] = useState<ShopApplication[]>([]);

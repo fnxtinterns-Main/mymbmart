@@ -94,15 +94,19 @@ export default function PartnersHomePage() {
     setRegError('');
 
     try {
+      const cleanPhone = quickReg.phone.replace(/\D/g, '');
       const res = await fetch('/api/v1/shop/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...quickReg,
+          phone: cleanPhone,
+          email: quickReg.email || `${cleanPhone}@partner.mymbmart.com`,
+          address: quickReg.address || `Main Market Area, Pincode ${quickReg.pincode || '834001'}`,
           businessType: quickReg.partnerType,
           tradeLicenseNumber: 'PENDING_VERIF',
           panNumber: 'PENDING',
-          bankAccountNumber: '0000000000',
+          bankAccountNumber: 'PENDING_ONBOARDING',
           ifscCode: 'SBIN000000',
         }),
       });
@@ -393,11 +397,21 @@ export default function PartnersHomePage() {
                         </div>
 
                         <div>
-                          <label className="block font-bold text-slate-700 mb-0.5">FSSAI License / Registration No</label>
+                          <label className="block font-bold text-slate-700 mb-0.5">Shop / Locality Address (Optional)</label>
                           <input
                             type="text"
-                            required
-                            placeholder="14-digit FSSAI Number"
+                            placeholder="e.g. Near Overbridge, Main Road, Ranchi"
+                            value={quickReg.address}
+                            onChange={(e) => setQuickReg({ ...quickReg, address: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-0.5">FSSAI License / Registration No (Optional)</label>
+                          <input
+                            type="text"
+                            placeholder="14-digit FSSAI Number (or leave blank if applying)"
                             value={quickReg.fssaiNumber}
                             onChange={(e) => setQuickReg({ ...quickReg, fssaiNumber: e.target.value })}
                             className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
