@@ -34,28 +34,12 @@ import { Footer } from '@/components/Footer';
 
 export default function PartnersHomePage() {
   const router = useRouter();
-  const [authTab, setAuthTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
 
   // Login form state
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-
-  // Quick Register form state
-  const [quickReg, setQuickReg] = useState({
-    shopName: '',
-    ownerName: '',
-    phone: '',
-    email: '',
-    pincode: '834001',
-    address: '',
-    partnerType: 'KIRANA_GENERAL',
-    fssaiNumber: '',
-  });
-  const [regLoading, setRegLoading] = useState(false);
-  const [regSuccess, setRegSuccess] = useState<any | null>(null);
-  const [regError, setRegError] = useState('');
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,43 +70,6 @@ export default function PartnersHomePage() {
   const handleQuickDemoFill = (id: string, pwd: string) => {
     setLoginIdentifier(id);
     setLoginPassword(pwd);
-  };
-
-  const handleQuickRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRegLoading(true);
-    setRegError('');
-
-    try {
-      const cleanPhone = quickReg.phone.replace(/\D/g, '');
-      const res = await fetch('/api/v1/shop/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...quickReg,
-          phone: cleanPhone,
-          email: quickReg.email || `${cleanPhone}@partner.mymbmart.com`,
-          address: quickReg.address || `Main Market Area, Pincode ${quickReg.pincode || '834001'}`,
-          businessType: quickReg.partnerType,
-          tradeLicenseNumber: 'PENDING_VERIF',
-          panNumber: 'PENDING',
-          bankAccountNumber: 'PENDING_ONBOARDING',
-          ifscCode: 'SBIN000000',
-        }),
-      });
-
-      const data = await res.json();
-      setRegLoading(false);
-
-      if (data.success) {
-        setRegSuccess(data);
-      } else {
-        setRegError(data.message || 'Registration failed.');
-      }
-    } catch (err: any) {
-      setRegLoading(false);
-      setRegError(err.message || 'Error submitting registration.');
-    }
   };
 
   return (
@@ -172,12 +119,20 @@ export default function PartnersHomePage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <a
-                  href="#partner-matrix"
+                <Link
+                  href="/shop/register"
                   className="bg-[#16A34A] hover:bg-[#15803d] text-white px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold shadow-lg shadow-emerald-950/30 transition flex items-center space-x-2"
                 >
-                  <span>Explore What You Need To Do</span>
+                  <Sparkles className="w-4 h-4 text-emerald-200" />
+                  <span>Join as Partner (KYC)</span>
                   <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <a
+                  href="#partner-matrix"
+                  className="bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 px-4 py-3 rounded-2xl text-xs sm:text-sm font-bold border border-emerald-700/50 transition flex items-center space-x-1.5"
+                >
+                  <span>Explore What You Need To Do</span>
                 </a>
 
                 <a
@@ -186,256 +141,118 @@ export default function PartnersHomePage() {
                   className="bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 px-4 py-3 rounded-2xl text-xs sm:text-sm font-bold border border-emerald-700/50 transition flex items-center space-x-1.5"
                 >
                   <Download className="w-4 h-4 text-emerald-300" />
-                  <span>Download Inventory CSV Template</span>
+                  <span>Download Inventory CSV</span>
                 </a>
               </div>
 
             </div>
 
-            {/* Right Column: Interactive Login & Quick Apply Card */}
+            {/* Right Column: Partner Portal Sign In Card with Direct KYC Link */}
             <div className="lg:col-span-5">
               <div className="bg-white rounded-3xl p-6 sm:p-8 text-[#0F172A] shadow-2xl border border-emerald-100 space-y-5">
                 
-                {/* Mode Selector Tabs */}
+                {/* Navigation Tabs: Sign In active + Join as Partner direct KYC link */}
                 <div className="grid grid-cols-2 bg-slate-100 p-1.5 rounded-2xl text-xs font-bold">
-                  <button
-                    onClick={() => setAuthTab('LOGIN')}
-                    className={`py-2.5 rounded-xl transition flex items-center justify-center space-x-1.5 cursor-pointer ${
-                      authTab === 'LOGIN'
-                        ? 'bg-[#064E3B] text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
+                  <div className="py-2.5 rounded-xl bg-[#064E3B] text-white shadow-xs flex items-center justify-center space-x-1.5">
                     <Lock className="w-3.5 h-3.5" />
                     <span>Partner Sign In</span>
-                  </button>
+                  </div>
 
-                  <button
-                    onClick={() => setAuthTab('REGISTER')}
-                    className={`py-2.5 rounded-xl transition flex items-center justify-center space-x-1.5 cursor-pointer ${
-                      authTab === 'REGISTER'
-                        ? 'bg-[#064E3B] text-white shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                  <Link
+                    href="/shop/register"
+                    className="py-2.5 rounded-xl text-emerald-800 hover:text-emerald-950 hover:bg-emerald-50 transition flex items-center justify-center space-x-1.5 cursor-pointer font-extrabold"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Join as Partner</span>
-                  </button>
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Join as Partner →</span>
+                  </Link>
                 </div>
 
-                {/* TAB 1: LOGIN FORM */}
-                {authTab === 'LOGIN' && (
-                  <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
-                    <div>
-                      <h3 className="font-extrabold text-slate-900 text-sm">Sign In to Partner Portal</h3>
-                      <p className="text-[11px] text-slate-500">Access store inventory, order dispatch, and CSV upload</p>
-                    </div>
-
-                    {loginError && (
-                      <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-bold flex items-center space-x-1.5">
-                        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                        <span>{loginError}</span>
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Store ID / Mobile Number</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. MBM-SHP-834006-03 or 9431109876"
-                        value={loginIdentifier}
-                        onChange={(e) => setLoginIdentifier(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs font-medium"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">Password</label>
-                      <input
-                        type="password"
-                        required
-                        placeholder="••••••••••••"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                      />
-                      <span className="text-[10px] text-slate-400 mt-1 block">
-                        Dispatched to your WhatsApp upon KYC approval
-                      </span>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loginLoading}
-                      className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold py-3 rounded-xl shadow-md transition flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
-                    >
-                      <span>{loginLoading ? 'Authenticating...' : 'Sign In to Portal'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-
-                    {/* Quick Demo Fill Shortcut */}
-                    <div className="pt-2 border-t border-slate-100">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-1.5">
-                        Test Partner Account (Ranchi Central)
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => handleQuickDemoFill('MBM-SHP-834006-03', 'MBM#Chot834@2026')}
-                        className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-slate-700 text-[11px] transition flex items-center justify-between group cursor-pointer"
-                      >
-                        <div>
-                          <span className="font-bold text-slate-900 group-hover:text-emerald-800">Chotanagpur Tribal Hub</span>
-                          <span className="text-slate-500 block text-[10px]">ID: MBM-SHP-834006-03</span>
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                          Pre-Approved
-                        </span>
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {/* TAB 2: REGISTER QUICK FORM */}
-                {authTab === 'REGISTER' && (
+                {/* SIGN IN FORM */}
+                <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
                   <div>
-                    {regSuccess ? (
-                      <div className="space-y-4 text-center py-2 animate-in fade-in zoom-in duration-150">
-                        <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                          <CheckCircle2 className="w-7 h-7" />
-                        </div>
-                        <div>
-                          <h4 className="font-black text-slate-900 text-sm">Application Received!</h4>
-                          <p className="text-xs text-slate-500 mt-0.5">Reference: <strong>{regSuccess.applicationNumber}</strong></p>
-                        </div>
-                        <p className="text-[11px] text-slate-600">
-                          Our Ranchi verification desk will review your details and send your Store ID & Password to your WhatsApp within 2-4 hours.
-                        </p>
-                        <Link
-                          href="/shop/register"
-                          className="inline-block bg-[#064E3B] text-white text-xs font-bold px-4 py-2 rounded-xl"
-                        >
-                          Complete Full KYC Documentation →
-                        </Link>
-                      </div>
-                    ) : (
-                      <form onSubmit={handleQuickRegisterSubmit} className="space-y-3 text-xs">
-                        <div>
-                          <h3 className="font-extrabold text-slate-900 text-sm">Apply for Merchant Onboarding</h3>
-                          <p className="text-[11px] text-slate-500">Fast-track onboarding for Ranchi shopkeepers & SHGs</p>
-                        </div>
-
-                        {regError && (
-                          <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-bold flex items-center space-x-1">
-                            <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                            <span>{regError}</span>
-                          </div>
-                        )}
-
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-0.5">Store / Business Name *</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="e.g. Verma Daily Mart or Mahila Shakti SHG"
-                            value={quickReg.shopName}
-                            onChange={(e) => setQuickReg({ ...quickReg, shopName: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-0.5">Owner / Leader Name *</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="Full Name"
-                              value={quickReg.ownerName}
-                              onChange={(e) => setQuickReg({ ...quickReg, ownerName: e.target.value })}
-                              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                            />
-                          </div>
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-0.5">WhatsApp Mobile *</label>
-                            <input
-                              type="tel"
-                              required
-                              placeholder="10-digit number"
-                              value={quickReg.phone}
-                              onChange={(e) => setQuickReg({ ...quickReg, phone: e.target.value })}
-                              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-0.5">Partner Type</label>
-                            <select
-                              value={quickReg.partnerType}
-                              onChange={(e) => setQuickReg({ ...quickReg, partnerType: e.target.value })}
-                              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                            >
-                              <option value="KIRANA_GENERAL">Retail Shop / Store</option>
-                              <option value="SHG_COOPERATIVE">SHG Women Cooperative</option>
-                              <option value="ORGANIC_PRODUCE">Farmer / Fresh Produce</option>
-                              <option value="DAIRY_SWEETS">Dairy & Bakery</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block font-bold text-slate-700 mb-0.5">Store PIN Code</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="834001"
-                              value={quickReg.pincode}
-                              onChange={(e) => setQuickReg({ ...quickReg, pincode: e.target.value })}
-                              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs font-mono"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-0.5">Shop / Locality Address (Optional)</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Near Overbridge, Main Road, Ranchi"
-                            value={quickReg.address}
-                            onChange={(e) => setQuickReg({ ...quickReg, address: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-0.5">FSSAI License / Registration No (Optional)</label>
-                          <input
-                            type="text"
-                            placeholder="14-digit FSSAI Number (or leave blank if applying)"
-                            value={quickReg.fssaiNumber}
-                            onChange={(e) => setQuickReg({ ...quickReg, fssaiNumber: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                          />
-                        </div>
-
-                        <button
-                          type="submit"
-                          disabled={regLoading}
-                          className="w-full bg-[#16A34A] hover:bg-[#15803d] text-white font-extrabold py-3 rounded-xl shadow-md transition flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
-                        >
-                          <span>{regLoading ? 'Submitting Application...' : 'Submit Quick Application'}</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
-
-                        <div className="text-center pt-1">
-                          <Link href="/shop/register" className="text-[11px] text-slate-500 hover:text-emerald-800 underline">
-                            Or open Full Multi-Step KYC Form with Document Uploads →
-                          </Link>
-                        </div>
-                      </form>
-                    )}
+                    <h3 className="font-extrabold text-slate-900 text-sm">Sign In to Partner Portal</h3>
+                    <p className="text-[11px] text-slate-500">Access store inventory, order dispatch, and CSV upload</p>
                   </div>
-                )}
+
+                  {loginError && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-bold flex items-center space-x-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                      <span>{loginError}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Store ID / Mobile Number</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. MBM-SHP-834006-03 or 9431109876"
+                      value={loginIdentifier}
+                      onChange={(e) => setLoginIdentifier(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Password</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      Dispatched to your WhatsApp upon KYC approval
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold py-3 rounded-xl shadow-md transition flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <span>{loginLoading ? 'Authenticating...' : 'Sign In to Portal'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+
+                  {/* Direct Link to KYC Onboarding Page */}
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2">
+                    <div className="text-xs font-black text-[#064E3B]">New Merchant or SHG Partner?</div>
+                    <p className="text-[11px] text-slate-600 leading-snug">
+                      Complete our digital KYC registration with statutory licenses and document upload to start selling.
+                    </p>
+                    <Link
+                      href="/shop/register"
+                      className="inline-flex items-center space-x-1.5 bg-[#16A34A] hover:bg-[#15803d] text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-xs transition"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-100" />
+                      <span>Start Partner KYC Registration</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+
+                  {/* Quick Demo Fill Shortcut */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-1.5">
+                      Test Partner Account (Ranchi Central)
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickDemoFill('MBM-SHP-834006-03', 'MBM#Chot834@2026')}
+                      className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-slate-700 text-[11px] transition flex items-center justify-between group cursor-pointer"
+                    >
+                      <div>
+                        <span className="font-bold text-slate-900 group-hover:text-emerald-800">Chotanagpur Tribal Hub</span>
+                        <span className="text-slate-500 block text-[10px]">ID: MBM-SHP-834006-03</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                        Pre-Approved
+                      </span>
+                    </button>
+                  </div>
+                </form>
 
               </div>
             </div>
