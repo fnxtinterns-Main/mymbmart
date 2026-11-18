@@ -227,6 +227,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
+  // --- Apple Sign-In Handler (Commented out until Apple Developer enrollment is active) ---
+  /*
   const handleAppleSignIn = async () => {
     setSocialLoading('apple');
     setErrorMsg('');
@@ -268,6 +270,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrorMsg(err.message || 'Failed to authenticate with Apple.');
     }
   };
+  */
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -497,13 +500,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="w-full">
               {/* Google Button */}
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={socialLoading !== null}
-                className="flex items-center justify-center space-x-2 py-3 px-3 rounded-2xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs cursor-pointer active:scale-98 disabled:opacity-60"
+                className="w-full flex items-center justify-center space-x-2.5 py-3 px-4 rounded-2xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs cursor-pointer active:scale-98 disabled:opacity-60"
               >
                 {socialLoading === 'google' ? (
                   <span className="animate-spin text-xs">🌀</span>
@@ -515,15 +518,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
                 )}
-                <span>{socialLoading === 'google' ? 'Connecting...' : 'Google'}</span>
+                <span>{socialLoading === 'google' ? 'Connecting to Google...' : 'Continue with Google'}</span>
               </button>
 
-              {/* Apple Button */}
+              {/* Apple Sign-In Button (Commented out until Apple Developer Program enrollment is active)
               <button
                 type="button"
                 onClick={handleAppleSignIn}
                 disabled={socialLoading !== null}
-                className="flex items-center justify-center space-x-2 py-3 px-3 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-98 disabled:opacity-60"
+                className="w-full mt-2.5 flex items-center justify-center space-x-2 py-3 px-3 rounded-2xl bg-black hover:bg-slate-900 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-98 disabled:opacity-60"
               >
                 {socialLoading === 'apple' ? (
                   <span className="animate-spin text-xs">🌀</span>
@@ -534,6 +537,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
                 <span>{socialLoading === 'apple' ? 'Connecting...' : 'Apple'}</span>
               </button>
+              */}
             </div>
           </div>
         )}
