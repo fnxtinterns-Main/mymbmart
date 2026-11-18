@@ -13,7 +13,9 @@ import {
   CheckCircle2, 
   Sparkles,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -22,6 +24,7 @@ export default function ShopPartnerLoginPage() {
   const router = useRouter();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -102,17 +105,35 @@ export default function ShopPartnerLoginPage() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Secure Password</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-700">Secure Password</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center space-x-1 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{showPassword ? 'Hide Password' : 'Show Password'}</span>
+                  </button>
+                </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
                 <div className="text-right mt-1">
                   <span className="text-[10px] text-slate-400">Password dispatched to your WhatsApp upon approval</span>
@@ -135,6 +156,20 @@ export default function ShopPartnerLoginPage() {
                 Quick Test Merchant Accounts
               </p>
               <div className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoFill('MBM-SHP-834001-23', 'MBM#Test001@2026')}
+                  className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-slate-700 text-[11px] transition flex items-center justify-between group cursor-pointer"
+                >
+                  <div>
+                    <span className="font-bold text-slate-900 group-hover:text-emerald-800">Test Store (Prop: RAJ)</span>
+                    <span className="text-slate-500 block text-[10px]">ID: MBM-SHP-834001-23 • Pwd: MBM#Test001@2026</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                    Click to Fill
+                  </span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => handleQuickDemoFill('MBM-SHP-834006-03', 'MBM#Chot834@2026')}

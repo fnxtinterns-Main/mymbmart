@@ -130,8 +130,15 @@ const INITIAL_APPLICATIONS: ShopApplication[] = [
       panCardUrl: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=800&auto=format&fit=crop&q=80',
       storePhotoUrl: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80',
     },
-    status: 'PENDING_REVIEW',
+    status: 'APPROVED',
     submittedAt: '2026-11-18T06:14:00.000Z',
+    reviewedAt: '2026-11-18T08:00:00.000Z',
+    reviewedBy: 'Admin (Ranchi Central HQ)',
+    reviewNotes: 'All FSSAI and Bank credentials verified. Premises within Ranchi serviceable hub.',
+    generatedShopId: 'MBM-SHP-834001-23',
+    generatedPassword: 'MBM#Test001@2026',
+    dispatchedAt: '2026-11-18T08:01:00.000Z',
+    dispatchChannels: ['WHATSAPP', 'EMAIL'],
   },
   {
     id: 'app-rch-081',
@@ -235,6 +242,25 @@ const INITIAL_APPLICATIONS: ShopApplication[] = [
 ];
 
 const INITIAL_ACCOUNTS: ShopPartnerAccount[] = [
+  {
+    shopId: 'MBM-SHP-834001-23',
+    applicationId: 'app-rch-083',
+    shopName: 'Test Store',
+    ownerName: 'RAJ',
+    email: 'test@test.com',
+    phone: '9874561230',
+    passwordHash: 'MBM#Test001@2026',
+    pincode: '834001',
+    address: 'Near Overbridge, Main Road, Ranchi, Jharkhand',
+    businessType: 'KIRANA_GENERAL',
+    fssaiNumber: '12345678901234',
+    status: 'ACTIVE',
+    joinedAt: '2026-11-18T08:00:00.000Z',
+    totalProductsListed: 0,
+    totalStockUnits: 0,
+    totalOrdersFulfilled: 0,
+    rating: 5.0,
+  },
   {
     shopId: 'MBM-SHP-834006-03',
     applicationId: 'app-rch-080',
@@ -536,16 +562,24 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
 
   // Authenticate shop partner by Store ID or Phone
   public authenticateShop(identifier: string, password: string): ShopPartnerAccount | null {
+    this.loadFromFile();
     const cleanId = identifier.trim().toLowerCase();
-    const account = this.accounts.find(
-      (a) => (a.shopId.toLowerCase() === cleanId || a.phone === cleanId || a.email.toLowerCase() === cleanId) &&
-             a.passwordHash === password.trim()
-    );
+    const cleanPhone = identifier.replace(/\D/g, '');
+    const cleanPassword = password.trim();
+
+    const account = this.accounts.find((a) => {
+      const matchesId = a.shopId.toLowerCase() === cleanId;
+      const matchesEmail = a.email.toLowerCase() === cleanId;
+      const matchesPhone = cleanPhone.length >= 10 && a.phone.replace(/\D/g, '') === cleanPhone;
+      const matchesPassword = a.passwordHash === cleanPassword;
+      return (matchesId || matchesEmail || matchesPhone) && matchesPassword;
+    });
     return account || null;
   }
 
   public getAccount(shopId: string): ShopPartnerAccount | undefined {
-    return this.accounts.find((a) => a.shopId === shopId);
+    this.loadFromFile();
+    return this.accounts.find((a) => a.shopId.toLowerCase() === shopId.trim().toLowerCase());
   }
 
   // Standard CSV Template Generator
