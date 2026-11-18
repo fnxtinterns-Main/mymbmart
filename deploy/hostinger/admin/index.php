@@ -9,7 +9,14 @@ $cleanUri = ($requestUri === '/' || $requestUri === '') ? '' : $requestUri;
 
 // If internal proxy via cURL / port 3000 is desired:
 $nodePort = 3000;
-$backendUrl = "http://127.0.0.1:{$nodePort}/admin{$cleanUri}";
+
+if (preg_match('#^/(_next|api|images|static|favicon\.ico|manifest\.json|robots\.txt|llms\.txt)#', $cleanUri)) {
+    $targetPath = $cleanUri;
+} else {
+    $targetPath = "/admin{$cleanUri}";
+}
+
+$backendUrl = "http://127.0.0.1:{$nodePort}{$targetPath}";
 
 $ch = curl_init($backendUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

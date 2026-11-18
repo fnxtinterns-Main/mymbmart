@@ -4,18 +4,31 @@
 
   # 1. Reverse Proxy to Next.js if mod_proxy is enabled
   <IfModule mod_proxy.c>
+    # Pass Next.js static assets, chunks, CSS, API and public files directly without /partners prefix
+    RewriteRule ^(_next|api|images|static|favicon\.ico|manifest\.json|robots\.txt|llms\.txt)(.*)$ http://127.0.0.1:3000/$1$2 [P,L]
+
+    # Pass /shop/* paths directly to /shop/*
+    RewriteRule ^shop/(.*)$ http://127.0.0.1:3000/shop/$1 [P,L]
+
+    # Partner shortcuts
     RewriteRule ^$ http://127.0.0.1:3000/partners [P,L]
     RewriteRule ^login$ http://127.0.0.1:3000/shop/login [P,L]
     RewriteRule ^portal$ http://127.0.0.1:3000/shop/portal [P,L]
     RewriteRule ^register$ http://127.0.0.1:3000/shop/register [P,L]
+    RewriteRule ^apply$ http://127.0.0.1:3000/shop/register [P,L]
+
+    # Fallthrough to /partners route
     RewriteRule ^(.*)$ http://127.0.0.1:3000/partners/$1 [P,L]
   </IfModule>
 
-  # 2. Fallback: If reverse proxy is not enabled, transparently redirect to main domain /partners
+  # 2. Fallback: If reverse proxy is not enabled, transparently redirect to main domain
   RewriteCond %{HTTP_HOST} ^partners\.mymbmart\.com$ [NC]
+  RewriteRule ^(_next|api|images|static|favicon\.ico|manifest\.json|robots\.txt|llms\.txt)(.*)$ https://mymbmart.com/$1$2 [R=301,L]
+  RewriteRule ^shop/(.*)$ https://mymbmart.com/shop/$1 [R=301,L]
   RewriteRule ^$ https://mymbmart.com/partners [R=301,L]
   RewriteRule ^login$ https://mymbmart.com/shop/login [R=301,L]
   RewriteRule ^portal$ https://mymbmart.com/shop/portal [R=301,L]
   RewriteRule ^register$ https://mymbmart.com/shop/register [R=301,L]
+  RewriteRule ^apply$ https://mymbmart.com/shop/register [R=301,L]
   RewriteRule ^(.*)$ https://mymbmart.com/partners/$1 [R=301,L]
 </IfModule>

@@ -9,9 +9,20 @@ $cleanUri = ($requestUri === '/' || $requestUri === '') ? '' : $requestUri;
 
 // If internal proxy via cURL / port 3000 is desired:
 $nodePort = 3000;
-$targetPath = ($cleanUri === '/login') ? '/shop/login' : 
-              (($cleanUri === '/portal') ? '/shop/portal' : 
-              (($cleanUri === '/register') ? '/shop/register' : "/partners{$cleanUri}"));
+
+if (preg_match('#^/(_next|api|images|static|favicon\.ico|manifest\.json|robots\.txt|llms\.txt)#', $cleanUri)) {
+    $targetPath = $cleanUri;
+} elseif (preg_match('#^/shop/#', $cleanUri)) {
+    $targetPath = $cleanUri;
+} elseif ($cleanUri === '/login') {
+    $targetPath = '/shop/login';
+} elseif ($cleanUri === '/portal') {
+    $targetPath = '/shop/portal';
+} elseif ($cleanUri === '/register' || $cleanUri === '/apply') {
+    $targetPath = '/shop/register';
+} else {
+    $targetPath = "/partners{$cleanUri}";
+}
 
 $backendUrl = "http://127.0.0.1:{$nodePort}{$targetPath}";
 
