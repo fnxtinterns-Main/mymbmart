@@ -8,7 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:e2e": "node scripts/e2e-api-test.mjs",
+    "test:1000": "node scripts/run-1000-tests.mjs",
+    "test:1500": "node scripts/run-all-1500-tests.mjs",
+    "test:resilience": "node scripts/run-production-resilience-suites.mjs",
+    "test:real": "node --experimental-strip-types --loader ./scripts/loader.mjs scripts/run-real-integration-suite.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:legacy": "node scripts/e2e-api-test.mjs",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "cap:sync": "cap sync",
@@ -32,6 +39,7 @@
     "tailwind-merge": "^2.5.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.1",

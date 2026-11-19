@@ -41,9 +41,23 @@ export default function ShopPage() {
       if (saved) {
         setCartItems(JSON.parse(saved));
       }
-      const savedUser = localStorage.getItem('mbm_user');
-      if (savedUser) {
-        setUser((p) => ({ ...p, ...JSON.parse(savedUser) }));
+
+      // Check cookie for OAuth redirect login (e.g. Google Sign-in)
+      const cookies = document.cookie.split('; ');
+      const userCookie = cookies.find((row) => row.startsWith('mbm_user_data='));
+      if (userCookie) {
+        try {
+          const cookieData = JSON.parse(decodeURIComponent(userCookie.split('=')[1]));
+          if (cookieData && cookieData.email) {
+            setUser((p) => ({ ...p, ...cookieData }));
+            localStorage.setItem('mbm_user', JSON.stringify(cookieData));
+          }
+        } catch {}
+      } else {
+        const savedUser = localStorage.getItem('mbm_user');
+        if (savedUser) {
+          setUser((p) => ({ ...p, ...JSON.parse(savedUser) }));
+        }
       }
     } catch (e) {
       console.error(e);

@@ -179,13 +179,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg('');
 
     try {
-      const google = (window as any).google;
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '1029863217785-2d0b296lb9i57kugmh5v92oin5q6bbcs.apps.googleusercontent.com';
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
+      // 1. Ensure Google Identity Services script is loaded
+      let google = (window as any).google;
+      if (!google?.accounts?.oauth2) {
+        await new Promise<void>((resolve) => {
+          const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+          if (existingScript) {
+            existingScript.addEventListener('load', () => resolve());
+            setTimeout(resolve, 800);
+          } else {
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            document.head.appendChild(script);
+            setTimeout(resolve, 1000);
+          }
+        });
+        google = (window as any).google;
+      }
+
+      // 2. Launch Google Popup if GIS is ready
       if (google && google.accounts && google.accounts.oauth2 && clientId) {
         const client = google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: 'email profile openid',
+          prompt: 'select_account',
           callback: async (tokenResponse: any) => {
             if (tokenResponse && tokenResponse.access_token) {
               try {
@@ -193,7 +215,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
                 });
                 const googleUser = await userInfoRes.json();
-                await completeSocialLogin('/api/auth/google', { user: googleUser });
+                if (googleUser && googleUser.email) {
+                  await completeSocialLogin('/api/auth/google', { user: googleUser });
+                } else {
+                  setSocialLoading(null);
+                  setErrorMsg('Failed to read Google profile data.');
+                }
               } catch (fetchErr) {
                 setSocialLoading(null);
                 setErrorMsg('Failed to retrieve Google profile details.');
@@ -203,24 +230,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }
           },
           error_callback: (err: any) => {
-            console.warn('Google Auth popup closed or blocked:', err);
+            console.warn('Google Auth popup notice:', err);
             setSocialLoading(null);
+            // Fallback to standard redirect if popup was blocked
+            const redirectUri = `${window.location.origin}/api/auth/google`;
+            window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&prompt=select_account`;
           },
         });
         client.requestAccessToken();
         return;
       }
 
-      // Interactive test sign-in if script not loaded yet
-      setTimeout(async () => {
-        await completeSocialLogin('/api/auth/google', {
-          user: {
-            name: 'Rahul Kumar (Google)',
-            email: 'rahul.kumar.ranchi@gmail.com',
-            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-          },
-        });
-      }, 700);
+      // 3. Fallback: Full-page OAuth 2.0 redirect
+      const redirectUri = typeof window !== 'undefined'
+        ? `${window.location.origin}/api/auth/google`
+        : 'https://mymbmart.com/api/auth/google';
+
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&prompt=select_account`;
     } catch (err: any) {
       setSocialLoading(null);
       setErrorMsg(err.message || 'Failed to authenticate with Google.');
@@ -274,7 +300,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100">
+      <div data-testid="auth-modal" role="dialog" className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100">
         
         {/* Close Button */}
         <button
@@ -330,7 +356,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {step === 'input' ? (
               <form onSubmit={handleSendOtp} className="space-y-4 text-xs sm:text-sm">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label htmlFor="auth-contact-input" className="block font-bold text-slate-700 mb-1">
                     Mobile Number or Email
                   </label>
                   <div className="relative">
@@ -338,6 +364,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <input
                       type="text"
                       required
+                      id="auth-contact-input"
+                      data-testid="phone-input"
                       placeholder="Enter 10-digit mobile number or email"
                       value={contact}
                       onChange={(e) => setContact(e.target.value)}
@@ -388,11 +416,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <input
                       key={idx}
                       id={`otp-${idx}`}
+                      data-testid="otp-input"
                       type="text"
-                      maxLength={1}
+                      maxLength={idx === 0 ? 6 : 1}
+                      inputMode="numeric"
                       value={digit}
                       onChange={(e) => {
                         const val = e.target.value;
+                        if (val.length > 1) {
+                          // Allow pasting or filling full 6-digit OTP into first field
+                          const digits = val.replace(/\D/g, '').slice(0, 6).split('');
+                          const next = ['', '', '', '', '', ''];
+                          digits.forEach((d, i) => { next[i] = d; });
+                          setOtp(next);
+                          const nextIdx = Math.min(5, digits.length);
+                          document.getElementById(`otp-${nextIdx}`)?.focus();
+                          return;
+                        }
                         const next = [...otp];
                         next[idx] = val;
                         setOtp(next);

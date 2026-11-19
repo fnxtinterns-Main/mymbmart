@@ -1,4 +1,4 @@
-import { UserProfile, WalletState, Transaction, ProductItem } from './types';
+import type { UserProfile, WalletState, Transaction, ProductItem } from './types';
 
 export const initialUser: UserProfile = {
   id: '',

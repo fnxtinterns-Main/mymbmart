@@ -19,8 +19,8 @@ export async function POST(req: Request) {
     // 1. VERIFY ACTION
     if (action === 'VERIFY') {
       const submittedOtp = otp?.toString().trim();
-      // Accept demo OTP '123456' or any valid 6-digit match
-      if (!submittedOtp || (submittedOtp !== '123456' && submittedOtp.length !== 6)) {
+      // Universal test OTP is '123456'; reject invalid or mismatched OTPs
+      if (!submittedOtp || submittedOtp !== '123456') {
         return NextResponse.json(
           { success: false, error: 'Invalid verification code. Please enter 123456 for testing.' },
           { status: 400 }

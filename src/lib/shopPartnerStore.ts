@@ -2,7 +2,7 @@
 // Handles Partner Registration, KYC verification, Admin Approvals, Credential Dispatch,
 // and Bulk CSV Inventory Ingestion with instant Live Storefront synchronization.
 
-import { ProductItem } from './types';
+import type { ProductItem } from './types';
 import { inventoryStore } from './inventoryStore';
 import { addCatalogProducts, getCatalogProducts } from './catalog';
 import { productImageLibrary } from './productImageLibrary';
@@ -570,7 +570,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
     const account = this.accounts.find((a) => {
       const matchesId = a.shopId.toLowerCase() === cleanId;
       const matchesEmail = a.email.toLowerCase() === cleanId;
-      const matchesPhone = cleanPhone.length >= 10 && a.phone.replace(/\D/g, '') === cleanPhone;
+      const matchesPhone = cleanPhone.length >= 10 && a.phone.replace(/\D/g, '').slice(-10) === cleanPhone.slice(-10);
       const matchesPassword = a.passwordHash === cleanPassword;
       return (matchesId || matchesEmail || matchesPhone) && matchesPassword;
     });

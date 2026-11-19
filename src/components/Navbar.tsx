@@ -371,6 +371,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Shopping Cart Button with Red/Orange Badge (Picture 5) */}
             <button
               onClick={onOpenCart || (() => router.push('/shop'))}
+              data-testid="cart-button"
               className="relative flex items-center space-x-1.5 bg-slate-50 hover:bg-brand-mint border border-slate-200 hover:border-emerald-300 text-brand-forest font-bold px-3 py-2 rounded-full transition shadow-2xs"
             >
               <ShoppingCart className="w-5 h-5 text-brand-forest" />
@@ -384,6 +385,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="relative" ref={userDropdownRef}>
                 <button
                   onClick={() => setUserDropdown(!userDropdown)}
+                  data-testid="user-menu"
                   className="flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-full border border-slate-200 hover:border-emerald-300 bg-white transition"
                 >
                   <div className="w-7 h-7 rounded-full bg-brand-forest text-white flex items-center justify-center text-xs font-bold">
@@ -470,6 +472,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <button
                 onClick={onOpenAuth || (() => router.push('/login'))}
+                data-testid="signin-button"
                 className="flex items-center space-x-1.5 bg-brand-orange hover:bg-brand-orange-hover text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-md shadow-orange-500/20 transition active:scale-95 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />

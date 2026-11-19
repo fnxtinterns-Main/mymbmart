@@ -198,7 +198,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
+        <div data-testid="cart-drawer" className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
           
           {/* Header */}
           <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
@@ -389,6 +389,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <button
                 onClick={handlePlaceOrder}
                 disabled={isCheckingOut}
+                data-testid="confirm-order-btn"
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-emerald-600/30 flex items-center justify-center space-x-2 transition-all active:scale-98 text-base cursor-pointer"
               >
                 {isCheckingOut ? (
@@ -526,7 +527,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-500">
                   <span>Total MRP</span>
-                  <span>₹{totalMRP}</span>
+                  <span data-testid="mrp-total">₹{totalMRP}</span>
+                </div>
+
+                <div className="flex justify-between text-slate-700 font-semibold">
+                  <span>Bachat Subtotal</span>
+                  <span data-testid="bachat-total">₹{totalBachatPrice}</span>
                 </div>
 
                 <div className="flex justify-between text-emerald-600 font-semibold">
@@ -545,7 +551,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 {applyCredits && (
                   <div className="flex justify-between text-amber-600 font-semibold">
                     <span>Reward Wallet Deduction</span>
-                    <span>-₹{creditDeduction}</span>
+                    <span data-testid="wallet-deduction">-₹{creditDeduction}</span>
                   </div>
                 )}
 
@@ -556,7 +562,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       You save ₹{shoppingSavings + creditDeduction} on this order
                     </span>
                   </div>
-                  <span className="text-2xl font-black text-brand-forest">₹{finalPayable}</span>
+                  <span data-testid="gateway-payable" className="text-2xl font-black text-brand-forest">₹{finalPayable}</span>
                 </div>
               </div>
 
@@ -569,6 +575,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               {/* Proceed to Payment Button */}
               <button
                 onClick={() => setStep('PAYMENT')}
+                data-testid="proceed-to-pay-btn"
                 className="w-full bg-brand-orange hover:bg-brand-orange-hover text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-orange-500/20 flex items-center justify-center space-x-2 transition-all active:scale-98 text-base cursor-pointer"
               >
                 <span>Proceed to Pay (₹{finalPayable})</span>

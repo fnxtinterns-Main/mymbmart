@@ -1,5 +1,5 @@
 import { sampleProducts } from '@/lib/data';
-import { ProductItem } from '@/lib/types';
+import type { ProductItem } from '@/lib/types';
 
 // Base seed products
 const INITIAL_PRODUCTS = [

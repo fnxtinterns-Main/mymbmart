@@ -1,12 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getOrderById } from '@/lib/ordersStore';
+import { verifyWebhookSignature } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { orderNumber, transactionRef, status = 'SUCCESS', paymentSignature } = body;
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-mbm-signature') || req.headers.get('x-razorpay-signature');
+
+    // Cryptographic signature verification against spoofing
+    if (!verifyWebhookSignature(rawBody, signature)) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Invalid or missing payment webhook cryptographic signature.' },
+        { status: 400 }
+      );
+    }
+
+    const body = JSON.parse(rawBody);
+    const { orderNumber, transactionRef, status = 'SUCCESS' } = body;
 
     const order = getOrderById(orderNumber);
     if (!order) {
@@ -15,12 +27,13 @@ export async function POST(req: Request) {
 
     if (status === 'SUCCESS') {
       order.paymentStatus = 'PAID';
+      order.upiTransactionId = transactionRef || `UPI-${Date.now()}`;
       return NextResponse.json({
         success: true,
         message: `Payment confirmed for order #${order.orderNumber}. Order routed to dark store queue.`,
         orderNumber: order.orderNumber,
         paymentStatus: 'PAID',
-        transactionRef,
+        transactionRef: order.upiTransactionId,
       });
     }
 

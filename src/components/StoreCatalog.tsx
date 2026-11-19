@@ -425,6 +425,7 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
             return (
               <div
                 key={product.id}
+                data-testid="product-card"
                 className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-2xs hover:shadow-lg hover:border-emerald-300 transition-all duration-300 flex flex-col justify-between group"
               >
                 {/* Product Image & Badges */}
@@ -475,7 +476,7 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                       {product.category}
                     </div>
-                    <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2 mt-0.5">
+                    <h3 data-testid="product-name" className="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2 mt-0.5">
                       {product.name}
                     </h3>
                     {product.producerName && (
@@ -534,6 +535,7 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
                     ) : (
                       /* Clean Green Blinkit + ADD Button */
                       <button
+                        data-testid="add-to-cart-btn"
                         onClick={() => onAddToCart(product)}
                         className="px-3.5 py-1.5 rounded-xl border border-emerald-400 bg-emerald-50 hover:bg-brand-green hover:text-white text-brand-forest font-black text-xs shadow-2xs transition active:scale-95"
                       >

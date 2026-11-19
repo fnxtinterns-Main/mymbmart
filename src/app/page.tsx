@@ -35,12 +35,33 @@ export default function Home() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  // Load persisted cart from localStorage on mount (starts empty if none)
+  // Load persisted cart & user session from localStorage / cookie on mount
   React.useEffect(() => {
     try {
       const saved = localStorage.getItem('mymbmart_cart');
       if (saved) {
         setCartItems(JSON.parse(saved));
+      }
+
+      // Check cookie for OAuth redirect login (e.g. Google Sign-in)
+      const cookies = document.cookie.split('; ');
+      const userCookie = cookies.find((row) => row.startsWith('mbm_user_data='));
+      if (userCookie) {
+        try {
+          const cookieData = JSON.parse(decodeURIComponent(userCookie.split('=')[1]));
+          if (cookieData && (cookieData.email || cookieData.phone)) {
+            setUser({ ...initialUser, ...cookieData });
+            setIsLoggedIn(true);
+            localStorage.setItem('mbm_user', JSON.stringify(cookieData));
+          }
+        } catch {}
+      } else {
+        const savedUser = localStorage.getItem('mbm_user');
+        if (savedUser) {
+          const parsed = JSON.parse(savedUser);
+          setUser({ ...initialUser, ...parsed });
+          setIsLoggedIn(true);
+        }
       }
     } catch (e) {
       console.error(e);

@@ -122,9 +122,38 @@ export function getOrderById(idOrNumber: string) {
   );
 }
 
+// Allowed state machine transitions to prevent illegal step-skipping or post-delivery tampering
+export const VALID_ORDER_TRANSITIONS: Record<string, string[]> = {
+  NEW: ['PLACED', 'CANCELLED'],
+  PLACED: ['ACCEPTED', 'CONFIRMED', 'CANCELLED'],
+  ACCEPTED: ['CONFIRMED', 'PROCESSING', 'PICKING', 'PACKED', 'CANCELLED'],
+  CONFIRMED: ['PROCESSING', 'PICKING', 'PACKED', 'CANCELLED'],
+  PROCESSING: ['PICKING', 'PACKED', 'CANCELLED'],
+  PICKING: ['PACKED', 'CANCELLED'],
+  PACKED: ['READY_FOR_DISPATCH', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'CANCELLED'],
+  READY_FOR_DISPATCH: ['OUT_FOR_DELIVERY', 'CANCELLED'],
+  READY_FOR_PICKUP: ['COLLECTED', 'PICKUP_EXPIRED', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'FAILED', 'RETURNED'],
+  AWAITING_COLLECTION: ['COLLECTED', 'PICKUP_EXPIRED', 'CANCELLED'],
+  DELIVERED: [], // Terminal: delivered orders cannot be cancelled or modified
+  COLLECTED: [], // Terminal
+  CANCELLED: [], // Terminal: cancelled orders cannot be revived
+  FAILED: ['CANCELLED', 'RETURNED'],
+  RETURNED: [], // Terminal
+  REJECTED: [], // Terminal
+  PICKUP_EXPIRED: ['CANCELLED', 'RETURNED'],
+};
+
 export function updateOrderStatus(orderId: string, status: OrderRecord['status'], notes?: string) {
   const order = ordersStore.find((o) => o.id === orderId || o.orderNumber === orderId);
   if (!order) return null;
+
+  // Strict state machine validation
+  const allowedNext = VALID_ORDER_TRANSITIONS[order.status] || [];
+  if (order.status !== status && !allowedNext.includes(status)) {
+    throw new Error(`Invalid state transition: Cannot transition order ${order.orderNumber} from "${order.status}" to "${status}".`);
+  }
+
   order.status = status;
   if (status === 'CONFIRMED') {
     const step = order.timeline.find((t) => t.step.toLowerCase().includes('confirm') || t.step.toLowerCase().includes('placed'));
@@ -149,9 +178,14 @@ export function updateOrderStatus(orderId: string, status: OrderRecord['status']
   if (status === 'CANCELLED') {
     if (notes) order.cancellationReason = notes;
     order.refundStatus = order.paymentStatus === 'PAID' ? 'PENDING' : 'NONE';
+    // Reverse any cashback and mark wallet credit for auto-refund
+    order.cashbackCredited = false;
+    order.cashbackEarnable = 0;
   }
   if (status === 'RETURNED') {
     order.refundStatus = 'PENDING';
+    order.cashbackCredited = false;
+    order.cashbackEarnable = 0;
   }
   return order;
 }
