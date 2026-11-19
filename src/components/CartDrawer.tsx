@@ -24,6 +24,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { CartItem } from '@/lib/types';
+import { getStoredUserSession } from '@/lib/userSession';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -93,6 +94,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const handlePlaceOrder = async () => {
     setIsCheckingOut(true);
+    const session = getStoredUserSession();
     try {
       const res = await fetch('/api/checkout/place-order', {
         method: 'POST',
@@ -102,6 +104,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             productId: ci.product.id,
             quantity: ci.quantity,
           })),
+          customerName: session.user?.name || 'Customer',
+          customerPhone: session.user?.phone || '+91 98015 06511',
+          customerEmail: session.user?.email || '',
           deliveryAddress,
           pincode: '834001',
           paymentMethod: paymentMode,
@@ -113,6 +118,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       const data = await res.json();
       setIsCheckingOut(false);
       if (data.success && data.order) {
+        // Save order to browser storage so admin dashboard & user tracking stay in sync
+        try {
+          const existing = JSON.parse(localStorage.getItem('mymbmart_placed_orders') || '[]');
+          localStorage.setItem('mymbmart_placed_orders', JSON.stringify([data.order, ...existing]));
+        } catch {}
+
         onOrderSuccess(data.order);
         onClearCart();
         setStep('CART');

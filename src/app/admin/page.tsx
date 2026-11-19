@@ -209,6 +209,22 @@ export default function AdminDashboardPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
+          // Merge client-side placed orders so browser-placed orders appear immediately even across serverless boundaries
+          try {
+            const clientOrders = JSON.parse(localStorage.getItem('mymbmart_placed_orders') || '[]');
+            if (Array.isArray(clientOrders) && clientOrders.length > 0) {
+              const serverOrders = data.recentOrders || [];
+              const merged = [...clientOrders];
+              for (const so of serverOrders) {
+                if (!merged.some((co: any) => co.id === so.id || co.orderNumber === so.orderNumber)) {
+                  merged.push(so);
+                }
+              }
+              data.recentOrders = merged;
+              data.kpis.totalOrders = Math.max(data.kpis.totalOrders || 0, merged.length);
+            }
+          } catch {}
+
           setMetrics(data);
           if (data.darkStore?.lowStockSKUs) {
             setLowStockList(data.darkStore.lowStockSKUs);
