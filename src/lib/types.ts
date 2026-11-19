@@ -15,6 +15,7 @@ export interface UserProfile {
   referredBy?: string;
   directReferralsCount: number;
   totalTeamCount: number;
+  walletBalance?: number;
 }
 
 export interface WalletState {

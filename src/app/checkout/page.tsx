@@ -24,8 +24,8 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile>(initialUser);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [walletBalance, setWalletBalance] = useState<number>(350);
-  const [applyCredits, setApplyCredits] = useState(true);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [applyCredits, setApplyCredits] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState('Main Road, Ranchi Central, Jharkhand - 834001');
   const [paymentMode, setPaymentMode] = useState<'PHONEPE_UPI' | 'COD'>('PHONEPE_UPI');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -38,28 +38,25 @@ export default function CheckoutPage() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setCartItems(parsed);
         } else {
-          // Default to first 2 products if cart is empty
-          setCartItems([
-            { product: sampleProducts[0], quantity: 1 },
-            { product: sampleProducts[1], quantity: 1 },
-          ]);
+          setCartItems([]);
         }
       } else {
-        setCartItems([
-          { product: sampleProducts[0], quantity: 1 },
-          { product: sampleProducts[1], quantity: 1 },
-        ]);
+        setCartItems([]);
       }
 
       const session = getStoredUserSession();
       if (session.isLoggedIn && session.user) {
         setUser(session.user);
+        const bal = session.user.walletBalance;
+        if (typeof bal === 'number') {
+          setWalletBalance(bal);
+          if (bal > 0) {
+            setApplyCredits(true);
+          }
+        }
       }
     } catch {
-      setCartItems([
-        { product: sampleProducts[0], quantity: 1 },
-        { product: sampleProducts[1], quantity: 1 },
-      ]);
+      setCartItems([]);
     }
   }, []);
 
@@ -89,8 +86,8 @@ export default function CheckoutPage() {
           paymentMethod: paymentMode,
           useWalletCredits: applyCredits,
           userWalletBalance: walletBalance,
-          customerName: user.name || 'Rahul Kumar',
-          customerPhone: user.phone || '9874561230',
+          customerName: user.name || 'Customer',
+          customerPhone: user.phone || '',
         }),
       });
 
@@ -99,16 +96,18 @@ export default function CheckoutPage() {
 
       if (data.success && data.order) {
         localStorage.removeItem('mymbmart_cart');
+        try {
+          const existing = JSON.parse(localStorage.getItem('mymbmart_placed_orders') || '[]');
+          localStorage.setItem('mymbmart_placed_orders', JSON.stringify([data.order, ...existing]));
+        } catch {}
         const orderId = data.order.orderNumber || data.order.id;
         router.push(`/orders/${orderId}`);
       } else {
         alert(data.message || 'Order failed. Please retry.');
       }
-    } catch (e) {
+    } catch {
       setIsPlacingOrder(false);
-      // Fallback redirect for resilience
-      const fallbackOrderId = `MBM-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-      router.push(`/orders/${fallbackOrderId}`);
+      alert('Network error while placing order. Please check your connection.');
     }
   };
 

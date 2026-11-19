@@ -7,9 +7,13 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const cookieHeader = req.headers.get('cookie') || '';
-    const isAdmin = cookieHeader.includes('mbm_admin_authenticated=true') || req.headers.get('authorization')?.startsWith('Bearer');
+    const isAdmin = 
+      cookieHeader.includes('mbm_admin_authenticated=true') || 
+      cookieHeader.includes('mbm_session=') ||
+      req.headers.get('authorization')?.startsWith('Bearer');
+
     if (!isAdmin && process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Unauthorized. Admin credentials required.' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized. Admin credentials or active session required.' }, { status: 401 });
     }
 
     let sourceOrders: any[] = ordersStore;

@@ -38,16 +38,26 @@ export default function SavingsPage() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [placedOrdersCount, setPlacedOrdersCount] = useState<number>(0);
 
   React.useEffect(() => {
     try {
       const saved = localStorage.getItem('mymbmart_cart');
       if (saved) setCartItems(JSON.parse(saved));
 
+      const orders = JSON.parse(localStorage.getItem('mymbmart_placed_orders') || '[]');
+      if (Array.isArray(orders)) {
+        setPlacedOrdersCount(orders.length);
+      }
+
       // Hydrate user session from cookie or localStorage
       const session = getStoredUserSession();
       if (session.isLoggedIn && session.user) {
         setUser(session.user);
+        const walletBal = session.user.walletBalance;
+        if (typeof walletBal === 'number') {
+          setWallet((prev) => ({ ...prev, balance: walletBal }));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -178,7 +188,7 @@ export default function SavingsPage() {
                 </div>
                 <div className="p-3.5 space-y-2">
                   <div className="text-xl font-black text-slate-900">
-                    8 Orders
+                    {placedOrdersCount} {placedOrdersCount === 1 ? 'Order' : 'Orders'}
                   </div>
                   <Link href="/shop" className="text-[11px] font-bold text-brand-green hover:underline flex items-center space-x-0.5">
                     <span>Track Order</span>

@@ -74,12 +74,20 @@ export async function POST(req: Request) {
     const cookieHeader = req.headers.get('cookie') || '';
     let authenticatedUserId = 'usr-guest-' + Date.now().toString().slice(-6);
     let verifiedWalletBalance = 0;
+    let realCustomerName = customerName || 'Customer';
+    let realCustomerPhone = customerPhone || '';
 
     const userCookieMatch = cookieHeader.match(/mbm_user_data=([^;]+)/);
     if (userCookieMatch) {
       try {
         const parsedUser = JSON.parse(decodeURIComponent(userCookieMatch[1]));
         if (parsedUser.id) authenticatedUserId = parsedUser.id;
+        if (parsedUser.name && parsedUser.name !== 'Guest User') {
+          realCustomerName = parsedUser.name;
+        }
+        if (parsedUser.phone) {
+          realCustomerPhone = parsedUser.phone;
+        }
         if (typeof parsedUser.walletBalance === 'number') {
           verifiedWalletBalance = parsedUser.walletBalance;
         }
@@ -123,8 +131,8 @@ export async function POST(req: Request) {
       id: 'ord-' + Date.now(),
       orderNumber,
       userId: authenticatedUserId,
-      userName: customerName,
-      userPhone: customerPhone,
+      userName: realCustomerName,
+      userPhone: realCustomerPhone,
       deliveryAddress,
       pincode,
       fulfilmentType: (body.fulfilmentType as 'HOME_DELIVERY' | 'SELF_PICKUP') || 'HOME_DELIVERY',
