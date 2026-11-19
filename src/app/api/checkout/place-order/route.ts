@@ -139,6 +139,28 @@ export async function POST(req: Request) {
       ]
     };
 
+    // 1. Prisma-First: Attempt persisting to PostgreSQL if database connection is active
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      await (prisma.order.create as any)({
+        data: {
+          id: newOrder.id,
+          orderNumber: newOrder.orderNumber,
+          userId: 'usr-1',
+          addressId: 'addr-1',
+          totalMRP: newOrder.totalMRP,
+          totalBachatPrice: newOrder.totalMRP - newOrder.shoppingSavings,
+          finalPayable: newOrder.totalPayable,
+          paymentStatus: newOrder.paymentStatus === 'COD' ? 'PENDING' : 'PAID',
+          paymentMethod: newOrder.paymentMethod === 'COD' ? 'CASH_ON_DELIVERY' : 'UPI',
+          orderStatus: 'PLACED',
+        },
+      });
+    } catch {
+      // Graceful fallback to resilient store when database server is offline/pending AWS migration
+    }
+
+    // 2. Resilient active store persistence
     addOrder(newOrder);
 
     return NextResponse.json({

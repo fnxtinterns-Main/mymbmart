@@ -6,12 +6,33 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const totalOrdersCount = ordersStore.length;
-    const totalGMV = ordersStore.reduce((acc, o) => acc + o.totalPayable, 0);
-    const totalCustomerSavings = ordersStore.reduce((acc, o) => acc + o.shoppingSavings, 0);
-    const deliveredOrders = ordersStore.filter((o) => o.status === 'DELIVERED').length;
-    const pendingOrders = ordersStore.filter((o) => o.status === 'PLACED' || o.status === 'PACKED').length;
-    const inTransitOrders = ordersStore.filter((o) => o.status === 'OUT_FOR_DELIVERY').length;
+    let sourceOrders: any[] = ordersStore;
+
+    // Prisma-First: Attempt fetching live orders from PostgreSQL if available
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const dbOrders = await prisma.order.findMany({
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+      });
+      if (dbOrders && dbOrders.length > 0) {
+        // Merge with ordersStore so both sets are represented
+        const combined: any[] = [...dbOrders];
+        for (const so of ordersStore) {
+          if (!combined.some((co: any) => co.id === so.id || co.orderNumber === so.orderNumber)) {
+            combined.push(so);
+          }
+        }
+        sourceOrders = combined;
+      }
+    } catch {}
+
+    const totalOrdersCount = sourceOrders.length;
+    const totalGMV = sourceOrders.reduce((acc, o: any) => acc + (o.totalPayable || o.finalPayable || 0), 0);
+    const totalCustomerSavings = sourceOrders.reduce((acc, o: any) => acc + (o.shoppingSavings || 0), 0);
+    const deliveredOrders = sourceOrders.filter((o: any) => (o.status || o.orderStatus) === 'DELIVERED').length;
+    const pendingOrders = sourceOrders.filter((o: any) => ['PLACED', 'PACKED', 'PACKING'].includes(o.status || o.orderStatus)).length;
+    const inTransitOrders = sourceOrders.filter((o: any) => (o.status || o.orderStatus) === 'OUT_FOR_DELIVERY').length;
 
     // Dark Store metrics for Ranchi Central
     const darkStoreKPIs = {
@@ -44,7 +65,7 @@ export async function GET() {
         activePromoterCount: 0,
       },
       darkStore: darkStoreKPIs,
-      recentOrders: ordersStore.slice(0, 10),
+      recentOrders: sourceOrders.slice(0, 25),
       systemHealth: {
         database: 'HEALTHY',
         redisQueue: 'OPERATIONAL',

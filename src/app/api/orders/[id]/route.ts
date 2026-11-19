@@ -9,7 +9,24 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const order = getOrderById(id);
+    let order: any = null;
+
+    // Prisma-First: Attempt retrieval from PostgreSQL
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const dbOrder = await prisma.order.findFirst({
+        where: { OR: [{ id }, { orderNumber: id }] },
+        include: { items: true, deliveryAddress: true },
+      });
+      if (dbOrder) {
+        order = dbOrder;
+      }
+    } catch {}
+
+    // Resilient fallback to active store
+    if (!order) {
+      order = getOrderById(id);
+    }
 
     if (!order) {
       return NextResponse.json(
