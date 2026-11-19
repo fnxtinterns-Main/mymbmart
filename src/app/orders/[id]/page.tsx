@@ -4,7 +4,7 @@ import React, { use } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { CheckCircle2, Clock, MapPin, Truck, Sparkles, ShoppingBag } from 'lucide-react';
+import { CheckCircle2, Clock, MapPin, Truck, Sparkles, ShoppingBag, Package } from 'lucide-react';
 
 interface OrderConfirmationPageProps {
   params: Promise<{ id: string }>;
@@ -72,17 +72,18 @@ export default function OrderDetailsPage({ params }: OrderConfirmationPageProps)
 
           <div className="pt-2 flex flex-col sm:flex-row gap-3">
             <Link
-              href="/shop"
+              href="/orders"
               className="flex-1 bg-brand-forest hover:bg-emerald-950 text-white font-bold py-3.5 px-4 rounded-xl text-xs transition flex items-center justify-center space-x-2"
+            >
+              <Package className="w-4 h-4" />
+              <span>View My Orders & History</span>
+            </Link>
+            <Link
+              href="/shop"
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-4 rounded-xl text-xs transition flex items-center justify-center space-x-1.5"
             >
               <ShoppingBag className="w-4 h-4" />
               <span>Continue Shopping</span>
-            </Link>
-            <Link
-              href="/savings"
-              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-4 rounded-xl text-xs transition flex items-center justify-center"
-            >
-              <span>View Passbook</span>
             </Link>
           </div>
 

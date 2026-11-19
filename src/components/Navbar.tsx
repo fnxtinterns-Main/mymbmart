@@ -18,7 +18,8 @@ import {
   ChevronDown,
   LogIn,
   LogOut,
-  Building2
+  Building2,
+  Package
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 import { getStoredUserSession, clearUserSession } from '@/lib/userSession';
@@ -429,6 +430,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {activeUser.level || 'Silver'} Member
                       </span>
                     </div>
+
+                    <Link
+                      href="/orders"
+                      onClick={() => setUserDropdown(false)}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-brand-mint flex items-center space-x-2 font-medium"
+                    >
+                      <Package className="w-4 h-4 text-emerald-600" />
+                      <span>My Orders & History</span>
+                    </Link>
 
                     <Link
                       href="/savings"

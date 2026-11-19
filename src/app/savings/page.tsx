@@ -190,8 +190,8 @@ export default function SavingsPage() {
                   <div className="text-xl font-black text-slate-900">
                     {placedOrdersCount} {placedOrdersCount === 1 ? 'Order' : 'Orders'}
                   </div>
-                  <Link href="/shop" className="text-[11px] font-bold text-brand-green hover:underline flex items-center space-x-0.5">
-                    <span>Track Order</span>
+                  <Link href="/orders" className="text-[11px] font-bold text-brand-green hover:underline flex items-center space-x-0.5">
+                    <span>View & Track Orders</span>
                     <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
