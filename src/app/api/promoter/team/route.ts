@@ -1,10 +1,41 @@
 import { NextResponse } from 'next/server';
 import { initialUser } from '@/lib/data';
+import { getDeterministicReferralCode, getDeterministicMemberId } from '@/lib/userSession';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const cookieHeader = req.headers.get('cookie') || '';
+    const cookies = Object.fromEntries(
+      cookieHeader.split('; ').map((c) => {
+        const [k, ...v] = c.split('=');
+        return [k, v.join('=')];
+      })
+    );
+
+    let promoter = {
+      name: 'Guest Member',
+      memberId: 'MBM-GUEST',
+      tierLevel: 'Silver',
+      referralCode: '',
+    };
+
+    if (cookies.mbm_user_data) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(cookies.mbm_user_data));
+        if (parsed) {
+          const seed = parsed.email || parsed.phone || parsed.id || parsed.name || '';
+          promoter = {
+            name: parsed.name || 'Member',
+            memberId: parsed.memberId || getDeterministicMemberId(seed),
+            tierLevel: parsed.level || 'Silver',
+            referralCode: parsed.referralCode || getDeterministicReferralCode(seed),
+          };
+        }
+      } catch {}
+    }
+
     const downlineTree: {
       level1Direct: any[];
       level2Team: any[];
@@ -22,12 +53,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      promoter: {
-        name: initialUser.name,
-        memberId: initialUser.memberId,
-        tierLevel: initialUser.level,
-        referralCode: initialUser.referralCode,
-      },
+      promoter,
       summary: {
         totalDirectReferrals: downlineTree.level1Direct.length,
         totalTeamSize: downlineTree.level1Direct.length + downlineTree.level2Team.length + downlineTree.level3Community.length,

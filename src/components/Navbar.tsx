@@ -21,6 +21,7 @@ import {
   Building2
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
+import { getStoredUserSession, clearUserSession } from '@/lib/userSession';
 
 interface NavbarProps {
   user?: UserProfile | null;
@@ -44,6 +45,28 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [userDropdown, setUserDropdown] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Internal active session state with automatic hydration fallback
+  const [activeUser, setActiveUser] = useState<UserProfile | null>(user || null);
+  const [activeIsLoggedIn, setActiveIsLoggedIn] = useState<boolean>(Boolean(isLoggedIn && user));
+
+  useEffect(() => {
+    if (isLoggedIn && user) {
+      setActiveUser(user);
+      setActiveIsLoggedIn(true);
+      return;
+    }
+
+    // Auto-hydrate from cookie or localStorage across all pages
+    const session = getStoredUserSession();
+    if (session.isLoggedIn && session.user) {
+      setActiveUser(session.user);
+      setActiveIsLoggedIn(true);
+    } else {
+      setActiveUser(user || null);
+      setActiveIsLoggedIn(Boolean(isLoggedIn && user));
+    }
+  }, [user, isLoggedIn]);
 
   const initialNotifications = [
     {
@@ -381,7 +404,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* User Profile or Sign In Button */}
-            {isLoggedIn && user ? (
+            {activeIsLoggedIn && activeUser ? (
               <div className="relative" ref={userDropdownRef}>
                 <button
                   onClick={() => setUserDropdown(!userDropdown)}
@@ -389,10 +412,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="flex items-center space-x-2 pl-2 pr-3 py-1.5 rounded-full border border-slate-200 hover:border-emerald-300 bg-white transition"
                 >
                   <div className="w-7 h-7 rounded-full bg-brand-forest text-white flex items-center justify-center text-xs font-bold">
-                    {user.name.charAt(0)}
+                    {activeUser.name ? activeUser.name.charAt(0).toUpperCase() : 'M'}
                   </div>
                   <div className="hidden md:block text-left text-xs">
-                    <div className="font-semibold text-slate-900 truncate max-w-[80px]">{user.name}</div>
+                    <div className="font-semibold text-slate-900 truncate max-w-[80px]">{activeUser.name}</div>
                   </div>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-500 hidden md:block" />
                 </button>
@@ -401,9 +424,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
                     <div className="px-4 py-2 border-b border-slate-100">
                       <p className="text-xs text-slate-500">Signed in as</p>
-                      <p className="text-sm font-bold text-slate-900">{user.name}</p>
+                      <p className="text-sm font-bold text-slate-900">{activeUser.name}</p>
                       <span className="inline-block mt-1 text-[10px] bg-brand-mint text-brand-forest px-2 py-0.5 rounded-full font-semibold">
-                        {user.level} Member
+                        {activeUser.level || 'Silver'} Member
                       </span>
                     </div>
 
@@ -453,10 +476,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </button>
                       <button
                         onClick={() => {
-                          try {
-                            localStorage.removeItem('mbm_user');
-                            localStorage.removeItem('mbm_token');
-                          } catch (e) {}
+                          clearUserSession();
+                          setActiveUser(null);
+                          setActiveIsLoggedIn(false);
                           setUserDropdown(false);
                           window.location.reload();
                         }}

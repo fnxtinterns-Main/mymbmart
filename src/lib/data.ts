@@ -9,7 +9,7 @@ export const initialUser: UserProfile = {
   role: 'CONSUMER',
   isActive: true,
   level: 'Silver',
-  referralCode: 'MBM2026',
+  referralCode: '',
   directReferralsCount: 0,
   totalTeamCount: 0,
 };

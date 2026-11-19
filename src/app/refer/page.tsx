@@ -10,6 +10,7 @@ import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
 import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
 import { CartItem, UserProfile } from '@/lib/types';
+import { getStoredUserSession } from '@/lib/userSession';
 import { Sparkles, Users, Award, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export default function ReferPage() {
@@ -22,16 +23,24 @@ export default function ReferPage() {
     try {
       const saved = localStorage.getItem('mymbmart_cart');
       if (saved) setCartItems(JSON.parse(saved));
+
+      // Hydrate user session from cookie or localStorage
+      const session = getStoredUserSession();
+      if (session.isLoggedIn && session.user) {
+        setUser(session.user);
+      }
     } catch (e) {
       console.error(e);
     }
   }, []);
 
+  const isUserLoggedIn = Boolean(user && (user.phone || user.email));
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <Navbar
-        user={user.phone ? user : null}
-        isLoggedIn={Boolean(user.phone)}
+        user={isUserLoggedIn ? user : null}
+        isLoggedIn={isUserLoggedIn}
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
@@ -53,7 +62,11 @@ export default function ReferPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-6 space-y-6">
-            <ReferAndEarn user={user} />
+            <ReferAndEarn 
+              user={user} 
+              isLoggedIn={isUserLoggedIn} 
+              onOpenAuth={() => setIsAuthOpen(true)} 
+            />
             <PromoterTeamView />
           </div>
 

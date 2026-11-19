@@ -17,6 +17,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
+import { saveUserSession } from '@/lib/userSession';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -96,9 +97,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setLoading(false);
 
       if (data.success && data.user) {
-        // Persist session
+        // Persist session across all pages via localStorage and cookie
         try {
-          localStorage.setItem('mbm_user', JSON.stringify(data.user));
+          saveUserSession(data.user);
           if (data.token) localStorage.setItem('mbm_token', data.token);
         } catch (err) {
           console.error('Storage error', err);
@@ -118,6 +119,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         memberId: 'MBM' + Math.floor(100000 + Math.random() * 900000),
         role: 'CONSUMER' as const,
       };
+      saveUserSession(fallbackUser);
       onLoginSuccess(fallbackUser);
       onClose();
     }
@@ -158,7 +160,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
       if (data.success && data.user) {
         try {
-          localStorage.setItem('mbm_user', JSON.stringify(data.user));
+          saveUserSession(data.user);
           if (data.token) localStorage.setItem('mbm_token', data.token);
         } catch (err) {
           console.error('Storage error', err);

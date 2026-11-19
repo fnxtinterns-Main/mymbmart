@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { getDeterministicReferralCode, getDeterministicMemberId } from '@/lib/userSession';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,8 +59,9 @@ export async function GET(req: Request) {
       return NextResponse.redirect(new URL('/shop?auth_error=no_email', req.url));
     }
 
-    const memberId = 'MBM' + Math.floor(100000 + Math.random() * 900000);
-    const referralCode = 'MBM' + Math.floor(100000 + Math.random() * 900000);
+    const userSeed = email || sub || name;
+    const memberId = getDeterministicMemberId(userSeed);
+    const referralCode = getDeterministicReferralCode(userSeed);
 
     const userProfile = {
       id: sub ? `usr-google-${sub}` : `usr-${Date.now()}`,
@@ -94,6 +96,14 @@ export async function GET(req: Request) {
 
     response.cookies.set('mbm_session', token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60,
+      path: '/',
+    });
+
+    response.cookies.set('mbm_user_data', encodeURIComponent(JSON.stringify(userProfile)), {
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60,
@@ -151,8 +161,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const memberId = 'MBM' + Math.floor(100000 + Math.random() * 900000);
-    const referralCode = 'MBM' + Math.floor(100000 + Math.random() * 900000);
+    const userSeed = email || sub || name;
+    const memberId = getDeterministicMemberId(userSeed);
+    const referralCode = getDeterministicReferralCode(userSeed);
 
     const userProfile = {
       id: sub ? `usr-google-${sub}` : `usr-${Date.now()}`,
@@ -192,6 +203,14 @@ export async function POST(req: Request) {
 
     response.cookies.set('mbm_session', token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60,
+      path: '/',
+    });
+
+    response.cookies.set('mbm_user_data', encodeURIComponent(JSON.stringify(userProfile)), {
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60,

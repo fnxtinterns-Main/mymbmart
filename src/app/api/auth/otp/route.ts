@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { initialUser, initialWallet } from '@/lib/data';
 import { sendOtpEmail } from '@/lib/emailService';
+import { getDeterministicReferralCode, getDeterministicMemberId } from '@/lib/userSession';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,8 +34,8 @@ export async function POST(req: Request) {
       const name = isEmail 
         ? identifier.split('@')[0].charAt(0).toUpperCase() + identifier.split('@')[0].slice(1) 
         : 'Member ' + identifier.slice(-4);
-      const memberId = 'MBM' + Math.floor(100000 + Math.random() * 900000);
-      const generatedReferralCode = 'MBM' + Math.floor(100000 + Math.random() * 900000);
+      const memberId = getDeterministicMemberId(identifier);
+      const generatedReferralCode = getDeterministicReferralCode(identifier);
 
       const userProfile = {
         id: 'usr-' + Date.now(),
@@ -72,6 +73,14 @@ export async function POST(req: Request) {
       // Set HTTP-only session cookie
       response.cookies.set('mbm_session', token, {
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60,
+        path: '/',
+      });
+
+      response.cookies.set('mbm_user_data', encodeURIComponent(JSON.stringify(userProfile)), {
+        httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60,

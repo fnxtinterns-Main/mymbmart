@@ -8,6 +8,7 @@ import { Footer } from '@/components/Footer';
 import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
 import { CartItem, UserProfile } from '@/lib/types';
 import { calculateSplitPayment } from '@/lib/securityUtils';
+import { getStoredUserSession } from '@/lib/userSession';
 import { 
   ShieldCheck, 
   Wallet, 
@@ -50,9 +51,9 @@ export default function CheckoutPage() {
         ]);
       }
 
-      const savedUser = localStorage.getItem('mbm_user');
-      if (savedUser) {
-        setUser((p) => ({ ...p, ...JSON.parse(savedUser) }));
+      const session = getStoredUserSession();
+      if (session.isLoggedIn && session.user) {
+        setUser(session.user);
       }
     } catch {
       setCartItems([
@@ -114,8 +115,8 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <Navbar
-        user={user.phone ? user : null}
-        isLoggedIn={Boolean(user.phone)}
+        user={(user.phone || user.email) ? user : null}
+        isLoggedIn={Boolean(user.phone || user.email)}
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
       />
 

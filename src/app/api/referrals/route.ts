@@ -1,11 +1,42 @@
 import { NextResponse } from 'next/server';
 import { initialUser } from '@/lib/data';
+import { getDeterministicReferralCode, getDeterministicMemberId } from '@/lib/userSession';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const referralCode = initialUser.referralCode || 'MB123456';
+    const cookieHeader = req.headers.get('cookie') || '';
+    const cookies = Object.fromEntries(
+      cookieHeader.split('; ').map((c) => {
+        const [k, ...v] = c.split('=');
+        return [k, v.join('=')];
+      })
+    );
+
+    let activeUser = {
+      name: 'Guest Member',
+      memberId: 'MBM-GUEST',
+      referralCode: '',
+      level: 'Silver',
+    };
+
+    if (cookies.mbm_user_data) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(cookies.mbm_user_data));
+        if (parsed) {
+          const seed = parsed.email || parsed.phone || parsed.id || parsed.name || '';
+          activeUser = {
+            name: parsed.name || 'Member',
+            memberId: parsed.memberId || getDeterministicMemberId(seed),
+            referralCode: parsed.referralCode || getDeterministicReferralCode(seed),
+            level: parsed.level || 'Silver',
+          };
+        }
+      } catch {}
+    }
+
+    const referralCode = activeUser.referralCode || 'MBM-GUEST';
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mymbmart.com';
     const inviteUrl = `${baseUrl}/join?ref=${referralCode}`;
 
@@ -44,11 +75,11 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       user: {
-        name: initialUser.name,
-        memberId: initialUser.memberId,
+        name: activeUser.name,
+        memberId: activeUser.memberId,
         referralCode,
         inviteUrl,
-        rank: initialUser.level,
+        rank: activeUser.level,
       },
       stats: {
         directReferralsCount: 5,

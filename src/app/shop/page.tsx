@@ -11,6 +11,7 @@ import { Footer } from '@/components/Footer';
 import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
 import { CartItem, ProductItem, UserProfile } from '@/lib/types';
 import { OrderRecord, ordersStore } from '@/lib/ordersStore';
+import { getStoredUserSession, hydrateUserProfile } from '@/lib/userSession';
 import { Sparkles, ShoppingBag, ShieldCheck, Zap } from 'lucide-react';
 
 export default function ShopPage() {
@@ -42,22 +43,10 @@ export default function ShopPage() {
         setCartItems(JSON.parse(saved));
       }
 
-      // Check cookie for OAuth redirect login (e.g. Google Sign-in)
-      const cookies = document.cookie.split('; ');
-      const userCookie = cookies.find((row) => row.startsWith('mbm_user_data='));
-      if (userCookie) {
-        try {
-          const cookieData = JSON.parse(decodeURIComponent(userCookie.split('=')[1]));
-          if (cookieData && cookieData.email) {
-            setUser((p) => ({ ...p, ...cookieData }));
-            localStorage.setItem('mbm_user', JSON.stringify(cookieData));
-          }
-        } catch {}
-      } else {
-        const savedUser = localStorage.getItem('mbm_user');
-        if (savedUser) {
-          setUser((p) => ({ ...p, ...JSON.parse(savedUser) }));
-        }
+      // Check session from cookies or localStorage
+      const session = getStoredUserSession();
+      if (session.isLoggedIn && session.user) {
+        setUser(session.user);
       }
     } catch (e) {
       console.error(e);
@@ -111,8 +100,8 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <Navbar
-        user={user.phone ? user : null}
-        isLoggedIn={Boolean(user.phone)}
+        user={(user.phone || user.email) ? user : null}
+        isLoggedIn={Boolean(user.phone || user.email)}
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}

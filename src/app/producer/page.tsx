@@ -9,11 +9,19 @@ import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
 import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
 import { CartItem, UserProfile } from '@/lib/types';
+import { getStoredUserSession } from '@/lib/userSession';
 
 export default function ProducerPage() {
   const [user, setUser] = useState<UserProfile>(initialUser);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  React.useEffect(() => {
+    const session = getStoredUserSession();
+    if (session.isLoggedIn && session.user) {
+      setUser(session.user);
+    }
+  }, []);
   const [cartItems] = useState<CartItem[]>([
     { product: sampleProducts[0], quantity: 1 },
     { product: sampleProducts[1], quantity: 1 },

@@ -11,6 +11,7 @@ import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
 import { initialUser, initialWallet, initialTransactions, monthlySavings, sampleProducts } from '@/lib/data';
 import { CartItem, Transaction, UserProfile, WalletState } from '@/lib/types';
+import { getStoredUserSession } from '@/lib/userSession';
 import { 
   PiggyBank, 
   Wallet, 
@@ -42,6 +43,12 @@ export default function SavingsPage() {
     try {
       const saved = localStorage.getItem('mymbmart_cart');
       if (saved) setCartItems(JSON.parse(saved));
+
+      // Hydrate user session from cookie or localStorage
+      const session = getStoredUserSession();
+      if (session.isLoggedIn && session.user) {
+        setUser(session.user);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -65,8 +72,8 @@ export default function SavingsPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between selection:bg-brand-orange selection:text-white">
       <Navbar
-        user={user.phone ? user : null}
-        isLoggedIn={Boolean(user.phone)}
+        user={(user.phone || user.email) ? user : null}
+        isLoggedIn={Boolean(user.phone || user.email)}
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
@@ -87,10 +94,10 @@ export default function SavingsPage() {
           </div>
           <div className="flex items-center space-x-3">
             <span className="text-xs text-slate-500">
-              Member ID: <strong className="text-brand-forest font-mono">{user.memberId || 'Guest Member'}</strong>
+              Member ID: <strong className="text-brand-forest font-mono">{user.memberId && user.memberId !== 'Guest Member' ? user.memberId : (user.phone || user.email ? 'MBM' + (user.phone ? user.phone.slice(-6) : '782910') : 'Guest Member')}</strong>
             </span>
             <span className="bg-brand-mint text-brand-forest text-xs font-extrabold px-3 py-1 rounded-full">
-              {user.level || 'Standard'}
+              {user.level || 'Silver'}
             </span>
           </div>
         </div>
