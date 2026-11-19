@@ -3,12 +3,29 @@ import { ordersStore } from '@/lib/ordersStore';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const cookieHeader = req.headers.get('cookie') || '';
+    const isAdmin = cookieHeader.includes('mbm_admin_authenticated=true') || req.headers.get('authorization')?.startsWith('Bearer');
+    if (!isAdmin && process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'Unauthorized. Admin credentials required.' }, { status: 401 });
+    }
+
+    let orders: any[] = ordersStore;
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const dbOrders = await prisma.order.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+      if (dbOrders && dbOrders.length > 0) {
+        orders = dbOrders;
+      }
+    } catch {}
+
     return NextResponse.json({
       success: true,
-      count: ordersStore.length,
-      orders: ordersStore,
+      count: orders.length,
+      orders,
     });
   } catch (error: any) {
     return NextResponse.json(

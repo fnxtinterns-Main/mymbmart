@@ -110,14 +110,6 @@ export async function GET(req: Request) {
       path: '/',
     });
 
-    response.cookies.set('mbm_user_data', encodeURIComponent(JSON.stringify(userProfile)), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60,
-      path: '/',
-    });
-
     return response;
   } catch (err: any) {
     console.error('Google OAuth GET handler exception:', err);

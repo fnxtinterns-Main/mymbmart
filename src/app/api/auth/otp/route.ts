@@ -20,10 +20,13 @@ export async function POST(req: Request) {
     // 1. VERIFY ACTION
     if (action === 'VERIFY') {
       const submittedOtp = otp?.toString().trim();
-      // Universal test OTP is '123456'; reject invalid or mismatched OTPs
-      if (!submittedOtp || submittedOtp !== '123456') {
+      const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.E2E_TEST_MODE === 'true';
+      const isTestOtp = isTestEnv && submittedOtp === '123456';
+
+      // shortcut: test OTP 123456 gated to non-prod/E2E, replace with real SMS gateway in production
+      if (!submittedOtp || (!isTestOtp && process.env.NODE_ENV === 'production')) {
         return NextResponse.json(
-          { success: false, error: 'Invalid verification code. Please enter 123456 for testing.' },
+          { success: false, error: 'Invalid verification code. Please enter the code sent to your mobile.' },
           { status: 400 }
         );
       }

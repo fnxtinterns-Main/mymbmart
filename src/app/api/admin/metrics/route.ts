@@ -4,8 +4,14 @@ import { CATALOG_PRODUCTS } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const cookieHeader = req.headers.get('cookie') || '';
+    const isAdmin = cookieHeader.includes('mbm_admin_authenticated=true') || req.headers.get('authorization')?.startsWith('Bearer');
+    if (!isAdmin && process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'Unauthorized. Admin credentials required.' }, { status: 401 });
+    }
+
     let sourceOrders: any[] = ordersStore;
 
     // Prisma-First: Attempt fetching live orders from PostgreSQL if available

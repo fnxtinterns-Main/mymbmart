@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Lock, Eye, EyeOff, ArrowRight, AlertCircle, KeyRound } from 'lucide-react';
 
-const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || 'MBM@Admin2026';
-
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -15,26 +13,34 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    const validPass = passcode.trim() === ADMIN_PIN || 
-      passcode.trim() === 'MBM#Test001@2026' || 
-      passcode.trim() === 'MBM@Admin2026';
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, passcode }),
+      });
+      const data = await res.json();
 
-    if (validPass) {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('mbm_admin_authenticated', 'true');
-        sessionStorage.setItem('mbm_admin_role', 'Super Admin');
-        sessionStorage.setItem('mbm_admin_name', email || 'System Administrator');
-        document.cookie = 'mbm_admin_authenticated=true; path=/';
+      if (res.ok && data.success) {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('mbm_admin_authenticated', 'true');
+          sessionStorage.setItem('mbm_admin_role', data.role || 'Super Admin');
+          sessionStorage.setItem('mbm_admin_name', data.name || email || 'System Administrator');
+          document.cookie = 'mbm_admin_authenticated=true; path=/';
+        }
+        router.push('/admin?tab=orders');
+      } else {
+        setIsLoading(false);
+        setError(data.error || 'Invalid Security Passcode. Access denied.');
       }
-      router.push('/admin?tab=orders');
-    } else {
+    } catch {
       setIsLoading(false);
-      setError('Invalid Security Passcode. Access denied.');
+      setError('Unable to reach authentication server. Please check your network.');
     }
   };
 

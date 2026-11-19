@@ -28,7 +28,10 @@ export default defineConfig({
   webServer: {
     command: 'npm run start -- -p 3001',
     url: 'http://127.0.0.1:3001/api/products',
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 180_000,
+    env: {
+      E2E_TEST_MODE: 'true',
+    },
   },
 });

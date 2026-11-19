@@ -264,7 +264,7 @@ export default function AdminDashboardPage() {
       if (tabParam === 'orders' || window.location.pathname.includes('/orders')) {
         setActiveTab('orders');
       }
-      if (authStatus === 'true' || urlParams.get('test_mode') === 'true') {
+      if (authStatus === 'true') {
         setIsAuthenticated(true);
         fetchMetrics();
       }
