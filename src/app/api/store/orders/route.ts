@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { ordersStore, updateOrderStatus, getOrderById } from '@/lib/ordersStore';
+import { ordersStore, updateOrderStatus, getOrderById, syncOrdersFromRedis } from '@/lib/ordersStore';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const quickOrders = ordersStore.filter((o) =>
-      o.items.some((i) => i.fulfilmentType === 'QUICK_COMMERCE')
+    const allOrders = await syncOrdersFromRedis();
+    const quickOrders = allOrders.filter((o) =>
+      o.items && o.items.some((i: any) => i.fulfilmentType === 'QUICK_COMMERCE')
     );
 
     return NextResponse.json({
@@ -29,6 +30,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    await syncOrdersFromRedis();
     const body = await req.json();
     const { orderId, action, reason } = body;
 

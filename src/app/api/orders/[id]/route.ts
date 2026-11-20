@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrderById } from '@/lib/ordersStore';
+import { getOrderByIdAsync } from '@/lib/ordersStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,9 +23,9 @@ export async function GET(
       }
     } catch {}
 
-    // Resilient fallback to active store
+    // Resilient fallback to active store + Redis
     if (!order) {
-      order = getOrderById(id);
+      order = await getOrderByIdAsync(id);
     }
 
     if (!order) {

@@ -203,6 +203,23 @@ export function getOrderById(idOrNumber: string) {
   );
 }
 
+export async function getOrderByIdAsync(idOrNumber: string): Promise<OrderRecord | undefined> {
+  const local = getOrderById(idOrNumber);
+  if (local) return local;
+  if (isRedisConfigured()) {
+    try {
+      const fromRedis = await redisGet<OrderRecord>(`order:${idOrNumber}`);
+      if (fromRedis) {
+        if (!ordersStore.some(o => o.id === fromRedis.id || o.orderNumber === fromRedis.orderNumber)) {
+          ordersStore.unshift(fromRedis);
+        }
+        return fromRedis;
+      }
+    } catch {}
+  }
+  return undefined;
+}
+
 // Allowed state machine transitions to prevent illegal step-skipping or post-delivery tampering
 export const VALID_ORDER_TRANSITIONS: Record<string, string[]> = {
   NEW: ['PLACED', 'CANCELLED'],
