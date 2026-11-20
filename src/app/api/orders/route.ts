@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ordersStore } from '@/lib/ordersStore';
+import { ordersStore, syncOrdersFromDisk } from '@/lib/ordersStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,10 +12,20 @@ export async function GET(req: Request) {
       req.headers.get('authorization')?.startsWith('Bearer');
 
     if (!isAdmin && process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Unauthorized. Admin credentials or active session required.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin credentials or active session required.' }, 
+        { 
+          status: 401,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          }
+        }
+      );
     }
 
-    let orders: any[] = ordersStore;
+    let orders: any[] = syncOrdersFromDisk();
     try {
       const { prisma } = await import('@/lib/prisma');
       const dbOrders = await prisma.order.findMany({
@@ -30,6 +40,12 @@ export async function GET(req: Request) {
       success: true,
       count: orders.length,
       orders,
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
     });
   } catch (error: any) {
     return NextResponse.json(

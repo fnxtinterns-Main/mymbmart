@@ -1,4 +1,7 @@
 // Central store for Orders, Deliveries, and Rider Workflows
+import fs from 'fs';
+import path from 'path';
+
 export interface OrderRecord {
   id: string;
   orderNumber: string;
@@ -102,13 +105,56 @@ export interface OrderRecord {
 
 export const initialPilotOrders: OrderRecord[] = [];
 
+const DATA_DIR = path.join(process.cwd(), 'data');
+const ORDERS_FILE = path.join(process.cwd(), 'data', 'orders.json');
+
+function loadOrdersFromDisk(): OrderRecord[] {
+  if (typeof window !== 'undefined') return [];
+  try {
+    if (fs.existsSync(ORDERS_FILE)) {
+      const content = fs.readFileSync(ORDERS_FILE, 'utf-8');
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (err) {
+    console.error('Failed to load orders from disk:', err);
+  }
+  return [];
+}
+
+function saveOrdersToDisk(orders: OrderRecord[]): void {
+  if (typeof window !== 'undefined') return;
+  if (process.env.NODE_ENV === 'test' || process.env.npm_lifecycle_event === 'test:real') return;
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Failed to save orders to disk:', err);
+  }
+}
+
 // In-memory persistent order state across Next.js API turns in runtime
 const globalStore = global as unknown as { 
   activeOrders: OrderRecord[];
 };
 
-if (!globalStore.activeOrders) {
-  globalStore.activeOrders = [];
+if (!globalStore.activeOrders || globalStore.activeOrders.length === 0) {
+  globalStore.activeOrders = loadOrdersFromDisk();
+}
+
+export function syncOrdersFromDisk(): OrderRecord[] {
+  const diskOrders = loadOrdersFromDisk();
+  if (diskOrders.length > 0) {
+    const existingIds = new Set(globalStore.activeOrders.map((o) => o.id || o.orderNumber));
+    for (const d of diskOrders) {
+      if (!existingIds.has(d.id) && !existingIds.has(d.orderNumber)) {
+        globalStore.activeOrders.push(d);
+      }
+    }
+  }
+  return globalStore.activeOrders;
 }
 
 export const ordersStore = globalStore.activeOrders;
@@ -119,10 +165,12 @@ export function addOrder(order: OrderRecord) {
   if (ordersStore.length > 200) {
     ordersStore.length = 200;
   }
+  saveOrdersToDisk(ordersStore);
   return order;
 }
 
 export function getOrderById(idOrNumber: string) {
+  syncOrdersFromDisk();
   return ordersStore.find(
     (o) => o.id === idOrNumber || o.orderNumber === idOrNumber
   );
@@ -193,5 +241,6 @@ export function updateOrderStatus(orderId: string, status: OrderRecord['status']
     order.cashbackCredited = false;
     order.cashbackEarnable = 0;
   }
+  saveOrdersToDisk(ordersStore);
   return order;
 }

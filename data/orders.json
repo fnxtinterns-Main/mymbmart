@@ -1,0 +1,71 @@
+[
+  {
+    "id": "ord-86084",
+    "orderNumber": "MBM-2026-86084",
+    "userId": "usr-aviraj",
+    "userName": "Aviraj Kumar",
+    "userPhone": "+91 98015 06511",
+    "deliveryAddress": "Main Road, Ranchi Central, Jharkhand - 834001",
+    "pincode": "834001",
+    "fulfilmentType": "HOME_DELIVERY",
+    "status": "PLACED",
+    "deliveryOtp": "7445",
+    "paymentMethod": "PHONEPE_UPI",
+    "paymentStatus": "PAID",
+    "upiTransactionId": "UPI-TXN-782101",
+    "totalMRP": 79,
+    "totalPayable": 64,
+    "shoppingSavings": 15,
+    "creditDeduction": 0,
+    "cashbackEarnable": 5,
+    "cashbackCredited": false,
+    "darkStore": {
+      "id": "store-ranchi-central",
+      "name": "Ranchi Central Dark Store",
+      "city": "Ranchi",
+      "etaMinutes": 25
+    },
+    "items": [
+      {
+        "productId": "p-produce-1",
+        "name": "Fresh Hybrid Juicy Red Tomatoes",
+        "quantity": 1,
+        "unitPrice": 35,
+        "image": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80",
+        "fulfilmentType": "QUICK_COMMERCE"
+      }
+    ],
+    "splitShipments": [
+      {
+        "type": "QUICK_COMMERCE",
+        "status": "PLACED",
+        "eta": "20–30 Minutes",
+        "hub": "Ranchi Central Dark Store",
+        "itemCount": 1
+      }
+    ],
+    "createdAt": "2026-11-19T08:43:00.000Z",
+    "timeline": [
+      {
+        "step": "Order Placed & Stock Locked",
+        "time": "2:13 pm",
+        "completed": true
+      },
+      {
+        "step": "Dark Store Packing Started",
+        "time": "In 3 mins",
+        "completed": false
+      },
+      {
+        "step": "Rider Pick-up & Dispatch",
+        "time": "In 8 mins",
+        "completed": false
+      },
+      {
+        "step": "Delivery at Doorstep (OTP: 7445)",
+        "time": "In 20–25 mins",
+        "completed": false
+      }
+    ]
+  }
+]

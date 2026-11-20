@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ordersStore } from '@/lib/ordersStore';
+import { ordersStore, syncOrdersFromDisk } from '@/lib/ordersStore';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
@@ -13,10 +13,20 @@ export async function GET(req: Request) {
       req.headers.get('authorization')?.startsWith('Bearer');
 
     if (!isAdmin && process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Unauthorized. Admin credentials or active session required.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin credentials or active session required.' }, 
+        { 
+          status: 401,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          }
+        }
+      );
     }
 
-    let sourceOrders: any[] = ordersStore;
+    let sourceOrders: any[] = syncOrdersFromDisk();
 
     // Prisma-First: Attempt fetching live orders from PostgreSQL if available
     try {
@@ -81,6 +91,12 @@ export async function GET(req: Request) {
         redisQueue: 'OPERATIONAL',
         smartChainNode: 'SYNCED',
         smsSmtpGateway: 'ONLINE',
+      }
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       }
     });
   } catch (error: any) {

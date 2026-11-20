@@ -13,7 +13,7 @@ import { Footer } from '@/components/Footer';
 
 import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
 import { CartItem, ProductItem, UserProfile } from '@/lib/types';
-import { OrderRecord, ordersStore } from '@/lib/ordersStore';
+import { OrderRecord } from '@/lib/ordersStore';
 import { getStoredUserSession, saveUserSession, hydrateUserProfile } from '@/lib/userSession';
 
 import { 

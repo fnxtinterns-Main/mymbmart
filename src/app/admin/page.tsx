@@ -205,70 +205,31 @@ export default function AdminDashboardPage() {
 
   const fetchMetrics = () => {
     setLoading(true);
-    fetch('/api/admin/metrics')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          // Merge client-side placed orders so browser-placed orders appear immediately even across serverless boundaries
-          try {
-            const clientOrders = JSON.parse(localStorage.getItem('mymbmart_placed_orders') || '[]');
-            if (Array.isArray(clientOrders) && clientOrders.length > 0) {
-              const serverOrders = data.recentOrders || [];
-              const merged = [...clientOrders];
-              for (const so of serverOrders) {
-                if (!merged.some((co: any) => co.id === so.id || co.orderNumber === so.orderNumber)) {
-                  merged.push(so);
-                }
-              }
-              data.recentOrders = merged;
-              data.kpis.totalOrders = Math.max(data.kpis.totalOrders || 0, merged.length);
-            }
-          } catch {}
 
-          setMetrics(data);
-          if (data.darkStore?.lowStockSKUs) {
-            setLowStockList(data.darkStore.lowStockSKUs);
-          }
-        } else {
-          // Fallback: hydrate from client-placed orders
-          try {
-            const clientOrders = JSON.parse(localStorage.getItem('mymbmart_placed_orders') || '[]');
-            if (Array.isArray(clientOrders) && clientOrders.length > 0) {
-              setMetrics((prev) => ({
-                kpis: {
-                  totalGMV: clientOrders.reduce((acc: number, o: any) => acc + (o.totalPayable || 0), 0),
-                  totalOrders: clientOrders.length,
-                  totalCustomerSavings: clientOrders.reduce((acc: number, o: any) => acc + (o.shoppingSavings || 0), 0),
-                  pendingDispatchCount: clientOrders.filter((o: any) => ['PLACED', 'PACKED', 'PACKING'].includes(o.status || o.orderStatus)).length,
-                  outForDeliveryCount: clientOrders.filter((o: any) => (o.status || o.orderStatus) === 'OUT_FOR_DELIVERY').length,
-                  deliveredCount: clientOrders.filter((o: any) => (o.status || o.orderStatus) === 'DELIVERED').length,
-                  activeSHGProducers: 2,
-                  activePromoterCount: 0,
-                },
-                darkStore: prev?.darkStore || {
-                  storeCode: 'MBM-RCH-01',
-                  name: 'MegaBachatMart Ranchi Central Dark Store',
-                  address: 'Main Road, Ranchi, Jharkhand (834001)',
-                  activeRiders: 4,
-                  busyRiders: 0,
-                  averageDeliveryMinutes: 22,
-                  inventorySKUs: 20,
-                  lowStockSKUs: [],
-                },
-                recentOrders: clientOrders,
-                systemHealth: prev?.systemHealth || {
-                  database: 'HEALTHY',
-                  redisQueue: 'OPERATIONAL',
-                  smartChainNode: 'SYNCED',
-                  smsSmtpGateway: 'ONLINE',
-                },
-              }));
+    const applyMetricsData = (data: any) => {
+      if (data && data.success) {
+        // Merge client-side placed orders so browser-placed orders appear immediately even across serverless boundaries
+        try {
+          const clientOrders = JSON.parse(localStorage.getItem('mymbmart_placed_orders') || '[]');
+          if (Array.isArray(clientOrders) && clientOrders.length > 0) {
+            const serverOrders = data.recentOrders || [];
+            const merged = [...clientOrders];
+            for (const so of serverOrders) {
+              if (!merged.some((co: any) => co.id === so.id || co.orderNumber === so.orderNumber)) {
+                merged.push(so);
+              }
             }
-          } catch {}
+            data.recentOrders = merged;
+            data.kpis.totalOrders = Math.max(data.kpis.totalOrders || 0, merged.length);
+          }
+        } catch {}
+
+        setMetrics(data);
+        if (data.darkStore?.lowStockSKUs) {
+          setLowStockList(data.darkStore.lowStockSKUs);
         }
-        setLoading(false);
-      })
-      .catch(() => {
+      } else {
+        // Fallback: hydrate from client-placed orders
         try {
           const clientOrders = JSON.parse(localStorage.getItem('mymbmart_placed_orders') || '[]');
           if (Array.isArray(clientOrders) && clientOrders.length > 0) {
@@ -303,7 +264,40 @@ export default function AdminDashboardPage() {
             }));
           }
         } catch {}
-        setLoading(false);
+      }
+      setLoading(false);
+    };
+
+    fetch('/api/admin/metrics')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success && data.recentOrders && data.recentOrders.length > 0) {
+          applyMetricsData(data);
+        } else if (typeof window !== 'undefined' && window.location.hostname.includes('admin.')) {
+          // Cross-subdomain fallback to main storefront API
+          fetch('https://mymbmart.com/api/admin/metrics')
+            .then((r) => r.json())
+            .then((storeData) => {
+              if (storeData && storeData.success && storeData.recentOrders?.length > 0) {
+                applyMetricsData(storeData);
+              } else {
+                applyMetricsData(data);
+              }
+            })
+            .catch(() => applyMetricsData(data));
+        } else {
+          applyMetricsData(data);
+        }
+      })
+      .catch(() => {
+        if (typeof window !== 'undefined' && window.location.hostname.includes('admin.')) {
+          fetch('https://mymbmart.com/api/admin/metrics')
+            .then((r) => r.json())
+            .then((storeData) => applyMetricsData(storeData))
+            .catch(() => applyMetricsData(null));
+        } else {
+          applyMetricsData(null);
+        }
       });
 
     fetch('/api/producer/register')
