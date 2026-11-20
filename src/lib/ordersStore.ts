@@ -1,6 +1,7 @@
 // Central store for Orders, Deliveries, and Rider Workflows
 import fs from 'fs';
 import path from 'path';
+import { redisSet, redisGet, isRedisConfigured } from './redis';
 
 export interface OrderRecord {
   id: string;
@@ -157,6 +158,25 @@ export function syncOrdersFromDisk(): OrderRecord[] {
   return globalStore.activeOrders;
 }
 
+export async function syncOrdersFromRedis(): Promise<OrderRecord[]> {
+  if (!isRedisConfigured()) {
+    return syncOrdersFromDisk();
+  }
+  try {
+    const remote = await redisGet<OrderRecord[]>('orders:latest');
+    if (Array.isArray(remote) && remote.length > 0) {
+      const existingIds = new Set(globalStore.activeOrders.map((o) => o.id || o.orderNumber));
+      for (const r of remote) {
+        if (!existingIds.has(r.id) && !existingIds.has(r.orderNumber)) {
+          globalStore.activeOrders.push(r);
+        }
+      }
+      saveOrdersToDisk(globalStore.activeOrders);
+    }
+  } catch {}
+  return syncOrdersFromDisk();
+}
+
 export const ordersStore = globalStore.activeOrders;
 
 export function addOrder(order: OrderRecord) {
@@ -166,6 +186,13 @@ export function addOrder(order: OrderRecord) {
     ordersStore.length = 200;
   }
   saveOrdersToDisk(ordersStore);
+  if (isRedisConfigured()) {
+    redisSet('orders:latest', ordersStore).catch(() => {});
+    redisSet(`order:${order.id}`, order).catch(() => {});
+    if (order.orderNumber) {
+      redisSet(`order:${order.orderNumber}`, order).catch(() => {});
+    }
+  }
   return order;
 }
 
@@ -242,5 +269,12 @@ export function updateOrderStatus(orderId: string, status: OrderRecord['status']
     order.cashbackEarnable = 0;
   }
   saveOrdersToDisk(ordersStore);
+  if (isRedisConfigured()) {
+    redisSet('orders:latest', ordersStore).catch(() => {});
+    redisSet(`order:${order.id}`, order).catch(() => {});
+    if (order.orderNumber) {
+      redisSet(`order:${order.orderNumber}`, order).catch(() => {});
+    }
+  }
   return order;
 }

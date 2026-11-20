@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ordersStore, syncOrdersFromDisk } from '@/lib/ordersStore';
+import { ordersStore, syncOrdersFromDisk, syncOrdersFromRedis } from '@/lib/ordersStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
       );
     }
 
-    let orders: any[] = syncOrdersFromDisk();
+    let orders: any[] = await syncOrdersFromRedis();
     try {
       const { prisma } = await import('@/lib/prisma');
       const dbOrders = await prisma.order.findMany({

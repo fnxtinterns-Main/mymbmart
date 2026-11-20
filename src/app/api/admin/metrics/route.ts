@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ordersStore, syncOrdersFromDisk } from '@/lib/ordersStore';
+import { ordersStore, syncOrdersFromDisk, syncOrdersFromRedis } from '@/lib/ordersStore';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       );
     }
 
-    let sourceOrders: any[] = syncOrdersFromDisk();
+    let sourceOrders: any[] = await syncOrdersFromRedis();
 
     // Prisma-First: Attempt fetching live orders from PostgreSQL if available
     try {
