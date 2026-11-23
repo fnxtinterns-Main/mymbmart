@@ -1,5 +1,6 @@
 import { sampleProducts } from '@/lib/data';
 import type { ProductItem } from '@/lib/types';
+import { isRedisConfigured, redisGet, redisSet } from '@/lib/redis';
 
 // Base seed products
 const INITIAL_PRODUCTS = [
@@ -21,6 +22,18 @@ const globalForCatalog = globalThis as unknown as {
 
 if (!globalForCatalog.dynamicCatalogProducts) {
   globalForCatalog.dynamicCatalogProducts = [...INITIAL_PRODUCTS];
+}
+
+export async function syncCatalogFromRedis(): Promise<any[]> {
+  if (isRedisConfigured()) {
+    try {
+      const remote = await redisGet<any[]>('catalog:custom_products');
+      if (Array.isArray(remote) && remote.length > 0) {
+        globalForCatalog.dynamicCatalogProducts = remote;
+      }
+    } catch {}
+  }
+  return getCatalogProducts();
 }
 
 export function getCatalogProducts(): any[] {
@@ -51,6 +64,10 @@ export function addCatalogProducts(newProducts: ProductItem[]): void {
       current.unshift(formatted);
     }
   });
+
+  if (isRedisConfigured()) {
+    redisSet('catalog:custom_products', current).catch(() => {});
+  }
 }
 
 // Backward compatible export

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { 
   X, 
@@ -54,6 +54,26 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [applyCredits, setApplyCredits] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState('Main Road, Ranchi Central, Jharkhand - 834001');
+
+  // Debounced server preview validation (250ms debounce)
+  useEffect(() => {
+    if (cartItems.length === 0) return;
+    const timeout = setTimeout(() => {
+      fetch('/api/checkout/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cartItems.map((ci) => ({
+            productId: ci.product.id,
+            quantity: ci.quantity,
+          })),
+          fulfilmentType: 'HOME_DELIVERY',
+        }),
+      }).catch(() => {});
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [cartItems]);
 
   if (!isOpen) return null;
 

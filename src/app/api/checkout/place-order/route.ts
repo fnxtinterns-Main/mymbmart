@@ -159,6 +159,42 @@ export async function POST(req: Request) {
       });
     }
 
+    // Dynamic Hyperlocal Partner Allocation via 10-Factor Routing Engine
+    let assignedHub = {
+      id: 'store-ranchi-central',
+      name: 'Ranchi Central Dark Store',
+      city: 'Ranchi',
+      etaMinutes: 25,
+    };
+
+    try {
+      const { routingEngine } = await import('@/lib/routingEngine');
+      const routeItems = items.map((i: any) => ({
+        skuId: i.productId || i.product?.id || 'MB-GRO-AASH-5K',
+        quantity: Math.max(1, Math.min(99, Math.floor(Number(i.quantity) || 1))),
+      }));
+
+      const routeResult = await routingEngine.routeOrder({
+        orderId: `ord-route-${Date.now()}`,
+        customerId: authenticatedUserId,
+        fulfilmentType: isPickup ? 'PICKUP' : 'DELIVERY',
+        deliveryPincode: pincode || '834001',
+        items: routeItems,
+        customerSelectedShopId: body.shopId || body.storeId || null,
+      });
+
+      if (routeResult.success && routeResult.selectedShopId && routeResult.selectedShopName) {
+        assignedHub = {
+          id: routeResult.selectedShopId,
+          name: routeResult.selectedShopName,
+          city: 'Ranchi',
+          etaMinutes: routeResult.estimatedDeliveryMinutes || (isPickup ? 15 : 25),
+        };
+      }
+    } catch (routeErr) {
+      console.warn('Dynamic routing fallback to Central Dark Store:', routeErr);
+    }
+
     const newOrder: OrderRecord = {
       id: 'ord-' + Date.now(),
       orderNumber,
@@ -180,20 +216,15 @@ export async function POST(req: Request) {
       cashbackEarnable: totalCashback,
       cashbackCredited: false,
       assignedRider: undefined,
-      darkStore: {
-        id: 'store-ranchi-central',
-        name: 'Ranchi Central Dark Store',
-        city: 'Ranchi',
-        etaMinutes: 25,
-      },
+      darkStore: assignedHub,
       items: [...quickItems, ...marketplaceItems],
       splitShipments,
       createdAt: new Date().toISOString(),
       timeline: [
         { step: 'Order Placed & Stock Locked', time: 'Just now', completed: true },
-        { step: 'Dark Store Packing Started', time: 'In 3 mins', completed: false },
-        { step: 'Rider Pick-up & Dispatch', time: 'In 8 mins', completed: false },
-        { step: `Delivery at Doorstep (OTP: ${deliveryOtp})`, time: 'In 20–25 mins', completed: false },
+        { step: `${assignedHub.name} Packing Started`, time: 'In 3 mins', completed: false },
+        { step: isPickup ? 'Ready for Counter Pickup' : 'Rider Pick-up & Dispatch', time: 'In 8 mins', completed: false },
+        { step: isPickup ? 'Customer Self-Pickup at Store' : `Delivery at Doorstep (OTP: ${deliveryOtp})`, time: `In ${assignedHub.etaMinutes} mins`, completed: false },
       ]
     };
 

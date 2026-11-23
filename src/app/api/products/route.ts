@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCatalogProducts } from '@/lib/catalog';
+import { getCatalogProducts, syncCatalogFromRedis } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +12,7 @@ export async function GET(req: Request) {
     const isSHG = searchParams.get('isSHG');
     const sort = searchParams.get('sort'); // 'savings_desc', 'price_asc', 'price_desc'
 
+    await syncCatalogFromRedis();
     let filtered = [...getCatalogProducts()];
 
     if (category && category !== 'All') {

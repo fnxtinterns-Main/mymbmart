@@ -191,7 +191,7 @@ export default function ShopPartnerPortalPage() {
           <div><span class="bold">Customer:</span> ${order.userName || order.customerName || 'Customer'}</div>
           <div><span class="bold">Phone:</span> ${order.userPhone || order.customerPhone || 'N/A'}</div>
           ${order.deliveryAddress ? `<div><span class="bold">Address:</span> ${order.deliveryAddress}</div>` : ''}
-          ${order.pickupOtp ? `<div class="bold" style="font-size: 13px; margin-top: 2px;">PICKUP PIN: ${order.pickupOtp}</div>` : ''}
+          ${isPickup ? `<div class="bold" style="font-size: 11px; margin-top: 3px; border: 1px dashed #000; padding: 2px; text-align: center;">HANDOVER SECURITY: VERIFY 4-DIGIT PIN ON CUSTOMER PHONE</div>` : ''}
         </div>
         <div class="divider-double"></div>
         <div class="bold center">PACKING LIST</div>
@@ -764,6 +764,24 @@ export default function ShopPartnerPortalPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Mobile Audio Permission Unlocking Banner */}
+                {soundAlertsEnabled && (
+                  <div
+                    onClick={() => playOrderChime()}
+                    className="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between text-xs text-amber-900 cursor-pointer hover:bg-amber-100 transition"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Volume2 className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>
+                        <strong>Audio Alert Active:</strong> Tap here once to ensure order chimes play when your phone is in the background.
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-black uppercase text-amber-800 bg-amber-200/60 px-2.5 py-1 rounded-xl shrink-0 ml-2">
+                      Tap to Test Chime
+                    </span>
+                  </div>
+                )}
 
                 {storeOrders.length === 0 ? (
                   <div className="text-center py-16 text-slate-400 space-y-3">
