@@ -26,8 +26,7 @@ import {
   Eye,
   FileUp
 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import Image from 'next/image';
 
 export default function ShopRegistrationPage() {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -249,8 +248,36 @@ export default function ShopRegistrationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
-      <Navbar cartCount={0} onOpenCart={() => {}} onOpenAuth={() => {}} />
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between text-[#0F172A]">
+      {/* Top Header with Only Website Logo */}
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex items-center justify-between">
+        <Link href="/" className="flex items-center">
+          <div className="relative w-56 sm:w-72 md:w-84 lg:w-96 xl:w-[420px] h-16 sm:h-20 md:h-22 lg:h-24">
+            <Image
+              src="/images/LOgo.jpeg"
+              alt="MegaBachatMart"
+              fill
+              priority
+              className="object-contain object-left group-hover:scale-105 transition-transform"
+            />
+          </div>
+        </Link>
+
+        <div className="flex items-center space-x-4">
+          <Link
+            href="/shop/login"
+            className="text-xs font-bold text-emerald-800 hover:text-emerald-950 transition"
+          >
+            Already a Partner? Sign In →
+          </Link>
+          <Link
+            href="/"
+            className="text-xs font-semibold text-slate-500 hover:text-[#064E3B] transition hidden sm:inline-block"
+          >
+            ← Back to Store
+          </Link>
+        </div>
+      </header>
 
       <main className="flex-1 py-10 sm:py-14 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto space-y-8">
@@ -1003,7 +1030,10 @@ export default function ShopRegistrationPage() {
         </div>
       </main>
 
-      <Footer />
+      {/* Minimal Clean Footer */}
+      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        &copy; 2026 MegaBachatMart (mymbmart.com). Merchant Partner Program.
+      </footer>
     </div>
   );
 }

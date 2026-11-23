@@ -31,7 +31,10 @@ export default function Error({
 
   const handleRetry = () => {
     if (typeof window !== 'undefined') {
-      window.location.reload();
+      try {
+        sessionStorage.clear();
+      } catch {}
+      window.location.href = window.location.pathname + '?reload=' + Date.now();
     } else {
       reset();
     }
@@ -50,6 +53,11 @@ export default function Error({
         <p className="text-xs sm:text-sm text-slate-600">
           A new version was just deployed or an unexpected network glitch occurred. Please refresh to load the latest release.
         </p>
+        {process.env.NODE_ENV !== 'production' && error?.message && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-left text-xs font-mono text-red-700 max-h-32 overflow-auto">
+            {error.message}
+          </div>
+        )}
         <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={handleRetry}
@@ -58,13 +66,13 @@ export default function Error({
             <RefreshCw className="w-4 h-4" />
             <span>Reload & Try Again</span>
           </button>
-          <Link
+          <a
             href="/"
             className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-6 py-3 rounded-2xl text-xs sm:text-sm transition flex items-center justify-center space-x-2"
           >
             <Home className="w-4 h-4" />
             <span>Back to Home</span>
-          </Link>
+          </a>
         </div>
       </div>
     </div>

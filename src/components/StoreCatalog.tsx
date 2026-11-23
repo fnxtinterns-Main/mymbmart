@@ -302,7 +302,7 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search 'rice', 'oil', 'aam ka achar', 'atta'..."
+              placeholder="Search for Rice, Oil, Dal, Atta, Masala..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-brand-green focus:bg-white rounded-2xl text-xs sm:text-sm outline-hidden transition shadow-2xs"
@@ -434,6 +434,7 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
                     src={product.image}
                     alt={product.name}
                     fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 25vw, 400px"
                     className="object-cover group-hover:scale-104 transition-transform duration-300"
                   />
 

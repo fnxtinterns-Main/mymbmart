@@ -96,6 +96,20 @@ export function middleware(request: NextRequest) {
   }
 
   // 3. MAIN DOMAIN: mymbmart.com / www.mymbmart.com / localhost
+  if (pathname === '/partner/login' || pathname === '/partners/login') {
+    url.pathname = '/shop/login';
+    return NextResponse.redirect(url);
+  }
+  if (
+    pathname === '/partner/register' ||
+    pathname === '/partners/register' ||
+    pathname === '/partner/apply' ||
+    pathname === '/partners/apply'
+  ) {
+    url.pathname = '/shop/register';
+    return NextResponse.redirect(url);
+  }
+
   return applyAgentHeaders(NextResponse.next());
 }
 

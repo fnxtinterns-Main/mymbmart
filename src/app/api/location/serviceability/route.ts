@@ -83,6 +83,14 @@ export async function POST(req: Request) {
 
     // Default fallback to pilot flagship store for demo / development
     if (!matchedStore) {
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({
+          success: true,
+          serviceable: false,
+          isPilotMode: false,
+          message: 'Currently delivery is not available in your area. MegaBachatMart is expanding soon!',
+        });
+      }
       const defaultStore = PILOT_DARK_STORES[0];
       return NextResponse.json({
         success: true,

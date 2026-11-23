@@ -24,16 +24,12 @@ export const Footer: React.FC = () => {
           
           {/* Brand info */}
           <div className="space-y-4">
-            <div 
-              className="relative w-44 h-12 bg-white p-2 rounded-xl"
-              style={{ position: 'relative', width: '176px', height: '48px', maxWidth: '100%' }}
-            >
+            <div className="relative w-48 sm:w-52 h-14 bg-white px-3 py-1.5 rounded-xl shadow-xs">
               <Image
                 src="/images/LOgo.jpeg"
                 alt="MegaBachatMart"
                 fill
                 className="object-contain"
-                style={{ objectFit: 'contain' }}
               />
             </div>
             <p className="text-xs text-emerald-200 leading-relaxed">
@@ -99,7 +95,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-emerald-800/80 text-center text-xs text-emerald-300/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 MegaBachatMart (mymbmart.com). All rights reserved.</p>
+          <p>&copy; 2026 MegaBachatMart (mymbmart.com). All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px]">
             <Link href="/about" className="hover:text-white transition">About Us</Link>
             <Link href="/contact" className="hover:text-white transition">Contact</Link>

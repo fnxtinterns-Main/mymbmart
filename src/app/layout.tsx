@@ -190,7 +190,7 @@ const jsonLd = {
             "itemOffered": {
               "@type": "Product",
               "name": "Fortune Sunlite Refined Sunflower Oil (1 Litre)",
-              "image": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500",
+              "image": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=1200",
               "description": "Refined sunflower cooking oil enriched with vitamins A & D.",
               "sku": "MBM-SKU-RCH-KRN-101"
             },
@@ -205,7 +205,7 @@ const jsonLd = {
             "itemOffered": {
               "@type": "Product",
               "name": "Tata Tea Gold Premium Assam Blended Tea (500 g)",
-              "image": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500",
+              "image": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200",
               "description": "Exquisite blend of Assam CTC teas with long leaves.",
               "sku": "MBM-SKU-RCH-KRN-102"
             },
@@ -220,7 +220,7 @@ const jsonLd = {
             "itemOffered": {
               "@type": "Product",
               "name": "Aashirvaad Superior MP Sharbati Whole Wheat Atta (5 kg)",
-              "image": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500",
+              "image": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200",
               "description": "100% pure whole wheat flour ground from heavy golden grains.",
               "sku": "MBM-SKU-RCH-KRN-103"
             },

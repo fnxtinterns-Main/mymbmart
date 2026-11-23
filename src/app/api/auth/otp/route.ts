@@ -3,10 +3,12 @@ import jwt from 'jsonwebtoken';
 import { initialUser, initialWallet } from '@/lib/data';
 import { sendOtpEmail } from '@/lib/emailService';
 import { getDeterministicReferralCode, getDeterministicMemberId } from '@/lib/userSession';
+import { redisSet, redisGet, redisDel, isRedisConfigured } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
+const memoryOtpStore = new Map<string, { code: string; expiresAt: number }>();
 
 export async function POST(req: Request) {
   try {
@@ -23,8 +25,24 @@ export async function POST(req: Request) {
       const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.E2E_TEST_MODE === 'true';
       const isTestOtp = isTestEnv && submittedOtp === '123456';
 
-      // shortcut: test OTP 123456 gated to non-prod/E2E, replace with real SMS gateway in production
-      if (!submittedOtp || (!isTestOtp && process.env.NODE_ENV === 'production')) {
+      let isOtpValid = isTestOtp;
+      if (!isOtpValid && submittedOtp) {
+        const memRecord = memoryOtpStore.get(identifier);
+        if (memRecord && memRecord.expiresAt > Date.now() && memRecord.code === submittedOtp) {
+          isOtpValid = true;
+          memoryOtpStore.delete(identifier);
+        } else if (isRedisConfigured()) {
+          try {
+            const redisOtp = await redisGet<string>(`otp:${identifier}`);
+            if (redisOtp && String(redisOtp) === submittedOtp) {
+              isOtpValid = true;
+              await redisDel(`otp:${identifier}`);
+            }
+          } catch {}
+        }
+      }
+
+      if (!isOtpValid) {
         return NextResponse.json(
           { success: false, error: 'Invalid verification code. Please enter the code sent to your mobile.' },
           { status: 400 }
@@ -95,6 +113,10 @@ export async function POST(req: Request) {
 
     // 2. SEND OTP ACTION
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    memoryOtpStore.set(identifier, { code: generatedOtp, expiresAt: Date.now() + 600 * 1000 });
+    if (isRedisConfigured()) {
+      redisSet(`otp:${identifier}`, generatedOtp, 600).catch(() => {});
+    }
 
     if (identifier.includes('@')) {
       try {
@@ -104,10 +126,12 @@ export async function POST(req: Request) {
       }
     }
 
+    const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.E2E_TEST_MODE === 'true';
+
     return NextResponse.json({
       success: true,
       message: `OTP dispatched to ${identifier}`,
-      testOtp: '123456',
+      ...(isTestEnv ? { testOtp: '123456' } : {}),
       expiresInSeconds: 600,
     });
   } catch (error: any) {

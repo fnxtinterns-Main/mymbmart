@@ -181,10 +181,6 @@ export const ordersStore = globalStore.activeOrders;
 
 export function addOrder(order: OrderRecord) {
   ordersStore.unshift(order);
-  // Cap in-memory fallback store to 200 items to prevent Node process memory exhaustion
-  if (ordersStore.length > 200) {
-    ordersStore.length = 200;
-  }
   saveOrdersToDisk(ordersStore);
   if (isRedisConfigured()) {
     redisSet('orders:latest', ordersStore).catch(() => {});

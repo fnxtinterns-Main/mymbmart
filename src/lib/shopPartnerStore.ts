@@ -609,7 +609,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '60',
         '2027-04-15',
         'BCH-FTN-2026-A1',
-        'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=1200&auto=format&fit=crop&q=80',
         'true',
       ],
       [
@@ -622,7 +622,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '40',
         '2027-08-20',
         'BCH-TTG-2026-X4',
-        'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
         'true',
       ],
       [
@@ -635,7 +635,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '50',
         '2026-12-10',
         'BCH-ASH-2026-M2',
-        'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200&auto=format&fit=crop&q=80',
         'true',
       ],
       [
@@ -648,7 +648,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '75',
         '2027-02-28',
         'BCH-BRT-2026-K9',
-        'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1200&auto=format&fit=crop&q=80',
         'false',
       ],
       [
@@ -661,7 +661,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '35',
         '2028-06-30',
         'BCH-DTL-2026-D3',
-        'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
         'true',
       ],
       [
@@ -674,7 +674,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '45',
         '2026-11-30',
         'BCH-VAD-2026-S1',
-        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1200&auto=format&fit=crop&q=80',
         'true',
       ],
     ];
@@ -745,7 +745,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       const stock = parseInt(getColVal('stockQuantity'), 10) || 10;
       const expiry = getColVal('expiryDate') || '2027-12-31';
       const batch = getColVal('batchNumber') || `BATCH-${Date.now()}`;
-      const img = getColVal('imageUrl') || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=80';
+      const img = getColVal('imageUrl') || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1200&auto=format&fit=crop&q=80';
       const ret = getColVal('isReturnable').toLowerCase() !== 'false';
 
       if (!name) {
