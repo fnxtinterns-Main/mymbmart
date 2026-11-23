@@ -166,6 +166,7 @@ export async function POST(req: Request) {
       city: 'Ranchi',
       etaMinutes: 25,
     };
+    let routingAuditMetadata: OrderRecord['routingAudit'] = undefined;
 
     try {
       const { routingEngine } = await import('@/lib/routingEngine');
@@ -189,6 +190,15 @@ export async function POST(req: Request) {
           name: routeResult.selectedShopName,
           city: 'Ranchi',
           etaMinutes: routeResult.estimatedDeliveryMinutes || (isPickup ? 15 : 25),
+        };
+        routingAuditMetadata = {
+          auditId: routeResult.routingAuditId,
+          selectedShopId: routeResult.selectedShopId,
+          selectedShopName: routeResult.selectedShopName,
+          candidateCount: routeResult.candidateCount,
+          winningScore: routeResult.winningScore,
+          latencyMs: routeResult.latencyMs,
+          excludedReasons: routeResult.excludedShops?.map((e) => ({ shopName: e.shopName, reason: e.reason })),
         };
       }
     } catch (routeErr) {
@@ -217,6 +227,7 @@ export async function POST(req: Request) {
       cashbackCredited: false,
       assignedRider: undefined,
       darkStore: assignedHub,
+      routingAudit: routingAuditMetadata,
       items: [...quickItems, ...marketplaceItems],
       splitShipments,
       createdAt: new Date().toISOString(),

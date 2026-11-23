@@ -102,6 +102,15 @@ export interface OrderRecord {
     time: string;
     completed: boolean;
   }>;
+  routingAudit?: {
+    auditId: string;
+    selectedShopId: string;
+    selectedShopName: string;
+    candidateCount: number;
+    winningScore?: number;
+    latencyMs: number;
+    excludedReasons?: Array<{ shopName: string; reason: string }>;
+  };
 }
 
 export const initialPilotOrders: OrderRecord[] = [];

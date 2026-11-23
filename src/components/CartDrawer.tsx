@@ -55,13 +55,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState('Main Road, Ranchi Central, Jharkhand - 834001');
 
-  // Debounced server preview validation (250ms debounce)
+  // Debounced server preview validation (250ms debounce with AbortController stale-request protection)
   useEffect(() => {
     if (cartItems.length === 0) return;
+    const controller = new AbortController();
     const timeout = setTimeout(() => {
       fetch('/api/checkout/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           items: cartItems.map((ci) => ({
             productId: ci.product.id,
@@ -69,10 +71,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           })),
           fulfilmentType: 'HOME_DELIVERY',
         }),
-      }).catch(() => {});
+      }).catch((err) => {
+        if (err.name !== 'AbortError') {
+          // Ignore aborted requests safely
+        }
+      });
     }, 250);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [cartItems]);
 
   if (!isOpen) return null;
