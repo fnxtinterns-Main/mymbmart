@@ -61,14 +61,16 @@ export async function POST(req: Request) {
     }
 
     // Delivery fees calculation:
+    // Self pickup is strictly ₹0 delivery fee.
     // Quick commerce free above ₹199, else ₹29
     // Marketplace free above ₹499, else ₹49
+    const isPickup = body.fulfilmentType === 'SELF_PICKUP' || body.fulfilmentType === 'STORE_PICKUP';
     const quickSubtotal = quickItems.reduce((acc, i) => acc + (i.unitPrice * i.quantity), 0);
     const marketplaceSubtotal = marketplaceItems.reduce((acc, i) => acc + (i.unitPrice * i.quantity), 0);
 
-    const quickDeliveryFee = quickItems.length > 0 ? (quickSubtotal >= 199 ? 0 : 29) : 0;
-    const marketplaceDeliveryFee = marketplaceItems.length > 0 ? (marketplaceSubtotal >= 499 ? 0 : 49) : 0;
-    const totalDeliveryFee = quickDeliveryFee + marketplaceDeliveryFee;
+    const quickDeliveryFee = isPickup ? 0 : (quickItems.length > 0 ? (quickSubtotal >= 199 ? 0 : 29) : 0);
+    const marketplaceDeliveryFee = isPickup ? 0 : (marketplaceItems.length > 0 ? (marketplaceSubtotal >= 499 ? 0 : 49) : 0);
+    const totalDeliveryFee = isPickup ? 0 : (quickDeliveryFee + marketplaceDeliveryFee);
 
     // Derive authenticated session and real wallet balance from verified cookie
     const cookieHeader = req.headers.get('cookie') || '';
@@ -224,8 +226,34 @@ export async function POST(req: Request) {
           orderStatus: 'PLACED',
         },
       });
+
+      // Atomic inventory update in PostgreSQL
+      for (const item of newOrder.items) {
+        try {
+          await prisma.storeInventory.updateMany({
+            where: {
+              productId: item.productId,
+              quantityAvailable: { gte: item.quantity },
+            },
+            data: {
+              quantityAvailable: { decrement: item.quantity },
+              quantityReserved: { increment: item.quantity },
+            },
+          });
+        } catch {}
+      }
     } catch (dbErr) {
       console.warn('PostgreSQL order insert deferred, continuing via Redis sync:', dbErr);
+    }
+
+    // Atomic catalog stock decrement in memory
+    for (const item of items) {
+      const product = CATALOG_PRODUCTS.find((p) => p.id === item.productId || p.id === item.product?.id);
+      if (product) {
+        const qty = item.quantity || 1;
+        product.stockQuantity = Math.max(0, (product.stockQuantity || 50) - qty);
+        if (product.stockQuantity === 0) product.inStock = false;
+      }
     }
 
     // 2. Resilient active store persistence

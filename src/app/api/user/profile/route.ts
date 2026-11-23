@@ -3,12 +3,28 @@ import { initialUser, initialWallet } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const cookieHeader = req.headers.get('cookie') || '';
+    let resolvedUser = { ...initialUser };
+    let walletBalance = initialWallet.balance;
+
+    const userCookieMatch = cookieHeader.match(/mbm_user_data=([^;]+)/);
+    if (userCookieMatch) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(userCookieMatch[1]));
+        if (parsed.name) resolvedUser.name = parsed.name;
+        if (parsed.phone) resolvedUser.phone = parsed.phone;
+        if (parsed.email) resolvedUser.email = parsed.email;
+        if (parsed.memberId) resolvedUser.id = parsed.memberId;
+        if (typeof parsed.walletBalance === 'number') walletBalance = parsed.walletBalance;
+      } catch {}
+    }
+
     return NextResponse.json({
       success: true,
       user: {
-        ...initialUser,
+        ...resolvedUser,
         savedAddresses: [
           {
             id: 'addr-1',
@@ -30,7 +46,7 @@ export async function GET() {
           }
         ],
         wallet: {
-          balance: initialWallet.balance,
+          balance: walletBalance,
           totalSavings: initialWallet.totalSavings,
           cashback: initialWallet.actualCashback,
           credits: initialWallet.walletCredits,

@@ -11,7 +11,8 @@ import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
 
-import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
+import { initialUser, initialWallet } from '@/lib/data';
+import { CATALOG_PRODUCTS } from '@/lib/catalog';
 import { CartItem, ProductItem, UserProfile } from '@/lib/types';
 import { OrderRecord } from '@/lib/ordersStore';
 import { getStoredUserSession, saveUserSession, hydrateUserProfile } from '@/lib/userSession';
@@ -393,7 +394,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-            {sampleProducts.slice(0, 4).map((product) => (
+            {CATALOG_PRODUCTS.slice(0, 4).map((product) => (
               <div
                 key={product.id}
                 className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group"

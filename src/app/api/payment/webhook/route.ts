@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getOrderById } from '@/lib/ordersStore';
+import { getOrderById, ordersStore } from '@/lib/ordersStore';
 import { verifyWebhookSignature } from '@/lib/securityUtils';
+import { redisSet } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,20 @@ export async function POST(req: Request) {
     if (status === 'SUCCESS') {
       order.paymentStatus = 'PAID';
       order.upiTransactionId = transactionRef || `UPI-${Date.now()}`;
+
+      // Synchronize across Redis & PostgreSQL
+      await redisSet(`order:${order.id}`, order).catch(() => {});
+      await redisSet(`order:${order.orderNumber}`, order).catch(() => {});
+      await redisSet('orders:latest', ordersStore).catch(() => {});
+
+      try {
+        const { prisma } = await import('@/lib/prisma');
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { paymentStatus: 'PAID' },
+        });
+      } catch {}
+
       return NextResponse.json({
         success: true,
         message: `Payment confirmed for order #${order.orderNumber}. Order routed to dark store queue.`,

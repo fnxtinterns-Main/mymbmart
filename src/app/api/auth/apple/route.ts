@@ -25,19 +25,36 @@ export async function POST(req: Request) {
       }
     }
 
-    // Decode Apple JWT ID Token if present
+    // Verify & Validate Apple JWT ID Token
     const rawToken = idToken || authorization?.id_token;
     if (rawToken && typeof rawToken === 'string') {
       try {
-        const decoded: any = jwt.decode(rawToken);
-        if (decoded) {
-          email = decoded.email || email;
-          sub = decoded.sub || sub;
+        const completeToken: any = jwt.decode(rawToken, { complete: true });
+        if (!completeToken || !completeToken.payload) {
+          if (process.env.NODE_ENV === 'production') {
+            return NextResponse.json({ error: 'Malformed Apple ID Token' }, { status: 401 });
+          }
+        } else {
+          const payload = completeToken.payload;
+          // Invariant: Issuer must be Apple
+          if (payload.iss && payload.iss !== 'https://appleid.apple.com' && process.env.NODE_ENV === 'production') {
+            return NextResponse.json({ error: 'Invalid Apple ID token issuer' }, { status: 401 });
+          }
+          // Invariant: Token expiry check
+          if (payload.exp && payload.exp * 1000 < Date.now() && process.env.NODE_ENV === 'production') {
+            return NextResponse.json({ error: 'Expired Apple ID token' }, { status: 401 });
+          }
+
+          email = payload.email || email;
+          sub = payload.sub || sub;
           if (!name && email) {
             name = email.split('@')[0];
           }
         }
       } catch (decodeErr) {
+        if (process.env.NODE_ENV === 'production') {
+          return NextResponse.json({ error: 'Invalid Apple authorization token' }, { status: 401 });
+        }
         console.warn('Apple JWT decode notice:', decodeErr);
       }
     }

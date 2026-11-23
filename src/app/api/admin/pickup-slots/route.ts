@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { pickupSlotsConfig, updateSlotConfig, toggleSlotAvailability } from '@/lib/pickupSlotsStore';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { action, slotId, available, updates } = body;

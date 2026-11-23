@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 import {
   inventoryStore,
   adjustStock,
@@ -75,6 +76,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { action } = body;

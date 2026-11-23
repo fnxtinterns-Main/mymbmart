@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { id, stockQuantity, bachatPrice, mrp, inStock } = body;

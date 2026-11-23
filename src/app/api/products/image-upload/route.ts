@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
 import { productImageLibrary } from '@/lib/productImageLibrary';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 import fs from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
+  // Enforce authentication: requires Admin, Partner session, or authenticated user
+  const cookieHeader = req.headers.get('cookie') || '';
+  const isPartner = cookieHeader.includes('mbm_partner_session=') || cookieHeader.includes('mbm_session=');
+  const isAuthorized = isAdminAuthorized(req) || isPartner;
+
+  if (!isAuthorized && process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ success: false, message: 'Unauthorized. Partner or Admin session required.' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { productId, productName, imageData, category } = body;
@@ -22,6 +32,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, message: 'imageData (file or base64) is required.' },
         { status: 400 }
+      );
+    }
+
+    // Size limit check: Max 5MB base64 payload (~7MB string length)
+    if (typeof imageData === 'string' && imageData.length > 7 * 1024 * 1024) {
+      return NextResponse.json(
+        { success: false, message: 'Image exceeds maximum allowed size of 5MB.' },
+        { status: 413 }
       );
     }
 

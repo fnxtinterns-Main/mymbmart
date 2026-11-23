@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 import { shopPartnerStore } from '@/lib/shopPartnerStore';
 
 export const dynamic = 'force-dynamic';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
 
 export async function POST(req: Request) {
   try {
@@ -30,9 +33,22 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({
+    // Sign session token for partner portal requests
+    const token = jwt.sign(
+      {
+        shopId: account.shopId,
+        shopName: account.shopName,
+        phone: account.phone,
+        role: 'SHOP_PARTNER',
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    const response = NextResponse.json({
       success: true,
       message: `Welcome back, ${account.shopName}!`,
+      token,
       account: {
         shopId: account.shopId,
         shopName: account.shopName,
@@ -49,6 +65,16 @@ export async function POST(req: Request) {
         rating: account.rating,
       },
     });
+
+    response.cookies.set('mbm_partner_session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60,
+      path: '/',
+    });
+
+    return response;
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error.message || 'Login failed.' },

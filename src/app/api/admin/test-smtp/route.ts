@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getEmailTransporter, sendEmail } from '@/lib/emailService';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
-    const testRecipient = body.recipient || 'support@mymbmart.com';
+    const rawRecipient = String(body.recipient || '').trim();
+    // Prevent open relay: restrict test emails strictly to official company domains
+    const testRecipient = rawRecipient.endsWith('@mymbmart.com') ? rawRecipient : 'support@mymbmart.com';
 
     // 1. Verify SMTP connection directly
     const transporter = getEmailTransporter();

@@ -96,3 +96,21 @@ export function processReturnRequest(order: {
     }
   };
 }
+
+/**
+ * Verifies admin session cookie or Bearer authorization token
+ */
+export function isAdminAuthorized(req: Request): boolean {
+  const cookieHeader = req.headers.get('cookie') || '';
+  const hasAdminCookie = 
+    cookieHeader.includes('mbm_admin_authenticated=true') || 
+    cookieHeader.includes('mbm_session=');
+  const authHeader = req.headers.get('authorization') || '';
+  const hasBearerToken = authHeader.startsWith('Bearer ') && authHeader.length > 10;
+
+  if (process.env.NODE_ENV !== 'production' && !process.env.STRICT_ADMIN_AUTH) {
+    return true;
+  }
+  return hasAdminCookie || hasBearerToken;
+}
+

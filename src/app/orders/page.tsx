@@ -97,6 +97,30 @@ export default function CustomerOrdersPage() {
     setIsTrackingOpen(true);
   };
 
+  const handleCancelOrder = async (orderId: string, orderNumber: string) => {
+    if (!confirm(`Are you sure you want to cancel order #${orderNumber}? Any paid amount will be refunded to your wallet balance.`)) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, reason: 'Customer cancelled from orders page' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || 'Order cancelled successfully.');
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId || o.orderNumber === orderNumber ? { ...o, status: 'CANCELLED' } : o))
+        );
+      } else {
+        alert(data.message || 'Unable to cancel this order.');
+      }
+    } catch {
+      alert('Network error while cancelling order.');
+    }
+  };
+
   const handleOrderUpdated = (updated: OrderRecord) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === updated.id || o.orderNumber === updated.orderNumber ? updated : o))
@@ -283,6 +307,15 @@ export default function CustomerOrdersPage() {
                           <Zap className="w-3.5 h-3.5 fill-white" />
                           <span>Track Live Status</span>
                         </button>
+
+                        {(order.status === 'PLACED' || order.status === 'PROCESSING') && (
+                          <button
+                            onClick={() => handleCancelOrder(order.id, order.orderNumber)}
+                            className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold py-2 px-3 rounded-xl transition cursor-pointer"
+                          >
+                            Cancel Order
+                          </button>
+                        )}
                       </div>
                     </div>
 

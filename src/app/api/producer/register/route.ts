@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { redisGet, redisSet } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +18,18 @@ interface ProducerInput {
 const registeredProducers: any[] = [];
 
 export async function GET() {
+  let list = registeredProducers;
+  try {
+    const cached = await redisGet<any[]>('producers:list');
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      list = cached;
+    }
+  } catch {}
+
   return NextResponse.json({
     success: true,
-    totalProducers: registeredProducers.length,
-    producers: registeredProducers,
+    totalProducers: list.length,
+    producers: list,
   });
 }
 
@@ -50,6 +59,43 @@ export async function POST(req: Request) {
     };
 
     registeredProducers.unshift(newProducer);
+
+    // 1. Persist to Upstash Redis
+    try {
+      const existing = (await redisGet<any[]>('producers:list')) || [];
+      existing.unshift(newProducer);
+      await redisSet('producers:list', existing.slice(0, 100));
+    } catch {}
+
+    // 2. Persist to PostgreSQL if connected
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const user = await prisma.user.upsert({
+        where: { phone },
+        update: { name: contactPerson },
+        create: {
+          memberId: 'SHG' + Math.floor(100000 + Math.random() * 900000),
+          referralCode: 'SHG' + Math.floor(100000 + Math.random() * 900000),
+          name: contactPerson,
+          phone,
+          role: 'SHG_PRODUCER',
+        },
+      });
+
+      await prisma.sellerProfile.create({
+        data: {
+          userId: user.id,
+          businessName,
+          isSHG: category === 'SHG',
+          shgGroupName: category === 'SHG' ? businessName : null,
+          city: city || 'Ranchi',
+          state: body.state || 'Jharkhand',
+          isVerified: false,
+        },
+      });
+    } catch (dbErr) {
+      // Safe fallback if relational constraint or duplicate profile
+    }
 
     return NextResponse.json({
       success: true,

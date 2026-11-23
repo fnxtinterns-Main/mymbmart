@@ -3,17 +3,27 @@ import { initialWallet, initialTransactions, monthlySavings } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const cookieHeader = req.headers.get('cookie') || '';
+    let currentBalance = initialWallet.balance;
+    const userCookieMatch = cookieHeader.match(/mbm_user_data=([^;]+)/);
+    if (userCookieMatch) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(userCookieMatch[1]));
+        if (typeof parsed.walletBalance === 'number') currentBalance = parsed.walletBalance;
+      } catch {}
+    }
+
     return NextResponse.json({
       success: true,
       wallet: {
-        balance: initialWallet.balance,
+        balance: currentBalance,
         totalSavings: initialWallet.totalSavings,
         actualCashback: initialWallet.actualCashback,
         walletCredits: initialWallet.walletCredits,
         referralRewards: initialWallet.referralRewards,
-        lifetimeEarned: initialWallet.lifetimeEarned,
+        lifetimeEarned: Math.max(currentBalance, initialWallet.lifetimeEarned),
         currency: 'INR',
         currencySymbol: '₹',
       },
