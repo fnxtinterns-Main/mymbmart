@@ -80,7 +80,7 @@ export async function POST(req: Request) {
       await redisSet(`order:${order.orderNumber}`, order).catch(() => {});
     }
 
-    const refundAmount = order.paymentStatus === 'PAID' ? order.totalPayable : 0;
+    const refundAmount = (order.paymentStatus === 'PAID' ? order.totalPayable : 0) + (order.creditDeduction || 0);
 
     // 4. Authoritative wallet credit in Upstash Redis and PostgreSQL
     if (refundAmount > 0 && order.userId) {

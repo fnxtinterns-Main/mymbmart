@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrderById, updateOrderStatus } from '@/lib/ordersStore';
+import { getOrderByIdAsync, updateOrderStatus } from '@/lib/ordersStore';
 import { redisCommand, redisDel, isRedisConfigured } from '@/lib/redis';
 import crypto from 'crypto';
 
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const order = getOrderById(orderId);
+    const order = await getOrderByIdAsync(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }

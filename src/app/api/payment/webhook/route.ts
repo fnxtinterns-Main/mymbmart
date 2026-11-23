@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrderById, ordersStore } from '@/lib/ordersStore';
+import { getOrderByIdAsync, ordersStore } from '@/lib/ordersStore';
 import { verifyWebhookSignature } from '@/lib/securityUtils';
 import { redisSet } from '@/lib/redis';
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const body = JSON.parse(rawBody);
     const { orderNumber, transactionRef, status = 'SUCCESS' } = body;
 
-    const order = getOrderById(orderNumber);
+    const order = await getOrderByIdAsync(orderNumber);
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }

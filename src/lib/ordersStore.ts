@@ -218,11 +218,50 @@ export async function getOrderByIdAsync(idOrNumber: string): Promise<OrderRecord
     const { prisma } = await import('./prisma');
     const dbOrder = await prisma.order.findFirst({
       where: {
-        OR: [{ id: idOrNumber }, { orderNumber: idOrNumber }]
-      }
+        OR: [{ id: idOrNumber }, { orderNumber: idOrNumber }],
+      },
+      include: {
+        deliveryAddress: true,
+        user: true,
+      },
     });
     if (dbOrder) {
-      return dbOrder as unknown as OrderRecord;
+      const mapped: OrderRecord = {
+        id: dbOrder.id,
+        orderNumber: dbOrder.orderNumber,
+        userId: dbOrder.userId,
+        userName: dbOrder.user?.name || 'Customer',
+        userPhone: dbOrder.user?.phone || '',
+        deliveryAddress: dbOrder.deliveryAddress?.fullAddress || 'Main Road, Ranchi Central - 834001',
+        pincode: dbOrder.deliveryAddress?.pincode || '834001',
+        status: dbOrder.orderStatus as any,
+        totalPayable: dbOrder.finalPayable,
+        totalMRP: dbOrder.totalMRP,
+        shoppingSavings: (dbOrder.totalMRP - dbOrder.totalBachatPrice) || 0,
+        creditDeduction: dbOrder.creditsApplied || 0,
+        paymentStatus: dbOrder.paymentStatus as any,
+        paymentMethod: dbOrder.paymentMethod as any,
+        fulfilmentType: 'HOME_DELIVERY',
+        deliveryOtp: dbOrder.deliveryOtp || '1234',
+        cashbackEarnable: 0,
+        cashbackCredited: false,
+        darkStore: {
+          id: 'store-ranchi-central',
+          name: 'Ranchi Central Dark Store',
+          city: 'Ranchi',
+          etaMinutes: 25,
+        },
+        items: [],
+        splitShipments: [],
+        createdAt: dbOrder.createdAt instanceof Date ? dbOrder.createdAt.toISOString() : String(dbOrder.createdAt),
+        timeline: [
+          { step: 'Order Placed & Stock Locked', time: 'Just now', completed: true },
+        ],
+      };
+      if (!ordersStore.some(o => o.id === mapped.id || o.orderNumber === mapped.orderNumber)) {
+        ordersStore.unshift(mapped);
+      }
+      return mapped;
     }
   } catch {}
   return undefined;

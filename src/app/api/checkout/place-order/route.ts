@@ -167,7 +167,7 @@ export async function POST(req: Request) {
       userPhone: realCustomerPhone,
       deliveryAddress,
       pincode,
-      fulfilmentType: (body.fulfilmentType as 'HOME_DELIVERY' | 'SELF_PICKUP') || 'HOME_DELIVERY',
+      fulfilmentType: isPickup ? 'SELF_PICKUP' : 'HOME_DELIVERY',
       status: 'PLACED',
       deliveryOtp,
       paymentMethod,

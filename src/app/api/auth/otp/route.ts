@@ -70,10 +70,59 @@ export async function POST(req: Request) {
       const memberId = getDeterministicMemberId(cleanId);
       const generatedReferralCode = getDeterministicReferralCode(cleanId);
 
+      let resolvedUserId = 'usr-' + Date.now();
+      let resolvedMemberId = memberId;
+      let resolvedName = name;
+      let resolvedWalletBalance = 0;
+
+      // Persist or retrieve user in PostgreSQL
+      try {
+        const { prisma } = await import('@/lib/prisma');
+        const existingUser = await prisma.user.findFirst({
+          where: cleanPhone ? { phone: cleanPhone } : { email: cleanEmail },
+          include: { rewardAccount: true },
+        });
+
+        if (existingUser) {
+          resolvedUserId = existingUser.id;
+          resolvedMemberId = existingUser.memberId || resolvedMemberId;
+          resolvedName = existingUser.name || resolvedName;
+          if (existingUser.rewardAccount) {
+            resolvedWalletBalance = existingUser.rewardAccount.balance || 0;
+          }
+        } else {
+          const created = await prisma.user.create({
+            data: {
+              id: resolvedUserId,
+              memberId: resolvedMemberId,
+              referralCode: generatedReferralCode,
+              name: resolvedName,
+              phone: cleanPhone || `guest-${Date.now()}`,
+              email: cleanEmail || null,
+              role: 'CUSTOMER',
+            },
+          });
+          resolvedUserId = created.id;
+        }
+      } catch (dbErr) {
+        // Safe fallback: proceed with deterministic attributes
+      }
+
+      // Check Redis wallet balance if available
+      try {
+        const { isRedisConfigured, redisGet } = await import('@/lib/redis');
+        if (isRedisConfigured()) {
+          const redisBal = await redisGet<number>(`wallet:${resolvedUserId}`);
+          if (redisBal !== null && !isNaN(Number(redisBal))) {
+            resolvedWalletBalance = Math.max(resolvedWalletBalance, Number(redisBal));
+          }
+        }
+      } catch {}
+
       const userProfile = {
-        id: 'usr-' + Date.now(),
-        memberId,
-        name,
+        id: resolvedUserId,
+        memberId: resolvedMemberId,
+        name: resolvedName,
         phone: cleanPhone,
         email: cleanEmail,
         role: 'CUSTOMER',
@@ -81,31 +130,9 @@ export async function POST(req: Request) {
         level: 'Silver',
         referralCode: generatedReferralCode,
         referredBy: referralCode || '',
-        walletBalance: 0,
+        walletBalance: resolvedWalletBalance,
         joinedAt: new Date().toISOString(),
       };
-
-      // Persist user to PostgreSQL if database connection is available
-      try {
-        const { prisma } = await import('@/lib/prisma');
-        await prisma.user.upsert({
-          where: cleanPhone ? { phone: cleanPhone } : { email: cleanEmail },
-          update: {
-            name: userProfile.name,
-          },
-          create: {
-            id: userProfile.id,
-            memberId: userProfile.memberId,
-            referralCode: userProfile.referralCode,
-            name: userProfile.name,
-            phone: cleanPhone || `guest-${Date.now()}`,
-            email: cleanEmail || null,
-            role: 'CUSTOMER',
-          },
-        });
-      } catch (dbErr) {
-        // Safe fallback: proceed with session cookie
-      }
 
       const token = jwt.sign(
         { 

@@ -56,9 +56,43 @@ export async function GET(req: Request) {
       const { prisma } = await import('@/lib/prisma');
       const dbOrders = await prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
+        include: { deliveryAddress: true },
       });
       if (dbOrders && dbOrders.length > 0) {
-        orders = dbOrders;
+        const orderMap = new Map<string, any>();
+        for (const dbo of dbOrders) {
+          const mapped: any = {
+            id: dbo.id,
+            orderNumber: dbo.orderNumber,
+            userId: dbo.userId,
+            deliveryAddress: dbo.deliveryAddress?.fullAddress || 'Ranchi Central',
+            pincode: dbo.deliveryAddress?.pincode || '834001',
+            fulfilmentType: 'HOME_DELIVERY',
+            status: dbo.orderStatus,
+            deliveryOtp: dbo.deliveryOtp || '1234',
+            paymentMethod: dbo.paymentMethod,
+            paymentStatus: dbo.paymentStatus,
+            totalMRP: dbo.totalMRP,
+            totalPayable: dbo.finalPayable,
+            shoppingSavings: (dbo.totalMRP - dbo.totalBachatPrice) || 0,
+            creditDeduction: dbo.creditsApplied || 0,
+            cashbackEarnable: 0,
+            cashbackCredited: false,
+            items: [],
+            splitShipments: [],
+            createdAt: dbo.createdAt.toISOString ? dbo.createdAt.toISOString() : dbo.createdAt,
+            timeline: [
+              { step: 'Order Placed', time: 'Just now', completed: true },
+            ],
+          };
+          orderMap.set(dbo.orderNumber || dbo.id, mapped);
+        }
+        for (const ro of orders) {
+          const key = ro.orderNumber || ro.id;
+          const existing = orderMap.get(key);
+          orderMap.set(key, { ...existing, ...ro });
+        }
+        orders = Array.from(orderMap.values());
       }
     } catch {}
 
