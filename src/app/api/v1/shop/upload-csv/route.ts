@@ -15,6 +15,36 @@ export async function POST(req: Request) {
       );
     }
 
+    // Verify partner or admin session
+    const cookieHeader = req.headers.get('cookie') || '';
+    const authHeader = req.headers.get('authorization') || '';
+    const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
+    const isAdmin = 
+      cookieHeader.includes('mbm_admin_authenticated=true') ||
+      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
+
+    let isPartnerAuthorized = isAdmin;
+    if (!isPartnerAuthorized) {
+      const partnerCookieMatch = cookieHeader.match(/mbm_partner_session=([^;]+)/);
+      if (partnerCookieMatch) {
+        try {
+          const { default: jwt } = await import('jsonwebtoken');
+          const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
+          const decoded: any = jwt.verify(partnerCookieMatch[1], JWT_SECRET);
+          if (decoded && (decoded.shopId === shopId || decoded.role === 'SHOP_PARTNER')) {
+            isPartnerAuthorized = true;
+          }
+        } catch {}
+      }
+    }
+
+    if (!isPartnerAuthorized && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized. Merchant login matching shopId is required.' },
+        { status: 401 }
+      );
+    }
+
     let parsedRows: CsvProductRow[] = [];
     let parseErrors: string[] = [];
 

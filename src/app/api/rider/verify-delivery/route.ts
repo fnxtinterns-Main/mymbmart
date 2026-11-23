@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrderById, updateOrderStatus } from '@/lib/ordersStore';
+import { redisCommand, redisDel, isRedisConfigured } from '@/lib/redis';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -21,8 +22,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
+    // Rate Limiting: Max 5 incorrect OTP attempts per order
+    const rateLimitKey = `rate-limit:otp-verify:${order.id}`;
+    if (isRedisConfigured()) {
+      const attempts = await redisCommand('get', rateLimitKey);
+      if (attempts && Number(attempts) >= 5) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Too many incorrect OTP attempts for this order. Verification is temporarily locked.' 
+          },
+          { status: 429 }
+        );
+      }
+    }
+
     // Verify OTP
     if (order.deliveryOtp !== deliveryOtp.toString().trim()) {
+      if (isRedisConfigured()) {
+        const attempts = await redisCommand('incr', rateLimitKey);
+        if (attempts === 1) {
+          await redisCommand('expire', rateLimitKey, 900);
+        }
+      }
+
       return NextResponse.json(
         { 
           success: false, 
@@ -30,6 +53,11 @@ export async function POST(req: Request) {
         },
         { status: 400 }
       );
+    }
+
+    // Clear rate limiter upon successful verification
+    if (isRedisConfigured()) {
+      await redisDel(rateLimitKey).catch(() => {});
     }
 
     // Mark as DELIVERED

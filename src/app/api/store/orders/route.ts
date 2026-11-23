@@ -3,7 +3,28 @@ import { ordersStore, updateOrderStatus, getOrderById, syncOrdersFromRedis } fro
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+function checkStoreAuth(req: Request): boolean {
+  const cookieHeader = req.headers.get('cookie') || '';
+  const authHeader = req.headers.get('authorization') || '';
+  const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
+
+  const isAuthorized = 
+    cookieHeader.includes('mbm_partner_session=') ||
+    cookieHeader.includes('mbm_admin_authenticated=true') ||
+    cookieHeader.includes('mbm_session=') ||
+    (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
+
+  if (!isAuthorized && process.env.NODE_ENV === 'production') {
+    return false;
+  }
+  return true;
+}
+
+export async function GET(req: Request) {
+  if (!checkStoreAuth(req)) {
+    return NextResponse.json({ success: false, message: 'Unauthorized: Partner or Admin session required.' }, { status: 401 });
+  }
+
   try {
     const allOrders = await syncOrdersFromRedis();
     const quickOrders = allOrders.filter((o) =>
@@ -29,6 +50,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!checkStoreAuth(req)) {
+    return NextResponse.json({ success: false, message: 'Unauthorized: Partner or Admin session required.' }, { status: 401 });
+  }
+
   try {
     await syncOrdersFromRedis();
     const body = await req.json();

@@ -36,7 +36,9 @@ export async function POST(req: Request) {
       const product = CATALOG_PRODUCTS.find((p) => p.id === item.productId || p.id === item.product?.id);
       if (!product) continue;
 
-      const qty = item.quantity || 1;
+      const rawQty = Number(item.quantity);
+      if (isNaN(rawQty) || rawQty <= 0) continue;
+      const qty = Math.max(1, Math.min(99, Math.floor(rawQty)));
       const mrp = product.mrp * qty;
       const bachat = product.bachatPrice * qty;
       const cashback = (product.cashbackAmount || 0) * qty;
@@ -278,7 +280,9 @@ export async function POST(req: Request) {
     for (const item of items) {
       const product = CATALOG_PRODUCTS.find((p) => p.id === item.productId || p.id === item.product?.id);
       if (product) {
-        const qty = item.quantity || 1;
+        const rawQty = Number(item.quantity);
+        if (isNaN(rawQty) || rawQty <= 0) continue;
+        const qty = Math.max(1, Math.min(99, Math.floor(rawQty)));
         product.stockQuantity = Math.max(0, (product.stockQuantity || 50) - qty);
         if (product.stockQuantity === 0) product.inStock = false;
       }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getOrderByIdAsync, updateOrderStatus, ordersStore } from '@/lib/ordersStore';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
-import { redisSet } from '@/lib/redis';
+import { redisSet, redisGet, isRedisConfigured } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,6 +81,33 @@ export async function POST(req: Request) {
     }
 
     const refundAmount = order.paymentStatus === 'PAID' ? order.totalPayable : 0;
+
+    // 4. Authoritative wallet credit in Upstash Redis and PostgreSQL
+    if (refundAmount > 0 && order.userId) {
+      if (isRedisConfigured()) {
+        try {
+          const currentBal = await redisGet<number>(`wallet:${order.userId}`);
+          const newBal = (Number(currentBal) || 0) + refundAmount;
+          await redisSet(`wallet:${order.userId}`, newBal);
+        } catch {}
+      }
+
+      try {
+        const { prisma } = await import('@/lib/prisma');
+        const rewardAcc = await prisma.rewardAccount.findUnique({
+          where: { userId: order.userId },
+        });
+        if (rewardAcc) {
+          await prisma.rewardAccount.update({
+            where: { userId: order.userId },
+            data: {
+              balance: { increment: refundAmount },
+              lifetimeEarned: { increment: refundAmount },
+            },
+          });
+        }
+      } catch {}
+    }
 
     return NextResponse.json({
       success: true,

@@ -17,8 +17,11 @@ export async function POST(req: Request) {
     const amountInPaise = Math.round(amountInRupees * 100);
     const transactionRef = `TXN-${order.orderNumber}-${Date.now().toString().slice(-4)}`;
 
+    // Authoritative Single Merchant VPA (configurable via env)
+    const merchantVpa = process.env.MERCHANT_UPI_VPA || 'pay-mymbmart@icici';
+
     // Generate UPI Intent URL & Dynamic QR Payload
-    const upiUri = `upi://pay?pa=pay-mymbmart@icici&pn=MegaBachatMart&am=${amountInRupees}&cu=INR&tr=${transactionRef}&tn=Order_${order.orderNumber}`;
+    const upiUri = `upi://pay?pa=${encodeURIComponent(merchantVpa)}&pn=MegaBachatMart&am=${amountInRupees}&cu=INR&tr=${transactionRef}&tn=Order_${order.orderNumber}`;
 
     return NextResponse.json({
       success: true,
@@ -29,13 +32,13 @@ export async function POST(req: Request) {
       paymentMethod,
       gateway: 'RAZORPAY_UPI_HYBRID',
       upiPayload: {
-        vpa: '9801506511@ybl',
+        vpa: merchantVpa,
         payeeName: 'MegaBachatMart',
         upiUri,
         supportedApps: [
-          { name: 'Google Pay', scheme: `gpay://upi/pay?pa=9801506511@ybl&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
-          { name: 'PhonePe', scheme: `phonepe://pay?pa=9801506511@ybl&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
-          { name: 'Paytm', scheme: `paytmmp://pay?pa=9801506511@ybl&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
+          { name: 'Google Pay', scheme: `gpay://upi/pay?pa=${encodeURIComponent(merchantVpa)}&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
+          { name: 'PhonePe', scheme: `phonepe://pay?pa=${encodeURIComponent(merchantVpa)}&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
+          { name: 'Paytm', scheme: `paytmmp://pay?pa=${encodeURIComponent(merchantVpa)}&pn=MegaBachatMart&am=${amountInRupees}&tr=${transactionRef}` },
         ]
       },
       paymentOptions: [

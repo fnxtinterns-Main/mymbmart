@@ -213,6 +213,18 @@ export async function getOrderByIdAsync(idOrNumber: string): Promise<OrderRecord
       }
     } catch {}
   }
+  // PostgreSQL Fallback
+  try {
+    const { prisma } = await import('./prisma');
+    const dbOrder = await prisma.order.findFirst({
+      where: {
+        OR: [{ id: idOrNumber }, { orderNumber: idOrNumber }]
+      }
+    });
+    if (dbOrder) {
+      return dbOrder as unknown as OrderRecord;
+    }
+  } catch {}
   return undefined;
 }
 
