@@ -29,13 +29,31 @@ export async function POST(req: Request) {
       );
     }
 
+    const { default: jwt } = await import('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
+    const adminToken = jwt.sign(
+      { role: 'ADMIN', email: email || 'admin@mymbmart.com' },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     const response = NextResponse.json({
       success: true,
       role: 'Super Admin',
       name: email || 'System Administrator',
+      token: adminToken,
     });
 
-    // Set authenticated cookie with 24hr expiration
+    // Set signed cryptographic admin token in HTTP-only cookie
+    response.cookies.set('mbm_admin_token', adminToken, {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 86400,
+    });
+
+    // Also set frontend status flag for UI compatibility
     response.cookies.set('mbm_admin_authenticated', 'true', {
       path: '/',
       httpOnly: false,

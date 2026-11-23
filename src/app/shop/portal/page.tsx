@@ -258,8 +258,26 @@ export default function ShopPartnerPortalPage() {
 
   useEffect(() => {
     refreshStoreOrders();
-    const interval = setInterval(refreshStoreOrders, 10000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshStoreOrders();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const interval = setInterval(() => {
+      // Pause background requests when tab is hidden to save battery & bandwidth
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        return;
+      }
+      refreshStoreOrders();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [soundAlertsEnabled]);
 
   const handleOrderStatusUpdate = async (orderId: string, action: string, extra: any = {}) => {
