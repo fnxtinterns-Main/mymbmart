@@ -82,37 +82,38 @@ button, a {
   touch-action: manipulation;
 }
 
-/* Glassmorphic Dashboard Utilities (Dashboard V22 aesthetic - Frosted Blur & Neon Glow) */
+/* Glassmorphic Dashboard Utilities (Emerald Green & Off-White Luxury Theme) */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  border: 1px solid rgba(6, 78, 59, 0.12);
+  box-shadow: 0 10px 30px -5px rgba(6, 78, 59, 0.04), 0 4px 12px -2px rgba(6, 78, 59, 0.02);
 }
 .glass-panel-glow {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: 0 0 25px rgba(56, 189, 248, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.12), 0 12px 36px 0 rgba(6, 78, 59, 0.06);
 }
 .glass-card {
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(6, 78, 59, 0.1);
+  box-shadow: 0 4px 20px -2px rgba(6, 78, 59, 0.04);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.065);
-  border-color: rgba(56, 189, 248, 0.35);
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.16);
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 12px 28px -4px rgba(16, 185, 129, 0.18);
   transform: translateY(-1px);
 }
 .glass-pill {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(6, 78, 59, 0.15);
 }
 
