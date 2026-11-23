@@ -76,11 +76,13 @@ export async function POST(req: Request) {
     const marketplaceSubtotal = standardMarketplaceItems.reduce((acc, i) => acc + i.subtotalBachat, 0);
 
     // Free delivery thresholds:
+    // Self-Pickup is strictly ₹0 delivery fee.
     // Quick Commerce: Free above ₹199, else ₹29
     // Marketplace: Free above ₹499, else ₹49
-    const quickDeliveryFee = quickCommerceItems.length > 0 ? (quickSubtotal >= 199 ? 0 : 29) : 0;
-    const marketplaceDeliveryFee = standardMarketplaceItems.length > 0 ? (marketplaceSubtotal >= 499 ? 0 : 49) : 0;
-    const totalDeliveryFee = quickDeliveryFee + marketplaceDeliveryFee;
+    const isPickup = body.fulfilmentType === 'SELF_PICKUP' || body.fulfilmentType === 'STORE_PICKUP';
+    const quickDeliveryFee = isPickup ? 0 : (quickCommerceItems.length > 0 ? (quickSubtotal >= 199 ? 0 : 29) : 0);
+    const marketplaceDeliveryFee = isPickup ? 0 : (standardMarketplaceItems.length > 0 ? (marketplaceSubtotal >= 499 ? 0 : 49) : 0);
+    const totalDeliveryFee = isPickup ? 0 : (quickDeliveryFee + marketplaceDeliveryFee);
 
     const subtotalWithDelivery = totalBachatPrice + totalDeliveryFee;
 

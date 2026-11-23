@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       const rawExt = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
       const ext = allowedExtensions.includes(rawExt) ? rawExt : 'jpg';
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'kyc');
+      const uploadDir = path.join(process.cwd(), 'data', 'kyc_uploads');
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       const filePath = path.join(uploadDir, filename);
 
       fs.writeFileSync(filePath, buffer);
-      const fileUrl = `/uploads/kyc/${filename}`;
+      const fileUrl = `/api/v1/shop/upload-doc?file=${filename}`;
 
       return NextResponse.json({
         success: true,
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
           else if (mimeType.includes('png')) ext = 'png';
           else if (mimeType.includes('webp')) ext = 'webp';
 
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'kyc');
+          const uploadDir = path.join(process.cwd(), 'data', 'kyc_uploads');
           if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
           }
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
           const filePath = path.join(uploadDir, filename);
 
           fs.writeFileSync(filePath, buffer);
-          finalUrl = `/uploads/kyc/${filename}`;
+          finalUrl = `/api/v1/shop/upload-doc?file=${filename}`;
         }
       } catch (fileErr) {
         console.warn('[DocUpload] Falling back to direct data URI:', fileErr);
@@ -99,5 +99,52 @@ export async function POST(req: Request) {
       { success: false, message: error.message || 'Failed to upload document.' },
       { status: 500 }
     );
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const file = searchParams.get('file');
+    if (!file) {
+      return NextResponse.json({ success: false, message: 'File parameter is required.' }, { status: 400 });
+    }
+
+    const cookieHeader = req.headers.get('cookie') || '';
+    const authHeader = req.headers.get('authorization') || '';
+    const isAuthorized =
+      cookieHeader.includes('mbm_admin_authenticated=true') ||
+      cookieHeader.includes('mbm_partner_session=') ||
+      cookieHeader.includes('mbm_session=') ||
+      authHeader.startsWith('Bearer ');
+
+    if (!isAuthorized) {
+      return NextResponse.json({ success: false, message: 'Unauthorized. KYC documents are restricted.' }, { status: 401 });
+    }
+
+    const safeFilename = path.basename(file);
+    const filePath = path.join(process.cwd(), 'data', 'kyc_uploads', safeFilename);
+
+    if (!fs.existsSync(filePath)) {
+      return NextResponse.json({ success: false, message: 'Document not found.' }, { status: 404 });
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+    const ext = path.extname(safeFilename).toLowerCase();
+    const contentType =
+      ext === '.pdf' ? 'application/pdf' :
+      ext === '.png' ? 'image/png' :
+      ext === '.webp' ? 'image/webp' :
+      'image/jpeg';
+
+    return new NextResponse(fileBuffer, {
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: 'Failed to retrieve document.' }, { status: 500 });
   }
 }

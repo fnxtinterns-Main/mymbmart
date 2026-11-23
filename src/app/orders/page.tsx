@@ -76,13 +76,13 @@ export default function CustomerOrdersPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.orders)) {
-          const combined = [...localOrders];
-          for (const sOrder of data.orders) {
-            if (!combined.some((co) => co.id === sOrder.id || co.orderNumber === sOrder.orderNumber)) {
-              combined.push(sOrder);
-            }
+          const map = new Map<string, OrderRecord>();
+          for (const lo of localOrders) map.set(lo.orderNumber || lo.id, lo);
+          for (const so of data.orders) {
+            const key = so.orderNumber || so.id;
+            map.set(key, { ...(map.get(key) || {}), ...so });
           }
-          setOrders(combined);
+          setOrders(Array.from(map.values()));
         } else {
           setOrders(localOrders);
         }
@@ -91,6 +91,45 @@ export default function CustomerOrdersPage() {
         setOrders(localOrders);
       });
   }, []);
+
+  // 5. Auto-poll server for live status updates if there are active fulfillment orders
+  useEffect(() => {
+    const hasActiveOrders = orders.some((o) =>
+      ['PLACED', 'CONFIRMED', 'PROCESSING', 'PACKED', 'OUT_FOR_DELIVERY', 'ASSIGNED_TO_RIDER'].includes(o.status)
+    );
+    if (!hasActiveOrders) return;
+
+    const interval = setInterval(() => {
+      fetch('/api/orders')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.orders)) {
+            setOrders((prev) => {
+              const map = new Map<string, OrderRecord>();
+              for (const o of prev) map.set(o.orderNumber || o.id, o);
+              for (const so of data.orders) {
+                const key = so.orderNumber || so.id;
+                const existing = map.get(key);
+                map.set(key, { ...existing, ...so });
+              }
+              return Array.from(map.values());
+            });
+
+            if (selectedOrder) {
+              const updatedSelected = data.orders.find(
+                (so: OrderRecord) => so.id === selectedOrder.id || so.orderNumber === selectedOrder.orderNumber
+              );
+              if (updatedSelected && updatedSelected.status !== selectedOrder.status) {
+                setSelectedOrder((prev) => (prev ? { ...prev, ...updatedSelected } : null));
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [orders, selectedOrder]);
 
   const handleOpenTracking = (order: OrderRecord) => {
     setSelectedOrder(order);

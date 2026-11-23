@@ -33,7 +33,10 @@ import {
   MapPin,
   Phone,
   User,
-  Play
+  Play,
+  Printer,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -90,12 +93,162 @@ export default function ShopPartnerPortalPage() {
   const [verifyingOrder, setVerifyingOrder] = useState<any | null>(null);
   const [otpInput, setOtpInput] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [soundAlertsEnabled, setSoundAlertsEnabled] = useState(true);
+
+  const knownOrderIdsRef = React.useRef<Set<string>>(new Set());
+  const initialOrdersLoadedRef = React.useRef(false);
+
+  const playOrderChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      // First beep: 587.33 Hz (D5)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, now);
+      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.28);
+
+      // Second beep: 880 Hz (A5)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880, now + 0.15);
+      gain2.gain.setValueAtTime(0.35, now + 0.15);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.15);
+      osc2.stop(now + 0.5);
+    } catch (err) {
+      console.warn('AudioContext chime error:', err);
+    }
+  };
+
+  const handlePrintPackingSlip = (order: any) => {
+    const isPickup = order.fulfilmentType === 'SELF_PICKUP';
+    const printWindow = window.open('', '_blank', 'width=420,height=600');
+    if (!printWindow) {
+      alert('Please allow popups to print packing slips.');
+      return;
+    }
+    const itemsHtml = (order.items || [])
+      .map(
+        (item: any) => `
+        <tr>
+          <td style="padding: 4px 0; border-bottom: 1px dashed #ccc;">${item.name}</td>
+          <td style="padding: 4px 0; text-align: center; border-bottom: 1px dashed #ccc; font-weight: bold;">x${item.quantity || 1}</td>
+          <td style="padding: 4px 0; text-align: right; border-bottom: 1px dashed #ccc;">₹${(item.unitPrice || item.price || 0) * (item.quantity || 1)}</td>
+        </tr>`
+      )
+      .join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Packing Slip - #${order.orderNumber || order.id}</title>
+        <style>
+          @page { size: 80mm auto; margin: 4mm; }
+          body {
+            font-family: 'Courier New', Courier, monospace;
+            width: 72mm;
+            margin: 0 auto;
+            padding: 4px;
+            color: #000;
+            font-size: 12px;
+            line-height: 1.3;
+          }
+          .center { text-align: center; }
+          .bold { font-weight: bold; }
+          .title { font-size: 15px; font-weight: 900; letter-spacing: 1px; }
+          .divider { border-top: 1px dashed #000; margin: 6px 0; }
+          .divider-double { border-top: 2px solid #000; margin: 6px 0; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; }
+          .badge { display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border: 1px solid #000; margin: 4px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="center">
+          <div class="title">MEGABACHATMART</div>
+          <div style="font-size: 10px;">Hyperlocal Quick Commerce</div>
+          <div class="divider"></div>
+          <div class="badge">${isPickup ? 'STORE SELF-PICKUP' : 'DOORSTEP DELIVERY'}</div>
+          <div class="bold" style="font-size: 14px;">ORDER #${order.orderNumber || order.id}</div>
+          <div style="font-size: 10px;">${new Date(order.createdAt || Date.now()).toLocaleString()}</div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div><span class="bold">Customer:</span> ${order.userName || order.customerName || 'Customer'}</div>
+          <div><span class="bold">Phone:</span> ${order.userPhone || order.customerPhone || 'N/A'}</div>
+          ${order.deliveryAddress ? `<div><span class="bold">Address:</span> ${order.deliveryAddress}</div>` : ''}
+          ${order.pickupOtp ? `<div class="bold" style="font-size: 13px; margin-top: 2px;">PICKUP PIN: ${order.pickupOtp}</div>` : ''}
+        </div>
+        <div class="divider-double"></div>
+        <div class="bold center">PACKING LIST</div>
+        <table>
+          <thead>
+            <tr style="border-bottom: 1px solid #000;">
+              <th style="text-align: left; padding-bottom: 2px;">Item</th>
+              <th style="text-align: center; padding-bottom: 2px;">Qty</th>
+              <th style="text-align: right; padding-bottom: 2px;">Amt</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+        <div class="divider"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;" class="bold">
+          <span>TOTAL PAYABLE:</span>
+          <span>₹${order.totalPayable || order.total || 0}</span>
+        </div>
+        <div style="font-size: 10px; margin-top: 4px;">Payment: ${(order.paymentStatus || 'PREPAID').toUpperCase()} (${order.paymentMethod || 'ONLINE'})</div>
+        <div class="divider"></div>
+        <div class="center" style="font-size: 10px; margin-top: 8px;">
+          Packed with care at Ranchi Central Store<br/>
+          Thank you for shopping on MegaBachatMart!
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  };
 
   const refreshStoreOrders = async () => {
     try {
       const res = await fetch('/api/store/orders');
       const data = await res.json();
       if (data.success && Array.isArray(data.orders)) {
+        if (initialOrdersLoadedRef.current) {
+          const hasNewOrder = data.orders.some(
+            (o: any) => !knownOrderIdsRef.current.has(o.id) && ['PLACED', 'CONFIRMED'].includes(o.status)
+          );
+          if (hasNewOrder && soundAlertsEnabled) {
+            playOrderChime();
+          }
+        } else {
+          initialOrdersLoadedRef.current = true;
+        }
+
+        const newSet = new Set<string>();
+        data.orders.forEach((o: any) => newSet.add(o.id));
+        knownOrderIdsRef.current = newSet;
+
         setStoreOrders(data.orders);
       }
     } catch (e) {
@@ -107,7 +260,7 @@ export default function ShopPartnerPortalPage() {
     refreshStoreOrders();
     const interval = setInterval(refreshStoreOrders, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [soundAlertsEnabled]);
 
   const handleOrderStatusUpdate = async (orderId: string, action: string, extra: any = {}) => {
     try {
@@ -584,13 +737,32 @@ export default function ShopPartnerPortalPage() {
                     </p>
                   </div>
 
-                  <button
-                    onClick={refreshStoreOrders}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 self-start sm:self-auto cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Refresh Queue</span>
-                  </button>
+                  <div className="flex items-center space-x-2 self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playOrderChime();
+                        setSoundAlertsEnabled(!soundAlertsEnabled);
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
+                        soundAlertsEnabled
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      }`}
+                      title="Toggle sound chime on new orders arrival"
+                    >
+                      {soundAlertsEnabled ? <Volume2 className="w-3.5 h-3.5 text-emerald-600" /> : <VolumeX className="w-3.5 h-3.5" />}
+                      <span>{soundAlertsEnabled ? 'Audio Chime ON' : 'Audio OFF'}</span>
+                    </button>
+
+                    <button
+                      onClick={refreshStoreOrders}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Refresh Queue</span>
+                    </button>
+                  </div>
                 </div>
 
                 {storeOrders.length === 0 ? (
@@ -715,76 +887,88 @@ export default function ShopPartnerPortalPage() {
                             </div>
                           </div>
 
-                          {/* Workflow Action Buttons */}
-                          <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                            {order.status === 'PLACED' && (
-                              <button
-                                type="button"
-                                onClick={() => handleOrderStatusUpdate(order.id, 'CONFIRM')}
-                                className="bg-[#16A34A] hover:bg-[#15803D] text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
-                              >
-                                <Check className="w-4 h-4" />
-                                <span>Accept Order & Lock Inventory</span>
-                              </button>
-                            )}
+                          {/* Workflow Action Buttons & Packing Slip */}
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => handlePrintPackingSlip(order)}
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer border border-slate-200"
+                              title="Print 80mm thermal receipt / packing slip"
+                            >
+                              <Printer className="w-3.5 h-3.5 text-slate-600" />
+                              <span>Print Packing Slip</span>
+                            </button>
 
-                            {order.status === 'CONFIRMED' && (
-                              <button
-                                type="button"
-                                onClick={() => handleOrderStatusUpdate(order.id, 'PROCESS')}
-                                className="bg-[#0284C7] hover:bg-sky-700 text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
-                              >
-                                <PackageCheck className="w-4 h-4" />
-                                <span>Start Packing Items</span>
-                              </button>
-                            )}
-
-                            {['PROCESSING', 'PACKING'].includes(order.status) && (
-                              isPickup ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              {order.status === 'PLACED' && (
                                 <button
                                   type="button"
-                                  onClick={() => handleOrderStatusUpdate(order.id, 'READY_FOR_PICKUP')}
-                                  className="bg-[#064E3B] hover:bg-emerald-950 text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                                  onClick={() => handleOrderStatusUpdate(order.id, 'CONFIRM')}
+                                  className="bg-[#16A34A] hover:bg-[#15803D] text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
                                 >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                  <span>Bag Packed & Ready for Customer Pickup</span>
+                                  <Check className="w-4 h-4" />
+                                  <span>Accept Order & Lock Inventory</span>
                                 </button>
-                              ) : (
+                              )}
+
+                              {order.status === 'CONFIRMED' && (
                                 <button
                                   type="button"
-                                  onClick={() => handleOrderStatusUpdate(order.id, 'PACK')}
-                                  className="bg-[#064E3B] hover:bg-emerald-950 text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                                  onClick={() => handleOrderStatusUpdate(order.id, 'PROCESS')}
+                                  className="bg-[#0284C7] hover:bg-sky-700 text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
                                 >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                  <span>Bag Packed & Ready for Delivery Rider</span>
+                                  <PackageCheck className="w-4 h-4" />
+                                  <span>Start Packing Items</span>
                                 </button>
-                              )
-                            )}
+                              )}
 
-                            {isPickup && ['READY_FOR_PICKUP', 'AWAITING_COLLECTION'].includes(order.status) && (
-                              <button
-                                type="button"
-                                onClick={() => { setVerifyingOrder(order); setOtpInput(''); setOtpError(''); }}
-                                className="bg-[#FF5722] hover:bg-orange-600 text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-md shadow-orange-700/20 cursor-pointer"
-                              >
-                                <QrCode className="w-4 h-4" />
-                                <span>Customer Arrived: Verify OTP & Handover</span>
-                              </button>
-                            )}
+                              {['PROCESSING', 'PACKING'].includes(order.status) && (
+                                isPickup ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOrderStatusUpdate(order.id, 'READY_FOR_PICKUP')}
+                                    className="bg-[#064E3B] hover:bg-emerald-950 text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span>Bag Packed & Ready for Customer Pickup</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOrderStatusUpdate(order.id, 'PACK')}
+                                    className="bg-[#064E3B] hover:bg-emerald-950 text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <span>Bag Packed & Ready for Delivery Rider</span>
+                                  </button>
+                                )
+                              )}
 
-                            {!isPickup && order.status === 'READY_FOR_DISPATCH' && (
-                              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3.5 py-2 rounded-xl flex items-center space-x-1.5">
-                                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Awaiting Ranchi Central Delivery Rider Fleet Pickup</span>
-                              </span>
-                            )}
+                              {isPickup && ['READY_FOR_PICKUP', 'AWAITING_COLLECTION'].includes(order.status) && (
+                                <button
+                                  type="button"
+                                  onClick={() => { setVerifyingOrder(order); setOtpInput(''); setOtpError(''); }}
+                                  className="bg-[#FF5722] hover:bg-orange-600 text-white px-5 py-2.5 rounded-2xl text-xs font-black transition flex items-center space-x-1.5 shadow-md shadow-orange-700/20 cursor-pointer"
+                                >
+                                  <QrCode className="w-4 h-4" />
+                                  <span>Customer Arrived: Verify OTP & Handover</span>
+                                </button>
+                              )}
 
-                            {['DELIVERED', 'COLLECTED'].includes(order.status) && (
-                              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3.5 py-2 rounded-xl flex items-center space-x-1.5">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Handover Complete & Fulfilled</span>
-                              </span>
-                            )}
+                              {!isPickup && order.status === 'READY_FOR_DISPATCH' && (
+                                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3.5 py-2 rounded-xl flex items-center space-x-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>Awaiting Ranchi Central Delivery Rider Fleet Pickup</span>
+                                </span>
+                              )}
+
+                              {['DELIVERED', 'COLLECTED'].includes(order.status) && (
+                                <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3.5 py-2 rounded-xl flex items-center space-x-1.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Handover Complete & Fulfilled</span>
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
