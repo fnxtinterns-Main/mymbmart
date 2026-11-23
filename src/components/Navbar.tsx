@@ -213,71 +213,68 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100/80 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-3 sm:gap-6">
+      <div className="w-full px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20 sm:h-24 lg:h-26 gap-3 sm:gap-6">
           
-          {/* Logo & Brand Identity */}
-          <Link href="/" className="flex items-center space-x-2 shrink-0 group">
-            <div 
-              className="relative w-32 sm:w-44 h-10 sm:h-12"
-              style={{ position: 'relative', width: '176px', height: '48px', maxWidth: '100%' }}
-            >
+          {/* Logo & Brand Identity in Left Corner */}
+          <Link href="/" className="flex items-center space-x-2 shrink-0 group" aria-label="MegaBachatMart Home">
+            <div className="relative w-52 sm:w-64 md:w-76 lg:w-88 xl:w-[380px] h-14 sm:h-18 md:h-20 lg:h-22">
               <Image
                 src="/images/LOgo.jpeg"
                 alt="MegaBachatMart"
                 fill
                 priority
                 className="object-contain object-left group-hover:scale-102 transition-transform"
-                style={{ objectFit: 'contain', objectPosition: 'left' }}
               />
             </div>
           </Link>
 
-          {/* Center Search Bar (Picture 5 & Blinkit Style) */}
+          {/* Center Search Bar (Blinkit Style) */}
           <form 
             onSubmit={handleSearchSubmit}
-            className="hidden md:flex flex-1 max-w-md lg:max-w-lg items-center relative"
+            className="hidden md:flex flex-1 max-w-lg lg:max-w-xl xl:max-w-2xl min-w-[260px] items-center relative mx-3 lg:mx-6"
           >
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for 'rice', 'oil', 'masala', SHG items..."
-              className="w-full bg-slate-50 border border-slate-200 hover:border-emerald-400 focus:border-brand-green focus:bg-white text-xs sm:text-sm text-slate-800 rounded-full pl-4 pr-11 py-2 sm:py-2.5 transition-all outline-hidden shadow-2xs"
+              placeholder="Search for Rice, Oil, Dal, Masala..."
+              className="w-full bg-slate-50 border border-slate-200 hover:border-emerald-400 focus:border-brand-green focus:bg-white text-xs sm:text-sm text-slate-800 rounded-full pl-4 pr-11 py-2 sm:py-2.5 transition-all outline-hidden shadow-2xs placeholder:text-slate-400"
             />
             <button
               type="submit"
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-brand-green hover:bg-brand-green-hover text-white flex items-center justify-center transition shadow-xs"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-brand-green hover:bg-brand-green-hover text-white flex items-center justify-center transition shadow-xs cursor-pointer"
               title="Search"
             >
               <Search className="w-4 h-4" />
             </button>
           </form>
 
-          {/* Desktop Navigation Links with Icons (Matching Picture 5) */}
-          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const active = isActive(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative flex flex-col items-center px-3 py-1 rounded-xl text-xs font-semibold transition-all ${
-                    active
-                      ? 'text-brand-green font-bold bg-brand-mint/60'
-                      : 'text-slate-600 hover:text-brand-forest hover:bg-slate-50'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 mb-0.5 ${active ? 'text-brand-green' : 'text-slate-500'}`} />
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right Action Icons: Notifications, User Account, Cart */}
+          {/* Right Section: Navigation Links & Action Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center space-x-1">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const active = isActive(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all ${
+                      active
+                        ? 'text-brand-green font-bold bg-brand-mint/60'
+                        : 'text-slate-600 hover:text-brand-forest hover:bg-slate-50'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${active ? 'text-brand-green' : 'text-slate-500'}`} />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="h-6 w-px bg-slate-200 hidden lg:block mx-1" aria-hidden="true" />
             
             {/* Notification Bell with Floating Dropdown */}
             <div className="relative" ref={notifRef}>
@@ -530,7 +527,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 'rice', 'oil', 'masala'..."
+              placeholder="Search Rice, Oil, Dal, Masala..."
               className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 rounded-full pl-4 pr-10 py-2 outline-hidden"
             />
             <button

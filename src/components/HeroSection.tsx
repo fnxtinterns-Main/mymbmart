@@ -30,14 +30,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     <section className="relative overflow-hidden bg-gradient-to-b from-brand-mint/40 via-white to-slate-50 pt-4 pb-10 sm:pt-6 sm:pb-14 border-b border-emerald-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
         
-        {/* 1. Top Hero Graphic Banner (User's Exact Design Graphic) */}
+        {/* 1. Top Hero Graphic Banner (High-Resolution 3072x1017 for Smart Boards & 4K Displays) */}
         <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-emerald-950/5 border border-emerald-200/90 bg-white group cursor-pointer">
-          <div className="relative w-full aspect-[1024/339]">
+          <div className="relative w-full aspect-[3072/1017]">
             <Image
               src="/images/hero_banner.jpg"
               alt="MegaBachatMart - Bachat Bhi. Kamai Bhi! Shop Smart. Save More."
               fill
               priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1536px) 1400px, 3072px"
               className="object-cover object-center group-hover:scale-[1.01] transition-transform duration-500"
             />
             {/* Clickable Overlay Link directly into the Shop */}

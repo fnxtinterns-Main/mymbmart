@@ -18,10 +18,16 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: 'No file provided.' }, { status: 400 });
       }
 
+      if (file.size > 10 * 1024 * 1024) {
+        return NextResponse.json({ success: false, message: 'File size exceeds maximum allowed limit (10MB).' }, { status: 400 });
+      }
+
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const rawExt = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+      const ext = allowedExtensions.includes(rawExt) ? rawExt : 'jpg';
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'kyc');
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });

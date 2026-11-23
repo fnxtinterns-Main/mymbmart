@@ -27,6 +27,12 @@ export async function POST(req: Request) {
 
     // Verify & Validate Apple JWT ID Token
     const rawToken = idToken || authorization?.id_token;
+    if (process.env.NODE_ENV === 'production' && !rawToken) {
+      return NextResponse.json(
+        { success: false, error: 'Valid Apple ID Token is required for authentication.' },
+        { status: 400 }
+      );
+    }
     if (rawToken && typeof rawToken === 'string') {
       try {
         const completeToken: any = jwt.decode(rawToken, { complete: true });

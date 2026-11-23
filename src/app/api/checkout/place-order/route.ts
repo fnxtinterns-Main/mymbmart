@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
 import { addOrder, OrderRecord } from '@/lib/ordersStore';
+import { isRedisConfigured, redisGet, redisSet } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,23 +80,50 @@ export async function POST(req: Request) {
     let realCustomerName = customerName || 'Customer';
     let realCustomerPhone = customerPhone || '';
 
+    // Verify cryptographic session token
+    let isSessionValid = false;
+    const sessionCookieMatch = cookieHeader.match(/mbm_session=([^;]+)/);
+    if (sessionCookieMatch) {
+      try {
+        const { default: jwt } = await import('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
+        const decoded: any = jwt.verify(sessionCookieMatch[1], JWT_SECRET);
+        if (decoded && decoded.userId) {
+          authenticatedUserId = decoded.userId;
+          if (decoded.phone) realCustomerPhone = decoded.phone;
+          isSessionValid = true;
+        }
+      } catch {}
+    }
+
     const userCookieMatch = cookieHeader.match(/mbm_user_data=([^;]+)/);
     if (userCookieMatch) {
       try {
         const parsedUser = JSON.parse(decodeURIComponent(userCookieMatch[1]));
-        if (parsedUser.id) authenticatedUserId = parsedUser.id;
+        if (!isSessionValid && parsedUser.id) authenticatedUserId = parsedUser.id;
         if (parsedUser.name && parsedUser.name !== 'Guest User') {
           realCustomerName = parsedUser.name;
         }
-        if (parsedUser.phone) {
+        if (parsedUser.phone && !realCustomerPhone) {
           realCustomerPhone = parsedUser.phone;
         }
-        if (typeof parsedUser.walletBalance === 'number') {
-          verifiedWalletBalance = parsedUser.walletBalance;
+        // Verify wallet balance safely: check Redis balance first, or clamp cookie balance to safe ceiling
+        if (isSessionValid && typeof parsedUser.walletBalance === 'number') {
+          verifiedWalletBalance = Math.max(0, Math.min(parsedUser.walletBalance, 500));
         }
       } catch {}
     } else if (process.env.NODE_ENV !== 'production' && typeof userWalletBalance === 'number') {
       verifiedWalletBalance = userWalletBalance;
+    }
+
+    // Check Redis for authoritative server-side wallet balance
+    if (isRedisConfigured() && isSessionValid && authenticatedUserId) {
+      try {
+        const redisBal = await redisGet<number>(`wallet:${authenticatedUserId}`);
+        if (redisBal !== null && !isNaN(Number(redisBal))) {
+          verifiedWalletBalance = Math.max(0, Number(redisBal));
+        }
+      } catch {}
     }
 
     // Closed-loop wallet credit redemption (up to 40% cap, verified server-side)
@@ -258,6 +286,13 @@ export async function POST(req: Request) {
 
     // 2. Resilient active store persistence
     addOrder(newOrder);
+
+    // 3. Deduct applied wallet credits from Redis if applicable
+    if (creditDeduction > 0 && isRedisConfigured() && authenticatedUserId) {
+      try {
+        await redisSet(`wallet:${authenticatedUserId}`, Math.max(0, verifiedWalletBalance - creditDeduction));
+      } catch {}
+    }
 
     return NextResponse.json({
       success: true,

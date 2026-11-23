@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { sendOtpEmail } from '@/lib/emailService';
 import { getDeterministicReferralCode, getDeterministicMemberId } from '@/lib/userSession';
-import { redisGet, redisSet, redisDel, redisCommand } from '@/lib/redis';
+import { redisSet, redisGet, redisDel, redisCommand, isRedisConfigured } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
+const memoryOtpStore = new Map<string, { code: string; expiresAt: number }>();
 
 // Ephemeral in-memory fallback store if Redis is ever unreachable
 const localOtpStore = new Map<string, { otp: string; expiresAt: number }>();
@@ -28,19 +29,28 @@ export async function POST(req: Request) {
       const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.E2E_TEST_MODE === 'true';
       const isTestOtp = isTestEnv && submittedOtp === '123456';
 
-      // Verify against Redis first, then in-memory fallback
+      // Verify against memory fallback store first, then Upstash Redis
       let isVerified = isTestOtp;
-      if (!isVerified) {
-        const storedOtp = await redisGet<string>(`otp:${cleanId}`);
-        if (storedOtp && String(storedOtp).trim() === submittedOtp) {
-          isVerified = true;
-          await redisDel(`otp:${cleanId}`).catch(() => {});
-        } else {
-          const local = localOtpStore.get(cleanId);
-          if (local && local.expiresAt > Date.now() && local.otp === submittedOtp) {
+      if (!isVerified && submittedOtp) {
+        const memRecord = localOtpStore.get(cleanId) || memoryOtpStore.get(identifier);
+        if (memRecord && memRecord.expiresAt > Date.now()) {
+          const expected = 'otp' in memRecord ? memRecord.otp : (memRecord as any).code;
+          if (expected === submittedOtp) {
             isVerified = true;
             localOtpStore.delete(cleanId);
+            memoryOtpStore.delete(identifier);
           }
+        }
+        
+        if (!isVerified && isRedisConfigured()) {
+          try {
+            const redisOtp = await redisGet<string>(`otp:${cleanId}`) || await redisGet<string>(`otp:${identifier}`);
+            if (redisOtp && String(redisOtp).trim() === submittedOtp) {
+              isVerified = true;
+              await redisDel(`otp:${cleanId}`).catch(() => {});
+              await redisDel(`otp:${identifier}`).catch(() => {});
+            }
+          } catch {}
         }
       }
 
@@ -150,6 +160,10 @@ export async function POST(req: Request) {
     }
 
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    memoryOtpStore.set(identifier, { code: generatedOtp, expiresAt: Date.now() + 600 * 1000 });
+    if (isRedisConfigured()) {
+      redisSet(`otp:${identifier}`, generatedOtp, 600).catch(() => {});
+    }
 
     // Persist OTP in Redis (10 minutes TTL) + In-memory fallback
     await redisSet(`otp:${cleanId}`, generatedOtp, 600).catch(() => {});
@@ -163,10 +177,12 @@ export async function POST(req: Request) {
       }
     }
 
+    const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.E2E_TEST_MODE === 'true';
+
     return NextResponse.json({
       success: true,
-      message: `OTP dispatched to ${cleanId}`,
-      testOtp: process.env.NODE_ENV !== 'production' ? '123456' : undefined,
+      message: `OTP dispatched to ${identifier}`,
+      ...(isTestEnv ? { testOtp: '123456' } : {}),
       expiresInSeconds: 600,
     });
   } catch (error: any) {

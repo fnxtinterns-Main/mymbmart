@@ -2,23 +2,17 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { 
-  Building2, 
   Store, 
   Lock, 
-  Key, 
   ArrowRight, 
   AlertCircle, 
-  CheckCircle2, 
-  Sparkles,
   ShieldCheck,
-  ChevronRight,
   Eye,
   EyeOff
 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
 
 export default function ShopPartnerLoginPage() {
   const router = useRouter();
@@ -62,18 +56,41 @@ export default function ShopPartnerLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
-      <Navbar cartCount={0} onOpenCart={() => {}} onOpenAuth={() => {}} />
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between text-[#0F172A]">
+      {/* Top Header with Only Website Logo */}
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex items-center justify-between">
+        <Link href="/" className="flex items-center">
+          <div className="relative w-56 sm:w-72 md:w-84 lg:w-96 xl:w-[420px] h-16 sm:h-20 md:h-22 lg:h-24">
+            <Image
+              src="/images/LOgo.jpeg"
+              alt="MegaBachatMart"
+              fill
+              priority
+              className="object-contain object-left group-hover:scale-105 transition-transform"
+            />
+          </div>
+        </Link>
 
+        <Link
+          href="/"
+          className="text-xs font-semibold text-slate-500 hover:text-[#064E3B] transition flex items-center space-x-1"
+        >
+          <span>← Back to Customer Website</span>
+        </Link>
+      </header>
+
+      {/* Main Login Area */}
       <main className="flex-1 py-12 px-4 sm:px-6 flex items-center justify-center">
         <div className="max-w-md w-full space-y-6">
           
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-3xl bg-[#064E3B] text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-950/20">
+            <div className="w-14 h-14 rounded-2xl bg-[#064E3B] text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-950/20">
               <Store className="w-7 h-7 text-emerald-300" />
             </div>
-            <h1 className="text-2xl font-black text-[#0F172A] tracking-tight">Merchant Partner Portal</h1>
+            <h1 className="text-2xl font-black text-[#0F172A] tracking-tight">
+              Merchant Partner Login
+            </h1>
             <p className="text-xs text-slate-500">
               Sign in to manage store inventory, bulk upload CSVs, and fulfill orders.
             </p>
@@ -99,7 +116,7 @@ export default function ShopPartnerLoginPage() {
                     placeholder="e.g. MBM-SHP-834006-03 or 9431109876"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium bg-slate-50/50 focus:bg-white"
                   />
                 </div>
               </div>
@@ -124,7 +141,7 @@ export default function ShopPartnerLoginPage() {
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-mono bg-slate-50/50 focus:bg-white"
                   />
                   <button
                     type="button"
@@ -196,10 +213,21 @@ export default function ShopPartnerLoginPage() {
             </div>
           </div>
 
+          {/* Compliance & Security Badge */}
+          <div className="text-center space-y-1">
+            <div className="inline-flex items-center space-x-1.5 text-[11px] text-slate-500">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>MegaBachatMart Partner Network • SSL 256-bit Encrypted</span>
+            </div>
+          </div>
+
         </div>
       </main>
 
-      <Footer />
+      {/* Minimal Clean Footer */}
+      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        &copy; 2026 MegaBachatMart (mymbmart.com). Merchant Partner Portal.
+      </footer>
     </div>
   );
 }

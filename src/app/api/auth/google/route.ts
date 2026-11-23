@@ -131,15 +131,37 @@ export async function POST(req: Request) {
     let avatarUrl = clientUser?.picture || clientUser?.avatarUrl || '';
     let sub = clientUser?.sub || clientUser?.id || '';
 
-    // If an idToken JWT was provided, decode payload
+    // In production, require verified Google idToken
+    if (process.env.NODE_ENV === 'production' && !idToken) {
+      return NextResponse.json(
+        { success: false, error: 'Valid Google ID Token is required for authentication.' },
+        { status: 400 }
+      );
+    }
+
+    // Verify Google ID Token
     if (idToken && typeof idToken === 'string') {
       try {
-        const decoded: any = jwt.decode(idToken);
-        if (decoded) {
-          email = decoded.email || email;
-          name = decoded.name || name || (email ? email.split('@')[0] : 'Google Member');
-          avatarUrl = decoded.picture || avatarUrl;
-          sub = decoded.sub || sub;
+        // shortcut: lightweight decode in dev/test, tokeninfo verification in production
+        if (process.env.NODE_ENV === 'production') {
+          const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+          if (verifyRes.ok) {
+            const tokenInfo = await verifyRes.json();
+            email = tokenInfo.email || '';
+            name = tokenInfo.name || (email ? email.split('@')[0] : 'Google Member');
+            avatarUrl = tokenInfo.picture || '';
+            sub = tokenInfo.sub || '';
+          } else {
+            return NextResponse.json({ success: false, error: 'Invalid Google ID Token.' }, { status: 401 });
+          }
+        } else {
+          const decoded: any = jwt.decode(idToken);
+          if (decoded) {
+            email = decoded.email || email;
+            name = decoded.name || name || (email ? email.split('@')[0] : 'Google Member');
+            avatarUrl = decoded.picture || avatarUrl;
+            sub = decoded.sub || sub;
+          }
         }
       } catch (decodeErr) {
         console.warn('Google JWT decode notice:', decodeErr);

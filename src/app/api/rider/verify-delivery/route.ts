@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Incorrect OTP. Please ask customer for the correct 4-digit delivery verification code.' 
+          error: 'Incorrect OTP. Please ask customer for the correct 4-digit delivery verification code.'
         },
         { status: 400 }
       );
