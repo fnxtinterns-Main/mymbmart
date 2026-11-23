@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
-import { addOrder, OrderRecord } from '@/lib/ordersStore';
+import { addOrder, type OrderRecord } from '@/lib/ordersStore';
 import { isRedisConfigured, redisGet, redisSet } from '@/lib/redis';
+import { prisma } from '@/lib/prisma';
+import { financialLedger } from '@/lib/ledgerStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -205,6 +207,8 @@ export async function POST(req: Request) {
       console.warn('Dynamic routing fallback to Central Dark Store:', routeErr);
     }
 
+    const isInstantPaid = totalPayable === 0 && creditDeduction > 0;
+
     const newOrder: OrderRecord = {
       id: 'ord-' + Date.now(),
       orderNumber,
@@ -217,7 +221,7 @@ export async function POST(req: Request) {
       status: 'PLACED',
       deliveryOtp,
       paymentMethod,
-      paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PAID',
+      paymentStatus: isInstantPaid ? 'PAID' : 'PENDING',
       upiTransactionId: body.upiTransactionId || undefined,
       totalMRP,
       totalPayable,
@@ -239,83 +243,128 @@ export async function POST(req: Request) {
       ]
     };
 
-    // 1. Prisma-First: Persist to PostgreSQL if database connection is active
-    try {
-      const { prisma } = await import('@/lib/prisma');
-      // Ensure user exists in Postgres so relational foreign key constraint is satisfied
-      let dbUser = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { id: newOrder.userId },
-            { phone: newOrder.userPhone }
-          ]
-        }
-      });
-      if (!dbUser) {
-        dbUser = await prisma.user.create({
-          data: {
-            id: newOrder.userId.startsWith('usr-') ? newOrder.userId : undefined,
-            memberId: 'MBM-' + Math.floor(100000 + Math.random() * 900000),
-            name: newOrder.userName || 'Customer',
-            phone: newOrder.userPhone || ('+91' + Math.floor(9000000000 + Math.random() * 1000000000)),
-            referralCode: 'REF-' + Math.floor(10000 + Math.random() * 90000),
-            role: 'CUSTOMER',
+    // 1. Transactional Checkout in PostgreSQL (Fail-Closed)
+    // Bundles: User & Address verification, Order creation, Single-Store Inventory Reservation,
+    // Instant Settlement (if wallet prepaid), and OutboxEvent emission into ONE commit.
+    if (process.env.DATABASE_URL) {
+      await prisma.$transaction(async (tx) => {
+        // Ensure user exists in Postgres so relational foreign key constraint is satisfied
+        let dbUser = await tx.user.findFirst({
+          where: {
+            OR: [
+              { id: newOrder.userId },
+              { phone: newOrder.userPhone }
+            ]
           }
         });
-      }
-
-      // Ensure delivery address exists in Postgres
-      let dbAddress = await prisma.address.findFirst({
-        where: { userId: dbUser.id }
-      });
-      if (!dbAddress) {
-        dbAddress = await prisma.address.create({
-          data: {
-            userId: dbUser.id,
-            fullAddress: newOrder.deliveryAddress || 'Ranchi Central, Jharkhand',
-            pincode: newOrder.pincode || '834001',
-            city: 'Ranchi',
-            state: 'Jharkhand',
-            latitude: 23.3441,
-            longitude: 85.3096,
-            isDefault: true,
-          }
-        });
-      }
-
-      // Create permanent order in PostgreSQL
-      await prisma.order.create({
-        data: {
-          id: newOrder.id,
-          orderNumber: newOrder.orderNumber,
-          userId: dbUser.id,
-          addressId: dbAddress.id,
-          totalMRP: newOrder.totalMRP,
-          totalBachatPrice: newOrder.totalMRP - newOrder.shoppingSavings,
-          finalPayable: newOrder.totalPayable,
-          paymentStatus: newOrder.paymentStatus === 'COD' ? 'PENDING' : 'PAID',
-          paymentMethod: newOrder.paymentMethod === 'COD' ? 'CASH_ON_DELIVERY' : 'UPI',
-          orderStatus: 'PLACED',
-        },
-      });
-
-      // Atomic inventory update in PostgreSQL
-      for (const item of newOrder.items) {
-        try {
-          await prisma.storeInventory.updateMany({
-            where: {
-              productId: item.productId,
-              quantityAvailable: { gte: item.quantity },
-            },
+        if (!dbUser) {
+          dbUser = await tx.user.create({
             data: {
-              quantityAvailable: { decrement: item.quantity },
-              quantityReserved: { increment: item.quantity },
-            },
+              id: newOrder.userId.startsWith('usr-') ? newOrder.userId : undefined,
+              memberId: 'MBM-' + Math.floor(100000 + Math.random() * 900000),
+              name: newOrder.userName || 'Customer',
+              phone: newOrder.userPhone || ('+91' + Math.floor(9000000000 + Math.random() * 1000000000)),
+              referralCode: 'REF-' + Math.floor(10000 + Math.random() * 90000),
+              role: 'CUSTOMER',
+            }
           });
-        } catch {}
-      }
-    } catch (dbErr) {
-      console.warn('PostgreSQL order insert deferred, continuing via Redis sync:', dbErr);
+        }
+
+        // Ensure delivery address exists in Postgres
+        let dbAddress = await tx.address.findFirst({
+          where: { userId: dbUser.id }
+        });
+        if (!dbAddress) {
+          dbAddress = await tx.address.create({
+            data: {
+              userId: dbUser.id,
+              fullAddress: newOrder.deliveryAddress || 'Ranchi Central, Jharkhand',
+              pincode: newOrder.pincode || '834001',
+              city: 'Ranchi',
+              state: 'Jharkhand',
+              latitude: 23.3441,
+              longitude: 85.3096,
+              isDefault: true,
+            }
+          });
+        }
+
+        // 1. Create permanent order in PostgreSQL
+        await tx.order.create({
+          data: {
+            id: newOrder.id,
+            orderNumber: newOrder.orderNumber,
+            userId: dbUser.id,
+            addressId: dbAddress.id,
+            totalMRP: newOrder.totalMRP,
+            totalBachatPrice: newOrder.totalMRP - newOrder.shoppingSavings,
+            finalPayable: newOrder.totalPayable,
+            paymentStatus: newOrder.paymentStatus === 'PAID' ? 'PAID' : 'PENDING',
+            paymentMethod: newOrder.paymentMethod === 'COD' ? 'CASH_ON_DELIVERY' : 'UPI',
+            orderStatus: 'PLACED',
+          },
+        });
+
+        // 2. Conditional inventory reservation in PostgreSQL (Filtered to assigned store)
+        for (const item of newOrder.items) {
+          const storeInv = await tx.storeInventory.findFirst({
+            where: { storeId: assignedHub.id, productId: item.productId }
+          });
+          if (storeInv) {
+            const updated = await tx.storeInventory.updateMany({
+              where: {
+                storeId: assignedHub.id,
+                productId: item.productId,
+                quantityAvailable: { gte: item.quantity },
+              },
+              data: {
+                quantityAvailable: { decrement: item.quantity },
+                quantityReserved: { increment: item.quantity },
+              },
+            });
+            if (updated.count === 0) {
+              throw new Error(`Insufficient stock available at store ${assignedHub.name} to reserve product ${item.name || item.productId}`);
+            }
+          }
+        }
+
+        // 3. Double-Entry Financial Ledger Posting (Only for 100% wallet prepaid orders at checkout)
+        // Online UPI orders settle when gateway webhook confirms status === 'SUCCESS'
+        if (isInstantPaid) {
+          await financialLedger.recordOrderSettlement({
+            orderId: newOrder.id,
+            grossAmount: newOrder.creditDeduction,
+            walletPaid: newOrder.creditDeduction,
+            gatewayPaid: 0,
+            idempotencyKey: `settle-${newOrder.id}`,
+          }, tx);
+        }
+
+        // 4. Create durable OutboxEvent for downstream dispatch
+        await tx.outboxEvent.create({
+          data: {
+            aggregateType: 'ORDER',
+            aggregateId: newOrder.id,
+            eventType: 'ORDER_PLACED',
+            payload: {
+              orderId: newOrder.id,
+              orderNumber: newOrder.orderNumber,
+              userId: dbUser.id,
+              totalPayable: newOrder.totalPayable,
+              paymentMethod: newOrder.paymentMethod,
+              paymentStatus: newOrder.paymentStatus,
+              itemsCount: newOrder.items.length,
+              hubId: assignedHub.id,
+              fulfilmentType: newOrder.fulfilmentType,
+              deliveryOtp,
+            },
+            idempotencyKey: `outbox-order-placed-${newOrder.id}`,
+            status: 'PENDING',
+          },
+        });
+      });
+    } else if (process.env.NODE_ENV === 'production') {
+      throw new Error('DATABASE_URL is required in production. Cannot place order without persistent database.');
     }
 
     // Atomic catalog stock decrement in memory

@@ -853,3 +853,62 @@ export function postGoodsReceipt(params: {
 
   return { success: true, message: 'GRN posted and stock added.', grnNumber };
 }
+
+// PostgreSQL Atomic Inventory Reservation using Conditional Update (Row-Level Locking Protection)
+export async function atomicReserveStoreInventory(params: {
+  storeId: string;
+  productId: string;
+  quantity: number;
+}): Promise<{ success: boolean; message: string; reservedQty?: number }> {
+  // Input validation: quantity must strictly be a positive integer
+  if (!Number.isInteger(params.quantity) || params.quantity <= 0) {
+    return { success: false, message: 'Reservation quantity must be a positive integer.' };
+  }
+
+  // 1. Production Mode: PostgreSQL is mandatory. No silent in-memory fallback.
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL is required in production. Database connection is mandatory.');
+    }
+    try {
+      const { prisma } = await import('./prisma');
+      if (!prisma) {
+        return { success: false, message: 'Production database client unavailable.' };
+      }
+      // Single atomic conditional update: locks row and re-evaluates capacity
+      const result: any[] = await prisma.$queryRawUnsafe(
+        `UPDATE "StoreInventory"
+         SET "quantityReserved" = "quantityReserved" + $1,
+             "updatedAt" = NOW()
+         WHERE "storeId" = $2
+           AND "productId" = $3
+           AND ("quantityAvailable" - "quantityReserved") >= $1
+         RETURNING "storeId", "productId", "quantityReserved", "quantityAvailable";`,
+        params.quantity,
+        params.storeId,
+        params.productId
+      );
+      if (Array.isArray(result) && result.length > 0) {
+        return { success: true, message: 'Stock reserved atomically in PostgreSQL.', reservedQty: result[0].quantityReserved };
+      }
+      return { success: false, message: 'Insufficient available inventory in PostgreSQL store.' };
+    } catch (err: any) {
+      // In production, database errors MUST fail the reservation to prevent unpersisted orders
+      return { success: false, message: `Database transaction failed during atomic reservation: ${err.message}` };
+    }
+  }
+
+  // 2. Test / Development Mode Fallback
+  const bucket = inventoryStore.stockBuckets.find(
+    (b) => (b.skuId === params.productId || b.skuCode === params.productId) && b.storeId === params.storeId
+  );
+  if (!bucket) {
+    return { success: false, message: `SKU ${params.productId} not found in store.` };
+  }
+  const available = bucket.onHand - (bucket.reservedSoft + bucket.reservedHard);
+  if (available < params.quantity) {
+    return { success: false, message: `Insufficient stock. Available: ${available}, Requested: ${params.quantity}` };
+  }
+  bucket.reservedSoft += params.quantity;
+  return { success: true, message: 'Stock reserved in development/test store.', reservedQty: bucket.reservedSoft };
+}

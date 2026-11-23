@@ -412,3 +412,76 @@ model RoutingConfig {
   updatedAt             DateTime @updatedAt
 }
 
+// ----------------------------------------------------
+// FINANCIAL LEDGER & TRANSACTIONAL OUTBOX (V5.3)
+// ----------------------------------------------------
+
+model LedgerTransaction {
+  id              String              @id @default(uuid())
+  orderId         String
+  transactionType String              // ORDER_SETTLEMENT, ORDER_REFUND, COMMISSION_PAYOUT
+  idempotencyKey  String              @unique
+  description     String
+  sumDebitsPaise  Int
+  sumCreditsPaise Int
+  isBalanced      Boolean             @default(true)
+  lines           LedgerJournalLine[]
+  refunds         RefundRecord[]
+  createdAt       DateTime            @default(now())
+
+  @@index([orderId])
+  @@index([transactionType])
+  @@index([createdAt])
+}
+
+model LedgerJournalLine {
+  id            String            @id @default(uuid())
+  transactionId String
+  transaction   LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  account       String            // GATEWAY_CLEARING, WALLET_LIABILITY, MERCHANT_PAYABLE, PLATFORM_REVENUE, TDS_PAYABLE_GOVT
+  debitPaise    Int               @default(0)
+  creditPaise   Int               @default(0)
+
+  @@index([transactionId])
+  @@index([account])
+}
+
+model RefundRecord {
+  id                     String             @id @default(uuid())
+  refundId               String             @unique
+  orderId                String
+  settlementId           String?
+  settlement             LedgerTransaction? @relation(fields: [settlementId], references: [id], onDelete: Restrict)
+  amountPaise            Int
+  cumulativeRefundedPaise Int
+  reversedMerchantPaise  Int
+  reversedPlatformPaise  Int
+  reversedTdsPaise       Int
+  gatewayRefundPaise     Int
+  walletRefundPaise      Int
+  status                 String             @default("PROCESSED") // PROCESSED, PENDING, FAILED
+  createdAt              DateTime           @default(now())
+
+  @@index([orderId])
+  @@index([settlementId])
+  @@index([createdAt])
+}
+
+model OutboxEvent {
+  id             String    @id @default(uuid())
+  aggregateType  String    // ORDER, PAYMENT, INVENTORY, LEDGER
+  aggregateId    String
+  eventType      String    // ORDER_CREATED, PAYMENT_RECEIVED, STOCK_RESERVED, INVENTORY_RELEASED
+  payload        Json
+  idempotencyKey String    @unique
+  status         String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  retryCount     Int       @default(0)
+  lockedBy       String?
+  lockedAt       DateTime?
+  processedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([status, createdAt])
+  @@index([aggregateType, aggregateId])
+}
+

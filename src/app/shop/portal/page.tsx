@@ -615,25 +615,33 @@ export default function ShopPartnerPortalPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
+    <div className="min-h-screen bg-[#070A13] text-slate-100 flex flex-col justify-between relative overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+      
+      {/* Ambient background glow orbs (Glassmorphism Dashboard V22 aesthetic) */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
+      </div>
+
       <Navbar cartCount={0} onOpenCart={() => {}} onOpenAuth={() => {}} />
 
-      <main className="flex-1 py-8 px-4 sm:px-6">
+      <main className="flex-1 py-8 px-4 sm:px-6 relative z-10">
         <div className="max-w-6xl mx-auto space-y-6">
           
-          {/* Store Partner Top Banner */}
+          {/* Store Partner Top Banner (Glassmorphic Glow) */}
           {partner && (
-            <div className="bg-[#064E3B] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+            <div className="glass-panel-glow rounded-3xl p-6 sm:p-8 text-white shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden border border-cyan-500/30">
               <div className="space-y-2 relative z-10">
-                <div className="inline-flex items-center space-x-2 bg-emerald-800/80 border border-emerald-400/40 px-3 py-1 rounded-full text-xs font-semibold text-emerald-300">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <div className="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-400/40 px-3 py-1 rounded-full text-xs font-semibold text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
                   <span>Store Status: ONLINE (Receiving 20-min Quick Orders)</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black">{partner.shopName}</h1>
-                <p className="text-xs text-emerald-200">
-                  Merchant ID: <code className="bg-emerald-950/60 font-mono px-2 py-0.5 rounded font-bold">{partner.shopId}</code> • Pincode: <strong>{partner.pincode}</strong> • Prop: {partner.ownerName}
+                <h1 className="text-2xl sm:text-3xl font-black text-white">{partner.shopName}</h1>
+                <p className="text-xs text-slate-300">
+                  Merchant ID: <code className="bg-white/10 border border-white/10 font-mono px-2 py-0.5 rounded font-bold text-cyan-300">{partner.shopId}</code> • Pincode: <strong>{partner.pincode}</strong> • Prop: {partner.ownerName}
                 </p>
-                <p className="text-[11px] text-emerald-300/80">
+                <p className="text-[11px] text-cyan-300/80">
                   📍 {partner.address}
                 </p>
               </div>
@@ -641,7 +649,7 @@ export default function ShopPartnerPortalPage() {
               <div className="flex flex-wrap items-center gap-3 relative z-10">
                 <button
                   onClick={handleDownloadShopReport}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-white font-black px-4 py-2.5 rounded-2xl text-xs transition flex items-center space-x-1.5 shadow-md shadow-emerald-950/20 cursor-pointer"
+                  className="bg-emerald-600/80 hover:bg-emerald-500 text-white font-black px-4 py-2.5 rounded-2xl text-xs transition flex items-center space-x-1.5 shadow-[0_0_15px_rgba(16,185,129,0.25)] border border-emerald-400/30 cursor-pointer backdrop-blur-md"
                   title="Download Sales, Refunds, and Credit Line Audit CSV"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
@@ -651,7 +659,7 @@ export default function ShopPartnerPortalPage() {
                 <Link
                   href="/shop"
                   target="_blank"
-                  className="bg-[#16A34A] hover:bg-[#15803d] text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-emerald-900/30"
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 shadow-[0_0_20px_rgba(6,182,212,0.35)]"
                 >
                   <ExternalLink className="w-4 h-4" />
                   <span>View Live Consumer Store</span>
@@ -659,7 +667,7 @@ export default function ShopPartnerPortalPage() {
 
                 <button
                   onClick={handleLogout}
-                  className="bg-emerald-900/80 hover:bg-emerald-900 text-emerald-200 hover:text-white px-3.5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 border border-emerald-700/50 cursor-pointer"
+                  className="glass-card hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 border border-white/10 hover:border-rose-500/40 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
@@ -670,43 +678,43 @@ export default function ShopPartnerPortalPage() {
 
           {/* Order Action Feedback Notification */}
           {orderActionMsg && (
-            <div className="bg-emerald-700 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="glass-panel-glow border border-cyan-400/40 text-cyan-200 px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-300 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
                 <span>{orderActionMsg}</span>
               </div>
-              <button onClick={() => setOrderActionMsg(null)} className="text-emerald-200 hover:text-white">✕</button>
+              <button onClick={() => setOrderActionMsg(null)} className="text-cyan-300 hover:text-white">✕</button>
             </div>
           )}
 
           {/* Photo Upload Toast Notification */}
           {photoToast && (
-            <div className="bg-emerald-600 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="glass-panel-glow border border-emerald-400/40 text-emerald-200 px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-200 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                 <span>{photoToast}</span>
               </div>
-              <button onClick={() => setPhotoToast(null)} className="text-emerald-200 hover:text-white ml-3">
+              <button onClick={() => setPhotoToast(null)} className="text-emerald-300 hover:text-white ml-3">
                 ✕
               </button>
             </div>
           )}
 
           {/* Navigation Tabs for Partner Operations */}
-          <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-2">
+          <div className="glass-panel p-2 rounded-2xl border border-white/10 shadow-lg flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setActivePortalTab('orders')}
               className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
                 activePortalTab === 'orders'
-                  ? 'bg-[#064E3B] text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
               }`}
             >
               <PackageOpen className="w-4 h-4" />
               <span>Live Orders & Packing Desk</span>
               {storeOrders.filter((o) => ['PLACED', 'CONFIRMED', 'PACKING', 'PROCESSING'].includes(o.status)).length > 0 && (
-                <span className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-black animate-pulse">
+                <span className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-black animate-pulse shadow-xs">
                   {storeOrders.filter((o) => ['PLACED', 'CONFIRMED', 'PACKING', 'PROCESSING'].includes(o.status)).length} TO PACK
                 </span>
               )}
@@ -717,8 +725,8 @@ export default function ShopPartnerPortalPage() {
               onClick={() => setActivePortalTab('inventory')}
               className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
                 activePortalTab === 'inventory'
-                  ? 'bg-[#064E3B] text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
               }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -730,8 +738,8 @@ export default function ShopPartnerPortalPage() {
               onClick={() => setActivePortalTab('finance')}
               className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
                 activePortalTab === 'finance'
-                  ? 'bg-[#064E3B] text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
               }`}
             >
               <Building2 className="w-4 h-4" />
@@ -742,11 +750,11 @@ export default function ShopPartnerPortalPage() {
           {/* TAB 1: LIVE ORDERS & PACKING DESK */}
           {activePortalTab === 'orders' && (
             <div className="space-y-6">
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+              <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
                   <div>
-                    <div className="inline-flex items-center space-x-1.5 text-emerald-800 text-xs font-black uppercase tracking-wider mb-1">
-                      <PackageOpen className="w-4 h-4 text-emerald-600" />
+                    <div className="inline-flex items-center space-x-1.5 text-cyan-400 text-xs font-black uppercase tracking-wider mb-1">
+                      <PackageOpen className="w-4 h-4 text-cyan-400" />
                       <span>Store Fulfilment Center</span>
                     </div>
                     <h2 className="text-xl font-black text-slate-900">Live Orders & Packing Queue</h2>

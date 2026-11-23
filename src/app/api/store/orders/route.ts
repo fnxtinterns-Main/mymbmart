@@ -167,21 +167,74 @@ export async function POST(req: Request) {
       });
     }
 
-    if (action === 'CANCEL') {
-      updateOrderStatus(order.id, 'CANCELLED', reason || 'Cancelled by admin operations');
-      return NextResponse.json({
-        success: true,
-        message: `Order #${order.orderNumber} has been cancelled.`,
-        order,
-      });
-    }
+    if (action === 'CANCEL' || action === 'RETURN' || action === 'REFUND') {
+      const targetStatus = action === 'REFUND' ? order.status : (action === 'CANCEL' ? 'CANCELLED' : 'RETURNED');
+      if (action !== 'REFUND') {
+        updateOrderStatus(order.id, targetStatus as any, reason || `${action} by admin operations`);
+      }
+      
+      let refundResult: any = null;
+      if (order.paymentStatus === 'PAID' || body.amount !== undefined) {
+        const refundAmount = body.amount !== undefined ? Number(body.amount) : order.totalPayable;
+        const walletAmount = body.walletRefund !== undefined ? Number(body.walletRefund) : (action === 'REFUND' ? 0 : (order.creditDeduction || 0));
+        
+        if (process.env.DATABASE_URL) {
+          const { financialLedger } = await import('@/lib/ledgerStore');
+          const { prisma } = await import('@/lib/prisma');
+          
+          const refId = body.refundId || `ref-${action.toLowerCase()}-${order.id}-${Date.now()}`;
+          try {
+            refundResult = await financialLedger.recordRefundReversal({
+              orderId: order.id,
+              gatewayRefund: refundAmount,
+              walletRefund: walletAmount,
+              refundId: refId,
+            });
 
-    if (action === 'RETURN') {
-      updateOrderStatus(order.id, 'RETURNED', reason || 'Customer return requested');
+            order.refundStatus = 'PROCESSED';
+
+            // Sync PostgreSQL Order status and create outbox event
+            await prisma.order.updateMany({
+              where: { id: order.id },
+              data: { 
+                paymentStatus: 'REFUNDED',
+                ...(action !== 'REFUND' ? { orderStatus: targetStatus as any } : {})
+              }
+            }).catch(() => {});
+
+            await prisma.outboxEvent.create({
+              data: {
+                eventType: 'ORDER_REFUNDED',
+                aggregateType: 'ORDER',
+                aggregateId: order.id,
+                payload: {
+                  orderId: order.id,
+                  orderNumber: order.orderNumber,
+                  refundId: refId,
+                  gatewayRefund: refundAmount,
+                  walletRefund: walletAmount,
+                  totalRefund: refundAmount + walletAmount,
+                  reason: reason || `${action} processed`
+                },
+                idempotencyKey: `outbox-ref-${refId}`
+              }
+            }).catch(() => {});
+          } catch (refundErr: any) {
+            console.error(`Refund reversal error for ${order.id}:`, refundErr.message);
+            return NextResponse.json({
+              success: false,
+              error: `Refund reversal failed: ${refundErr.message}`,
+              order,
+            }, { status: 400 });
+          }
+        }
+      }
+
       return NextResponse.json({
         success: true,
-        message: `Return recorded for Order #${order.orderNumber}.`,
+        message: `${action} processed for Order #${order.orderNumber}.${refundResult ? ' Financial ledger refund posted.' : ''}`,
         order,
+        refund: refundResult,
       });
     }
 

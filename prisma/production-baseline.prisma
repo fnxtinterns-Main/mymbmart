@@ -1,0 +1,381 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(uuid())
+  memberId        String         @unique
+  name            String
+  phone           String         @unique
+  email           String?        @unique
+  passwordHash    String?
+  role            Role           @default(CUSTOMER)
+  referralCode    String         @unique
+  referredById    String?
+  level           String         @default("Silver")
+  isActive        Boolean        @default(true)
+  assignedStoreId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  addresses       Address[]
+  orders          Order[]
+  rewardAccount   RewardAccount?
+  sellerProfile   SellerProfile?
+  assignedStore   Store?         @relation("StoreStaff", fields: [assignedStoreId], references: [id])
+  referredBy      User?          @relation("UserReferrals", fields: [referredById], references: [id])
+  downline        User[]         @relation("UserReferrals")
+
+  @@index([phone])
+  @@index([referralCode])
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   @default("HOME")
+  fullAddress String
+  landmark    String?
+  city        String   @default("Ranchi")
+  state       String   @default("Jharkhand")
+  pincode     String
+  latitude    Float
+  longitude   Float
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders      Order[]
+
+  @@index([latitude, longitude])
+  @@index([pincode])
+}
+
+model Store {
+  id               String           @id @default(uuid())
+  storeCode        String           @unique
+  name             String
+  city             String           @default("Ranchi")
+  state            String           @default("Jharkhand")
+  address          String
+  latitude         Float
+  longitude        Float
+  deliveryRadiusKm Float            @default(5.0)
+  status           StoreStatus      @default(OPEN)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  inventory        StoreInventory[]
+  subOrders        SubOrder[]
+  staff            User[]           @relation("StoreStaff")
+
+  @@index([latitude, longitude])
+}
+
+model StoreInventory {
+  id                String   @id @default(uuid())
+  storeId           String
+  productId         String
+  quantityAvailable Int      @default(0)
+  quantityReserved  Int      @default(0)
+  updatedAt         DateTime @updatedAt
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, productId])
+}
+
+model Category {
+  id          String         @id @default(uuid())
+  slug        String         @unique
+  name        String
+  description String?
+  imageUrl    String?
+  type        FulfilmentType @default(QUICK_COMMERCE)
+  sortOrder   Int            @default(0)
+  createdAt   DateTime       @default(now())
+  products    Product[]
+}
+
+model SellerProfile {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  businessName  String
+  isSHG         Boolean   @default(false)
+  shgGroupName  String?
+  gstin         String?
+  fssaiNumber   String?
+  city          String
+  state         String
+  isVerified    Boolean   @default(false)
+  commissionPct Float     @default(5.0)
+  createdAt     DateTime  @default(now())
+  products      Product[]
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id             String           @id @default(uuid())
+  sku            String           @unique
+  name           String
+  slug           String           @unique
+  categoryId     String
+  unit           String
+  mrp            Float
+  bachatPrice    Float
+  discountPct    Int              @default(0)
+  cashbackPct    Float            @default(5.0)
+  description    String?
+  imageUrl       String
+  isSHG          Boolean          @default(false)
+  producerName   String?
+  fulfilmentType FulfilmentType   @default(QUICK_COMMERCE)
+  sellerId       String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  orderItems     OrderItem[]
+  category       Category         @relation(fields: [categoryId], references: [id])
+  seller         SellerProfile?   @relation(fields: [sellerId], references: [id])
+  storeInventory StoreInventory[]
+
+  @@index([categoryId])
+  @@index([sku])
+}
+
+model Order {
+  id               String        @id @default(uuid())
+  orderNumber      String        @unique
+  userId           String
+  addressId        String
+  totalMRP         Float
+  totalBachatPrice Float
+  savingsEarned    Float         @default(0)
+  deliveryFee      Float         @default(0)
+  creditsApplied   Float         @default(0)
+  finalPayable     Float
+  paymentStatus    PaymentStatus @default(PENDING)
+  paymentMethod    PaymentMethod @default(UPI)
+  orderStatus      OrderStatus   @default(PLACED)
+  deliveryOtp      String?
+  gatewayOrderId   String?
+  gatewayPaymentId String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deliveryAddress  Address       @relation(fields: [addressId], references: [id])
+  user             User          @relation(fields: [userId], references: [id])
+  items            OrderItem[]
+  subOrders        SubOrder[]
+
+  @@index([userId])
+  @@index([orderNumber])
+}
+
+model SubOrder {
+  id                 String         @id @default(uuid())
+  subOrderNumber     String         @unique
+  parentOrderId      String
+  storeId            String?
+  sellerId           String?
+  fulfilmentType     FulfilmentType
+  status             OrderStatus    @default(PLACED)
+  trackingNumber     String?
+  assignedRiderPhone String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  parentOrder        Order          @relation(fields: [parentOrderId], references: [id], onDelete: Cascade)
+  store              Store?         @relation(fields: [storeId], references: [id])
+
+  @@index([parentOrderId])
+}
+
+model OrderItem {
+  id              String  @id @default(uuid())
+  orderId         String
+  productId       String
+  quantity        Int
+  unitMRP         Float
+  unitBachatPrice Float
+  cashbackEarned  Float   @default(0)
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id])
+}
+
+model RewardAccount {
+  id                  String         @id @default(uuid())
+  userId              String         @unique
+  balance             Float          @default(0)
+  totalSavings        Float          @default(0)
+  totalCashbackEarned Float          @default(0)
+  totalReferralEarned Float          @default(0)
+  lifetimeEarned      Float          @default(0)
+  updatedAt           DateTime       @updatedAt
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries             RewardLedger[]
+}
+
+model RewardLedger {
+  id             String            @id @default(uuid())
+  accountId      String
+  transactionRef String            @unique
+  orderId        String?
+  entryType      LedgerEntryType
+  status         LedgerEntryStatus @default(CONFIRMED)
+  amount         Float
+  runningBalance Float
+  title          String
+  description    String
+  smartChainHash String?
+  createdAt      DateTime          @default(now())
+  account        RewardAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([transactionRef])
+}
+
+model OtpVerification {
+  id         String    @id @default(uuid())
+  identifier String
+  code       String
+  purpose    String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([identifier])
+}
+
+model ServiceablePincode {
+  id               String   @id @default(uuid())
+  pincode          String   @unique
+  city             String   @default("Ranchi")
+  state            String   @default("Jharkhand")
+  deliveryActive   Boolean  @default(true)
+  pickupActive     Boolean  @default(true)
+  deliveryRadiusKm Decimal  @default(5.0) @db.Decimal(4, 1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([pincode])
+}
+
+model RoutingRule {
+  id         String   @id @default(uuid())
+  name       String
+  priority   Int      @default(100)
+  conditions Json
+  actions    Json
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([priority, isActive])
+}
+
+model RoutingAuditLog {
+  id              String   @id @default(uuid())
+  orderId         String
+  attemptNumber   Int      @default(1)
+  pincode         String
+  fulfilmentType  String
+  candidateCount  Int
+  excludedShops   Json
+  scoredShops     Json
+  selectedShopId  String?
+  selectionReason String
+  reservationIds  Json?
+  latencyMs       Int
+  createdAt       DateTime @default(now())
+
+  @@index([orderId])
+  @@index([pincode])
+  @@index([createdAt])
+}
+
+model RoutingConfig {
+  id                    String   @id @default(uuid())
+  key                   String   @unique @default("DEFAULT")
+  weights               Json
+  acceptanceSlaMinutes  Int      @default(5)
+  pickingSlaMinutes     Int      @default(15)
+  softReservationTtlMin Int      @default(15)
+  maxRerouteAttempts    Int      @default(3)
+  closingBufferMinutes  Int      @default(15)
+  antiStarvationDays    Int      @default(7)
+  antiStarvationBonus   Decimal  @default(0.05) @db.Decimal(4, 2)
+  updatedBy             String   @default("Super Admin")
+  updatedAt             DateTime @updatedAt
+}
+
+enum Role {
+  CUSTOMER
+  SELLER
+  SHG_PRODUCER
+  STORE_MANAGER
+  RIDER
+  SUPPORT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum FulfilmentType {
+  QUICK_COMMERCE
+  STANDARD_MARKETPLACE
+  BOTH
+}
+
+enum StoreStatus {
+  OPEN
+  CLOSED
+  MAINTENANCE
+}
+
+enum OrderStatus {
+  PLACED
+  PROCESSING
+  PACKED
+  ASSIGNED
+  PICKED_UP
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURN_REQUESTED
+  RETURNED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  NET_BANKING
+  WALLET
+  CASH_ON_DELIVERY
+}
+
+enum LedgerEntryType {
+  CREDIT_PURCHASE_CASHBACK
+  CREDIT_DIRECT_REFERRAL_L1
+  CREDIT_TEAM_REFERRAL_L2
+  CREDIT_COMMUNITY_REFERRAL_L3
+  CREDIT_PROMOTIONAL_BONUS
+  DEBIT_ORDER_REDEMPTION
+  DEBIT_EXPIRY
+  REVERSAL_REFUND
+}
+
+enum LedgerEntryStatus {
+  PENDING_RETURN_WINDOW
+  CONFIRMED
+  CANCELLED
+}
+
+

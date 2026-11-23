@@ -5,6 +5,10 @@ import fs from 'fs';
 const ROOT = pathResolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 export async function resolve(specifier, context, defaultResolve) {
+  if (specifier === 'next/server') {
+    return defaultResolve('next/server.js', context, defaultResolve);
+  }
+
   let targetPath = specifier;
 
   if (specifier.startsWith('@/')) {

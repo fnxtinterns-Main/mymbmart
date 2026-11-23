@@ -1,0 +1,30 @@
+# /etc/systemd/system/megabachatmart-outbox.service
+# MegaBachatMart Production Transactional Outbox Worker Service
+#
+# Installation:
+#   sudo cp deploy/megabachatmart-outbox.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable megabachatmart-outbox.service
+#   sudo systemctl start megabachatmart-outbox.service
+#   sudo systemctl status megabachatmart-outbox.service
+
+[Unit]
+Description=MegaBachatMart Transactional Outbox Daemon
+After=network.target postgresql.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/megabachatmart
+Environment=NODE_ENV=production
+EnvironmentFile=/var/www/megabachatmart/.env.production
+ExecStart=/usr/bin/node --experimental-strip-types --loader ./scripts/loader.mjs scripts/run-outbox-worker.mjs
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/log/megabachatmart/outbox.log
+StandardError=append:/var/log/megabachatmart/outbox-error.log
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

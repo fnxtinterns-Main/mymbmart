@@ -631,55 +631,62 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex text-[#0F172A] antialiased">
+    <div className="min-h-screen bg-[#070A13] text-slate-100 flex antialiased relative overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
       
+      {/* Ambient background glow orbs (Glassmorphism Dashboard V22 aesthetic) */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
+      </div>
+
       {/* ============================================================== */}
-      {/* 1. SIDEBAR (Emerald Green #064E3B)                            */}
+      {/* 1. SIDEBAR (Frosted Glassmorphism #070A13)                    */}
       {/* ============================================================== */}
       <aside 
-        className={`fixed lg:static inset-y-0 left-0 z-40 bg-[#064E3B] text-white flex flex-col transition-all duration-300 shadow-xl lg:shadow-none ${
+        className={`fixed lg:static inset-y-0 left-0 z-40 bg-slate-950/80 backdrop-blur-2xl border-r border-white/10 text-white flex flex-col transition-all duration-300 shadow-2xl lg:shadow-[4px_0_24px_rgba(0,0,0,0.5)] ${
           sidebarCollapsed ? 'w-20' : 'w-64'
         } ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         {/* Brand Header */}
-        <div className="h-16 border-b border-emerald-900/60 px-4 flex items-center justify-between">
+        <div className="h-16 border-b border-white/10 px-4 flex items-center justify-between">
           {!sidebarCollapsed ? (
             <div className="flex items-center space-x-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-xl bg-white text-[#064E3B] font-black flex items-center justify-center shrink-0 shadow-xs text-xs">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-black flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.4)] text-xs">
                 MBM
               </div>
               <div className="truncate">
                 <h1 className="text-sm font-black tracking-tight text-white leading-tight">MegaBachatMart</h1>
-                <p className="text-[10px] text-emerald-300 font-semibold uppercase tracking-wider">Admin Hub</p>
+                <p className="text-[10px] text-cyan-400 font-semibold uppercase tracking-wider">Admin Hub V22</p>
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-xl bg-white text-[#064E3B] font-black flex items-center justify-center mx-auto shadow-xs text-xs">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white font-black flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(6,182,212,0.4)] text-xs">
               M
             </div>
           )}
 
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="lg:hidden p-1 text-emerald-300 hover:text-white"
+            className="lg:hidden p-1 text-slate-400 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Store Location Pill */}
-        <div className="p-3 border-b border-emerald-900/40">
-          <div className={`bg-emerald-900/50 rounded-xl p-2.5 border border-emerald-800/60 ${sidebarCollapsed ? 'text-center' : ''}`}>
+        <div className="p-3 border-b border-white/10">
+          <div className={`glass-card rounded-xl p-2.5 ${sidebarCollapsed ? 'text-center' : ''}`}>
             {!sidebarCollapsed ? (
               <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
                 <div className="text-[11px] truncate">
                   <p className="font-bold text-white">Pilot Store & Dark Hub</p>
-                  <p className="text-emerald-300 text-[10px]">Ranchi Central (MBM-RCH-01)</p>
+                  <p className="text-cyan-300/80 text-[10px]">Ranchi Central (MBM-RCH-01)</p>
                 </div>
               </div>
             ) : (
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
             )}
           </div>
         </div>
@@ -698,25 +705,25 @@ export default function AdminDashboardPage() {
                 }}
                 className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   active
-                    ? 'bg-[#16A34A] text-white shadow-md shadow-emerald-950/20'
-                    : 'text-emerald-100 hover:bg-emerald-900/60 hover:text-white'
+                    ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
+                    : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
                 }`}
                 title={item.label}
               >
                 <div className="flex items-center space-x-3 truncate">
-                  <Icon className="w-4 h-4 shrink-0 text-emerald-300" />
+                  <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-cyan-400' : 'text-slate-400'}`} />
                   {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
                 </div>
 
                 {!sidebarCollapsed && (
                   <div>
                     {item.badge !== undefined && item.badge > 0 && (
-                      <span className="bg-[#FF5722] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                      <span className="bg-[#FF5722] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm">
                         {item.badge}
                       </span>
                     )}
                     {item.tag && (
-                      <span className="bg-emerald-900/80 text-emerald-200 border border-emerald-700/60 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                      <span className="bg-white/10 text-cyan-200 border border-cyan-400/30 text-[9px] font-bold px-1.5 py-0.5 rounded">
                         {item.tag}
                       </span>
                     )}
@@ -728,19 +735,19 @@ export default function AdminDashboardPage() {
         </nav>
 
         {/* Bottom Storefront & Logout Links */}
-        <div className="p-3 border-t border-emerald-900/60 space-y-1">
+        <div className="p-3 border-t border-white/10 space-y-1">
           <Link
             href="/shop"
             target="_blank"
-            className="w-full flex items-center space-x-3 p-2.5 rounded-xl text-xs font-semibold text-emerald-200 hover:bg-emerald-900/60 hover:text-white transition"
+            className="w-full flex items-center space-x-3 p-2.5 rounded-xl text-xs font-semibold text-cyan-300/80 hover:bg-white/[0.06] hover:text-cyan-200 transition"
           >
-            <ExternalLink className="w-4 h-4 shrink-0 text-emerald-400" />
+            <ExternalLink className="w-4 h-4 shrink-0 text-cyan-400" />
             {!sidebarCollapsed && <span>Customer Store ↗</span>}
           </Link>
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center space-x-3 p-2.5 rounded-xl text-xs font-semibold text-rose-300 hover:bg-rose-950/40 hover:text-rose-100 transition cursor-pointer"
+            className="w-full flex items-center space-x-3 p-2.5 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-950/40 hover:text-rose-200 transition cursor-pointer"
           >
             <LogOut className="w-4 h-4 shrink-0 text-rose-400" />
             {!sidebarCollapsed && <span>Sign Out / Lock</span>}
@@ -749,32 +756,32 @@ export default function AdminDashboardPage() {
       </aside>
 
       {/* ============================================================== */}
-      {/* 2. MAIN WORKSPACE (#F8FAFC, Cards #FFFFFF, Borders #E2E8F0)    */}
+      {/* 2. MAIN WORKSPACE (Glassmorphism Dashboard V22)               */}
       {/* ============================================================== */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         
         {/* Top Navigation Bar */}
-        <header className="h-16 bg-white border-b border-[#E2E8F0] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+        <header className="h-16 bg-slate-950/60 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
           
           {/* Left: Hamburger & Collapse & Global Search */}
           <div className="flex items-center space-x-3 flex-1 max-w-xl">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100"
+              className="lg:hidden p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/[0.05]"
             >
               <Menu className="w-5 h-5" />
             </button>
 
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex p-2 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition"
+              className="hidden lg:flex p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/[0.05] transition"
               title="Toggle Sidebar"
             >
               <Sliders className="w-4 h-4" />
             </button>
 
             <div className="relative flex-1 hidden sm:block">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                 <Search className="w-4 h-4" />
               </div>
               <input
@@ -782,7 +789,7 @@ export default function AdminDashboardPage() {
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
                 placeholder="Search orders, products, customers..."
-                className="w-full pl-9 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] focus:border-[#16A34A] focus:bg-white rounded-xl text-xs text-[#0F172A] outline-hidden transition shadow-2xs"
+                className="w-full pl-9 pr-4 py-2 bg-white/[0.04] border border-white/10 focus:border-cyan-400/60 focus:bg-white/[0.08] rounded-xl text-xs text-white placeholder-slate-400 outline-hidden transition shadow-2xs"
               />
             </div>
           </div>
@@ -792,42 +799,42 @@ export default function AdminDashboardPage() {
             
             <button
               onClick={fetchMetrics}
-              className="p-2 text-slate-600 hover:text-[#16A34A] hover:bg-emerald-50 rounded-xl transition cursor-pointer"
+              className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/[0.05] rounded-xl transition cursor-pointer"
               title="Refresh Live Data"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
             </button>
 
             {/* Notification Bell */}
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 text-slate-600 hover:text-[#0F172A] hover:bg-slate-100 rounded-xl transition relative cursor-pointer"
+                className="p-2 text-slate-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition relative cursor-pointer"
                 title="System Notifications"
               >
                 <Bell className="w-4 h-4" />
                 {pendingOrders > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#FF5722] rounded-full ring-2 ring-white"></span>
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-cyan-400 rounded-full ring-2 ring-slate-950 shadow-[0_0_8px_rgba(34,211,238,0.9)]"></span>
                 )}
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-[#E2E8F0] rounded-2xl shadow-xl p-4 z-50 animate-in fade-in space-y-3">
-                  <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
-                    <span className="text-xs font-bold text-[#0F172A]">Operational Alerts</span>
-                    <span className="text-[10px] bg-emerald-100 text-[#064E3B] font-bold px-2 py-0.5 rounded-full">
+                <div className="absolute right-0 mt-2 w-80 glass-panel-glow rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in space-y-3">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <span className="text-xs font-bold text-white">Operational Alerts</span>
+                    <span className="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 font-bold px-2 py-0.5 rounded-full">
                       Live
                     </span>
                   </div>
                   <div className="space-y-2 text-xs">
                     {pendingOrders > 0 ? (
-                      <div className="p-2 rounded-xl bg-orange-50 border border-orange-200">
-                        <p className="font-bold text-orange-900">Pending Orders</p>
-                        <p className="text-[11px] text-orange-700">{pendingOrders} order(s) awaiting dispatch in dark store.</p>
+                      <div className="p-2.5 rounded-xl bg-orange-950/40 border border-orange-500/30">
+                        <p className="font-bold text-orange-300">Pending Orders</p>
+                        <p className="text-[11px] text-orange-200/70">{pendingOrders} order(s) awaiting dispatch in dark store.</p>
                       </div>
                     ) : (
-                      <div className="p-2 rounded-xl bg-slate-50 text-slate-600 text-center py-4">
-                        <CheckCircle2 className="w-5 h-5 text-[#16A34A] mx-auto mb-1" />
+                      <div className="p-2 rounded-xl bg-white/[0.03] text-slate-400 text-center py-4">
+                        <CheckCircle2 className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
                         <span>All orders fulfilled. No pending alerts.</span>
                       </div>
                     )}
@@ -839,24 +846,24 @@ export default function AdminDashboardPage() {
             {/* Help / Support Modal Trigger */}
             <button
               onClick={() => setShowHelp(!showHelp)}
-              className="p-2 text-slate-600 hover:text-[#0284C7] hover:bg-sky-50 rounded-xl transition cursor-pointer"
+              className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/[0.05] rounded-xl transition cursor-pointer"
               title="Support & Documentation"
             >
               <HelpCircle className="w-4 h-4" />
             </button>
 
             {/* Administrator Profile Card */}
-            <div className="flex items-center space-x-2 pl-2 border-l border-[#E2E8F0]">
-              <div className="w-8 h-8 rounded-full bg-[#064E3B] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+            <div className="flex items-center space-x-2 pl-2 border-l border-white/10">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-[0_0_10px_rgba(6,182,212,0.4)]">
                 SA
               </div>
               <div className="hidden md:block text-left text-xs">
-                <p className="font-bold text-[#0F172A] leading-tight">Super Admin</p>
-                <p className="text-[10px] text-slate-500 font-semibold">Business Owner</p>
+                <p className="font-bold text-white leading-tight">Super Admin</p>
+                <p className="text-[10px] text-slate-400 font-semibold">Business Owner</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer"
+                className="text-slate-500 hover:text-rose-400 p-1 transition cursor-pointer"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4" />
@@ -868,8 +875,8 @@ export default function AdminDashboardPage() {
 
         {/* Global Action Message Banner */}
         {actionMessage && (
-          <div className="bg-emerald-50 border-b border-emerald-200 text-[#064E3B] px-6 py-2.5 text-xs font-bold flex items-center space-x-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
+          <div className="bg-cyan-950/50 border-b border-cyan-400/30 text-cyan-200 px-6 py-2.5 text-xs font-bold flex items-center space-x-2 animate-in fade-in shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+            <CheckCircle2 className="w-4 h-4 text-cyan-400" />
             <span>{actionMessage}</span>
           </div>
         )}
@@ -878,7 +885,7 @@ export default function AdminDashboardPage() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto w-full">
           
           {/* ============================================================== */}
-          {/* TAB 1: OVERVIEW & DASHBOARD METRICS                            */}
+          {/* TAB 1: OVERVIEW & DASHBOARD METRICS (Glassmorphism V22)        */}
           {/* ============================================================== */}
           {activeTab === 'overview' && (
             <div className="space-y-8">
@@ -886,22 +893,26 @@ export default function AdminDashboardPage() {
               {/* Top Header Title */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
-                    Operations Executive Dashboard
+                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center space-x-2">
+                    <span>Operations Executive Dashboard</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                      V22 Glassmorphic
+                    </span>
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-400 mt-0.5">
                     Live operational metrics across quick commerce orders, catalog inventory, and prosumer savings.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xs font-semibold text-slate-500 bg-white border border-[#E2E8F0] px-3 py-1.5 rounded-xl shadow-2xs">
-                    Live Node: Ranchi MBM-RCH-01
+                  <span className="text-xs font-semibold text-slate-300 glass-card px-3 py-1.5 rounded-xl border border-white/10 shadow-sm flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span>Live Node: Ranchi MBM-RCH-01</span>
                   </span>
 
                   <button
                     onClick={handleDownloadMasterReport}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                    className="bg-emerald-600/80 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-[0_0_15px_rgba(16,185,129,0.25)] border border-emerald-400/30 flex items-center space-x-1.5 cursor-pointer backdrop-blur-md"
                     title="Download Consolidated All-Partners Report (Sales, Refunds, Credit Line)"
                   >
                     <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -911,7 +922,7 @@ export default function AdminDashboardPage() {
                   <Link
                     href="/shop"
                     target="_blank"
-                    className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs flex items-center space-x-1.5"
+                    className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-[0_0_20px_rgba(6,182,212,0.35)] flex items-center space-x-1.5"
                   >
                     <span>View Storefront</span>
                     <ExternalLink className="w-3.5 h-3.5" />
@@ -919,89 +930,89 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* First Row: 4 Metric Cards (Strictly Genuine) */}
+              {/* First Row: 4 Metric Cards (Frosted Glassmorphic) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 
                 {/* Metric 1: Total Sales */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider">Total Sales</span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center">
+                <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:border-cyan-500/40 transition-all group space-y-3">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Sales</span>
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_12px_rgba(6,182,212,0.25)]">
                       <TrendingUp className="w-4 h-4" />
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl sm:text-3xl font-black text-[#0F172A]">
+                    <div className="text-2xl sm:text-3xl font-black text-white group-hover:text-cyan-300 transition-colors">
                       ₹{totalGMV.toLocaleString()}
                     </div>
-                    <div className="text-xs text-slate-500 font-medium mt-1">
+                    <div className="text-xs text-slate-400 font-medium mt-1">
                       Gross Merchandise Value
                     </div>
                   </div>
-                  <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                    Customer Bachat: ₹{totalSavings.toLocaleString()}
+                  <div className="pt-2 border-t border-white/[0.06] text-[11px] text-slate-400">
+                    Customer Bachat: <span className="text-emerald-400 font-semibold">₹{totalSavings.toLocaleString()}</span>
                   </div>
                 </div>
 
                 {/* Metric 2: Total Orders */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider">Total Orders</span>
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0284C7] flex items-center justify-center">
+                <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:border-blue-500/40 transition-all group space-y-3">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center shadow-[0_0_12px_rgba(59,130,246,0.25)]">
                       <ShoppingBag className="w-4 h-4" />
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl sm:text-3xl font-black text-[#0F172A]">
+                    <div className="text-2xl sm:text-3xl font-black text-white group-hover:text-blue-300 transition-colors">
                       {totalOrders.toLocaleString()}
                     </div>
-                    <div className="text-xs text-slate-500 font-medium mt-1">
+                    <div className="text-xs text-slate-400 font-medium mt-1">
                       Processed through Checkout
                     </div>
                   </div>
-                  <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                    Pending Dispatch: {pendingOrders}
+                  <div className="pt-2 border-t border-white/[0.06] text-[11px] text-slate-400">
+                    Pending Dispatch: <span className="text-cyan-400 font-semibold">{pendingOrders}</span>
                   </div>
                 </div>
 
                 {/* Metric 3: Active SHG Producers */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider">SHG Producers</span>
-                    <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:border-purple-500/40 transition-all group space-y-3">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">SHG Producers</span>
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30 flex items-center justify-center shadow-[0_0_12px_rgba(168,85,247,0.25)]">
                       <Store className="w-4 h-4" />
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl sm:text-3xl font-black text-[#0F172A]">
+                    <div className="text-2xl sm:text-3xl font-black text-white group-hover:text-purple-300 transition-colors">
                       {producersList.length}
                     </div>
-                    <div className="text-xs text-slate-500 font-medium mt-1">
+                    <div className="text-xs text-slate-400 font-medium mt-1">
                       Verified Micro-Producers
                     </div>
                   </div>
-                  <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                    Onboarding Portal: Active
+                  <div className="pt-2 border-t border-white/[0.06] text-[11px] text-slate-400">
+                    Onboarding Portal: <span className="text-purple-300 font-semibold">Active</span>
                   </div>
                 </div>
 
                 {/* Metric 4: Active Deliveries */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span className="text-xs font-bold uppercase tracking-wider">Active Deliveries</span>
-                    <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#FF5722] flex items-center justify-center">
+                <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:border-orange-500/40 transition-all group space-y-3">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Active Deliveries</span>
+                    <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/30 flex items-center justify-center shadow-[0_0_12px_rgba(249,115,22,0.25)]">
                       <Bike className="w-4 h-4" />
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl sm:text-3xl font-black text-[#0F172A]">
+                    <div className="text-2xl sm:text-3xl font-black text-white group-hover:text-orange-300 transition-colors">
                       {activeDeliveries}
                     </div>
-                    <div className="text-xs text-slate-500 font-medium mt-1">
+                    <div className="text-xs text-slate-400 font-medium mt-1">
                       Riders En Route (Live GPS)
                     </div>
                   </div>
-                  <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500">
+                  <div className="pt-2 border-t border-white/[0.06] text-[11px] text-slate-400">
                     Doorstep OTP Verification
                   </div>
                 </div>
@@ -1012,50 +1023,50 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* 1. Sales & Bachat Performance (2 Cols) */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-4">
+                <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-black text-[#0F172A]">Revenue & Customer Bachat Summary</h3>
-                      <p className="text-xs text-slate-500">Gross sales vs customer purchase savings</p>
+                      <h3 className="text-sm font-black text-white">Revenue & Customer Bachat Summary</h3>
+                      <p className="text-xs text-slate-400">Gross sales vs customer purchase savings</p>
                     </div>
                     <div className="flex items-center space-x-3 text-xs font-bold">
-                      <span className="flex items-center space-x-1">
-                        <span className="w-3 h-3 bg-[#16A34A] rounded-sm"></span>
-                        <span className="text-slate-600">Sales: ₹{totalGMV.toLocaleString()}</span>
+                      <span className="flex items-center space-x-1.5">
+                        <span className="w-3 h-3 bg-cyan-400 rounded-sm shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
+                        <span className="text-slate-300">Sales: ₹{totalGMV.toLocaleString()}</span>
                       </span>
-                      <span className="flex items-center space-x-1">
-                        <span className="w-3 h-3 bg-[#FF5722] rounded-sm"></span>
-                        <span className="text-slate-600">Bachat: ₹{totalSavings.toLocaleString()}</span>
+                      <span className="flex items-center space-x-1.5">
+                        <span className="w-3 h-3 bg-emerald-400 rounded-sm shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+                        <span className="text-slate-300">Bachat: ₹{totalSavings.toLocaleString()}</span>
                       </span>
                     </div>
                   </div>
 
-                  <div className="h-44 bg-[#F8FAFC] rounded-xl border border-dashed border-[#E2E8F0] flex flex-col items-center justify-center p-6 text-center space-y-2">
+                  <div className="h-44 bg-slate-900/60 rounded-xl border border-dashed border-white/10 flex flex-col items-center justify-center p-6 text-center space-y-2">
                     {totalOrders > 0 ? (
                       <div className="space-y-1">
-                        <p className="text-sm font-black text-[#0F172A]">Live Order Tracking Active</p>
-                        <p className="text-xs text-slate-500">{totalOrders} order(s) processed. Total GMV: ₹{totalGMV.toLocaleString()}</p>
+                        <p className="text-sm font-black text-white">Live Order Tracking Active</p>
+                        <p className="text-xs text-slate-400">{totalOrders} order(s) processed. Total GMV: ₹{totalGMV.toLocaleString()}</p>
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        <BarChart3 className="w-8 h-8 text-slate-300 mx-auto" />
-                        <p className="text-xs font-bold text-slate-600">No Orders Placed Yet</p>
-                        <p className="text-[11px] text-slate-400">Live sales and customer bachat metrics will chart dynamically as checkouts occur.</p>
+                        <BarChart3 className="w-8 h-8 text-cyan-400/50 mx-auto" />
+                        <p className="text-xs font-bold text-slate-300">No Orders Placed Yet</p>
+                        <p className="text-[11px] text-slate-500">Live sales and customer bachat metrics will chart dynamically as checkouts occur.</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                  <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
                     <span>Pilot Store: Ranchi Central (MBM-RCH-01)</span>
-                    <span className="font-bold text-[#16A34A]">Dual Fulfilment: Home Delivery + Self-Pickup</span>
+                    <span className="font-bold text-cyan-400">Dual Fulfilment: Home Delivery + Self-Pickup</span>
                   </div>
                 </div>
 
                 {/* 4. Category-Wise Distribution (1 Col) */}
-                <div className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-4">
+                <div className="glass-panel p-6 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] space-y-4">
                   <div>
-                    <h3 className="text-sm font-black text-[#0F172A]">Product Catalog Categories</h3>
-                    <p className="text-xs text-slate-500">Live inventory vertical distribution</p>
+                    <h3 className="text-sm font-black text-white">Product Catalog Categories</h3>
+                    <p className="text-xs text-slate-400">Live inventory vertical distribution</p>
                   </div>
 
                   <div className="space-y-3">
@@ -1065,20 +1076,20 @@ export default function AdminDashboardPage() {
                       return (
                         <div key={cat} className="space-y-1">
                           <div className="flex justify-between text-xs font-bold">
-                            <span className="text-slate-700">{cat}</span>
-                            <span className="text-[#0F172A]">{count} SKUs ({pct}%)</span>
+                            <span className="text-slate-300">{cat}</span>
+                            <span className="text-white">{count} SKUs ({pct}%)</span>
                           </div>
-                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                            <div className="h-full bg-[#16A34A] rounded-full" style={{ width: `${pct}%` }}></div>
+                          <div className="w-full bg-slate-800/80 h-2 rounded-full overflow-hidden border border-white/[0.05]">
+                            <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" style={{ width: `${pct}%` }}></div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-xs text-[#064E3B] font-medium flex items-center justify-between">
+                  <div className="p-3 bg-white/[0.04] rounded-xl border border-white/10 text-xs text-slate-300 font-medium flex items-center justify-between">
                     <span>Total Active SKUs</span>
-                    <span className="font-bold text-[#16A34A]">{sampleProducts.length} Items Listed</span>
+                    <span className="font-bold text-cyan-300">{sampleProducts.length} Items Listed</span>
                   </div>
                 </div>
 
@@ -1088,15 +1099,15 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* 2. Recent Orders (2 Cols) */}
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden">
-                  <div className="p-5 border-b border-[#E2E8F0] flex items-center justify-between">
+                <div className="lg:col-span-2 glass-panel rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] overflow-hidden">
+                  <div className="p-5 border-b border-white/10 flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-black text-[#0F172A]">Recent Orders & Live Dispatch</h3>
-                      <p className="text-xs text-slate-500">Real-time fulfillment queue</p>
+                      <h3 className="text-sm font-black text-white">Recent Orders & Live Dispatch</h3>
+                      <p className="text-xs text-slate-400">Real-time fulfillment queue</p>
                     </div>
                     <button
                       onClick={() => setActiveTab('orders')}
-                      className="text-xs font-bold text-[#16A34A] hover:underline cursor-pointer"
+                      className="text-xs font-bold text-cyan-400 hover:text-cyan-300 hover:underline cursor-pointer"
                     >
                       View All Orders →
                     </button>
@@ -1105,7 +1116,7 @@ export default function AdminDashboardPage() {
                   <div className="overflow-x-auto">
                     {filteredOrders.length > 0 ? (
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-[#F8FAFC] text-slate-500 font-bold border-b border-[#E2E8F0]">
+                        <thead className="bg-slate-900/80 text-slate-400 font-bold border-b border-white/10">
                           <tr>
                             <th className="p-3.5">Order ID</th>
                             <th className="p-3.5">Customer & Items</th>
@@ -1114,24 +1125,24 @@ export default function AdminDashboardPage() {
                             <th className="p-3.5 text-right">Quick Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#E2E8F0]">
+                        <tbody className="divide-y divide-white/[0.06]">
                           {filteredOrders.slice(0, 6).map((order: any) => (
-                            <tr key={order.id} className="hover:bg-slate-50 transition">
-                              <td className="p-3.5 font-bold font-mono text-[#0F172A]">{order.id}</td>
+                            <tr key={order.id} className="hover:bg-white/[0.03] transition">
+                              <td className="p-3.5 font-bold font-mono text-cyan-300">{order.id}</td>
                               <td className="p-3.5">
-                                <p className="font-semibold text-slate-900">{order.customerName}</p>
-                                <p className="text-[11px] text-slate-500">{order.items?.length || 1} items</p>
+                                <p className="font-semibold text-white">{order.customerName}</p>
+                                <p className="text-[11px] text-slate-400">{order.items?.length || 1} items</p>
                               </td>
-                              <td className="p-3.5 font-bold text-[#0F172A]">₹{order.totalAmount}</td>
+                              <td className="p-3.5 font-bold text-white">₹{order.totalAmount}</td>
                               <td className="p-3.5">
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-slate-100 text-slate-700">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
                                   {order.status}
                                 </span>
                               </td>
                               <td className="p-3.5 text-right">
                                 <button
                                   onClick={() => setSelectedOrder(order)}
-                                  className="bg-[#16A34A] hover:bg-[#15803D] text-white px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer"
+                                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer shadow-[0_0_10px_rgba(6,182,212,0.3)]"
                                 >
                                   Inspect →
                                 </button>
@@ -1142,9 +1153,9 @@ export default function AdminDashboardPage() {
                       </table>
                     ) : (
                       <div className="py-12 text-center text-slate-400 space-y-2">
-                        <ShoppingBag className="w-8 h-8 mx-auto text-slate-300" />
-                        <p className="text-xs font-semibold text-slate-600">No Orders in Queue</p>
-                        <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                        <ShoppingBag className="w-8 h-8 mx-auto text-slate-500" />
+                        <p className="text-xs font-semibold text-slate-300">No Orders in Queue</p>
+                        <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
                           When customers complete a purchase on the storefront, their orders will appear here immediately for pick, pack, dispatch, or pickup verification.
                         </p>
                       </div>
@@ -1153,22 +1164,22 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* 3. Catalog Products (1 Col) */}
-                <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-4">
+                <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-black text-[#0F172A]">Storefront Products</h3>
-                      <p className="text-xs text-slate-500">Live products in catalog</p>
+                      <h3 className="text-sm font-black text-white">Storefront Products</h3>
+                      <p className="text-xs text-slate-400">Live products in catalog</p>
                     </div>
-                    <span className="text-[10px] font-bold text-[#16A34A] bg-emerald-50 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-400/30 px-2 py-0.5 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.2)]">
                       {sampleProducts.length} Listed
                     </span>
                   </div>
 
                   <div className="space-y-3">
                     {sampleProducts.slice(0, 5).map((p, idx) => (
-                      <div key={p.id} className="flex items-center justify-between text-xs p-2 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100">
+                      <div key={p.id} className="flex items-center justify-between text-xs p-2 rounded-xl hover:bg-white/[0.04] transition border border-transparent hover:border-white/10">
                         <div className="flex items-center space-x-2.5">
-                          <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center text-[11px]">
+                          <span className="w-5 h-5 rounded-full bg-white/10 text-cyan-300 font-bold flex items-center justify-center text-[11px] border border-cyan-400/20">
                             {idx + 1}
                           </span>
                           <div>

@@ -110,6 +110,7 @@ export interface ScoredCandidate {
   shopName: string;
   distanceKm: number;
   totalPrice: number;
+  baseScore?: number;
   score: number;
   factors: {
     distance: number;
@@ -160,6 +161,15 @@ export interface RoutingAuditLogEntry {
   selectionReason: string;
   reservationIds?: string[];
   latencyMs: number;
+  algorithmVersion?: string;
+  configVersion?: string;
+  winningBreakdown?: {
+    baseWeightedScore: number;
+    antiStarvationBonus: number;
+    newShopBonus: number;
+    highLoadPenalty: number;
+    finalScore: number;
+  };
   createdAt: string;
 }
 
@@ -763,7 +773,7 @@ export class RoutingEngine {
       const sFairness = Math.min(1.0, daysSinceLastOrder / 7.0);
 
       // Base Weighted Score
-      let compositeScore =
+      const baseWeightedScore =
         weights.distance * sDist +
         weights.rating * sRating +
         weights.acceptance * sAccept +
@@ -772,6 +782,7 @@ export class RoutingEngine {
         weights.price * sPrice +
         weights.trust * sTrust +
         weights.fairness * sFairness;
+      let compositeScore = baseWeightedScore;
 
       // Anti-Starvation Rule (§11.2): 0 orders in 7+ days gets +0.05 bonus
       let antiStarvationApplied = false;
@@ -793,8 +804,8 @@ export class RoutingEngine {
         compositeScore -= 0.15;
       }
 
-      // Round to 6 decimal places to prevent floating point noise
-      const finalScore = Math.round(compositeScore * 1000000) / 1000000;
+      // Normalize and cap final score within [0.0, 1.0] (0% to 100%)
+      const finalScore = Math.max(0, Math.min(1.0, Math.round(compositeScore * 1000000) / 1000000));
 
       // Estimated delivery time: base 15 min prep + 5 min per km
       const estimatedDeliveryMinutes = Math.min(60, Math.max(20, Math.round(15 + distanceKm * 5)));
@@ -804,6 +815,7 @@ export class RoutingEngine {
         shopName: shop.name,
         distanceKm,
         totalPrice,
+        baseScore: Math.round(baseWeightedScore * 1000000) / 1000000,
         score: finalScore,
         factors: {
           distance: Math.round(sDist * 1000) / 1000,
@@ -875,6 +887,7 @@ export class RoutingEngine {
         scoredShops: [],
         selectionReason: 'NO_SHOP_AVAILABLE',
         latencyMs,
+        algorithmVersion: 'v5.2-10factor',
         createdAt: new Date().toISOString(),
       };
       routingAuditLogs.unshift(auditEntry);
@@ -962,6 +975,7 @@ export class RoutingEngine {
         scoredShops,
         selectionReason: 'RESERVATION_FAILED_FOR_ALL_CANDIDATES',
         latencyMs,
+        algorithmVersion: 'v5.2-10factor',
         createdAt: new Date().toISOString(),
       };
       routingAuditLogs.unshift(auditEntry);
@@ -1002,6 +1016,15 @@ export class RoutingEngine {
       selectionReason: 'HIGHEST_SCORE',
       reservationIds,
       latencyMs,
+      algorithmVersion: 'v5.2-10factor',
+      configVersion: 'v5.2.0-phase1-ranchi',
+      winningBreakdown: {
+        baseWeightedScore: chosenShop.baseScore || chosenShop.score,
+        antiStarvationBonus: chosenShop.bonusApplied.antiStarvation ? this.config.antiStarvationBonus : 0,
+        newShopBonus: chosenShop.bonusApplied.newShopBoost ? this.config.newShopBoostBonus : 0,
+        highLoadPenalty: chosenShop.factors.load === 0 ? 0.15 : 0,
+        finalScore: chosenShop.score,
+      },
       createdAt: new Date().toISOString(),
     };
     routingAuditLogs.unshift(auditEntry);

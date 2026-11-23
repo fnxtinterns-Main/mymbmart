@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getOrderByIdAsync, ordersStore } from '@/lib/ordersStore';
 import { verifyWebhookSignature } from '@/lib/securityUtils';
 import { redisSet } from '@/lib/redis';
+import { prisma } from '@/lib/prisma';
+import { financialLedger } from '@/lib/ledgerStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,13 +37,41 @@ export async function POST(req: Request) {
       await redisSet(`order:${order.orderNumber}`, order).catch(() => {});
       await redisSet('orders:latest', ordersStore).catch(() => {});
 
-      try {
-        const { prisma } = await import('@/lib/prisma');
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { paymentStatus: 'PAID' },
+      if (process.env.DATABASE_URL) {
+        await prisma.$transaction(async (tx) => {
+          // 1. Update order payment status
+          await tx.order.update({
+            where: { id: order.id },
+            data: { paymentStatus: 'PAID' },
+          });
+
+          // 2. Record Double-Entry Financial Settlement in PostgreSQL
+          await financialLedger.recordOrderSettlement({
+            orderId: order.id,
+            grossAmount: order.totalPayable + (order.creditDeduction || 0),
+            walletPaid: order.creditDeduction || 0,
+            gatewayPaid: order.totalPayable,
+            idempotencyKey: `settle-${order.id}`,
+          }, tx);
+
+          // 3. Emit OutboxEvent for payment confirmation
+          await tx.outboxEvent.create({
+            data: {
+              aggregateType: 'PAYMENT',
+              aggregateId: order.id,
+              eventType: 'PAYMENT_RECEIVED',
+              payload: {
+                orderId: order.id,
+                orderNumber: order.orderNumber,
+                amountPaise: Math.round(order.totalPayable * 100),
+                transactionRef: order.upiTransactionId,
+              },
+              idempotencyKey: `outbox-pay-${order.id}`,
+              status: 'PENDING',
+            },
+          });
         });
-      } catch {}
+      }
 
       return NextResponse.json({
         success: true,

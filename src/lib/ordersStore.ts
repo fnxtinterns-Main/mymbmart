@@ -134,7 +134,7 @@ function loadOrdersFromDisk(): OrderRecord[] {
 
 function saveOrdersToDisk(orders: OrderRecord[]): void {
   if (typeof window !== 'undefined') return;
-  if (process.env.NODE_ENV === 'test' || process.env.npm_lifecycle_event === 'test:real') return;
+  if (process.env.DATABASE_URL || process.env.NODE_ENV === 'test' || process.env.npm_lifecycle_event?.includes('test')) return;
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -328,6 +328,20 @@ export function updateOrderStatus(orderId: string, status: OrderRecord['status']
   if (status === 'DELIVERED') {
     order.timeline.forEach((t) => (t.completed = true));
     order.cashbackCredited = true;
+    if (order.paymentMethod === 'COD' && order.paymentStatus !== 'PAID') {
+      order.paymentStatus = 'PAID';
+      if (process.env.DATABASE_URL) {
+        import('@/lib/ledgerStore').then(({ financialLedger }) => {
+          financialLedger.recordOrderSettlement({
+            orderId: order.id,
+            grossAmount: order.totalPayable + (order.creditDeduction || 0),
+            walletPaid: order.creditDeduction || 0,
+            gatewayPaid: order.totalPayable,
+            idempotencyKey: `settle-cod-${order.id}`,
+          }).catch((err) => console.error('COD settlement error:', err));
+        }).catch(() => {});
+      }
+    }
   }
   if (status === 'CANCELLED') {
     if (notes) order.cancellationReason = notes;
@@ -335,11 +349,35 @@ export function updateOrderStatus(orderId: string, status: OrderRecord['status']
     // Reverse any cashback and mark wallet credit for auto-refund
     order.cashbackCredited = false;
     order.cashbackEarnable = 0;
+    if (order.paymentStatus === 'PAID' && process.env.DATABASE_URL) {
+      import('@/lib/ledgerStore').then(({ financialLedger }) => {
+        financialLedger.recordRefundReversal({
+          orderId: order.id,
+          gatewayRefund: order.totalPayable,
+          walletRefund: order.creditDeduction || 0,
+          refundId: `ref-cancel-${order.id}`,
+        }).then(() => {
+          order.refundStatus = 'PROCESSED';
+        }).catch((err) => console.error('Auto-refund error on cancel:', err));
+      }).catch(() => {});
+    }
   }
   if (status === 'RETURNED') {
     order.refundStatus = 'PENDING';
     order.cashbackCredited = false;
     order.cashbackEarnable = 0;
+    if (order.paymentStatus === 'PAID' && process.env.DATABASE_URL) {
+      import('@/lib/ledgerStore').then(({ financialLedger }) => {
+        financialLedger.recordRefundReversal({
+          orderId: order.id,
+          gatewayRefund: order.totalPayable,
+          walletRefund: order.creditDeduction || 0,
+          refundId: `ref-return-${order.id}`,
+        }).then(() => {
+          order.refundStatus = 'PROCESSED';
+        }).catch((err) => console.error('Auto-refund error on return:', err));
+      }).catch(() => {});
+    }
   }
   saveOrdersToDisk(ordersStore);
   if (isRedisConfigured()) {
