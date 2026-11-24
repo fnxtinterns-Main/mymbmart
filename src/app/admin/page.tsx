@@ -64,6 +64,7 @@ import { RoutingAdminTab } from '@/components/RoutingAdminTab';
 import { PilotPlaybookTab } from '@/components/PilotPlaybookTab';
 import { MerchantOnboardingTab } from '@/components/admin/MerchantOnboardingTab';
 import { generateMasterPlatformReportCsv, triggerCsvDownload } from '@/lib/reportGenerator';
+import FallingLeaves from '@/components/FallingLeaves';
 
 interface AdminMetrics {
   kpis: {
@@ -646,6 +647,9 @@ export default function AdminDashboardPage() {
         <div className="absolute top-1/4 -right-32 w-96 h-96 bg-teal-600/8 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-emerald-400/8 rounded-full blur-3xl"></div>
       </div>
+
+      {/* Gentle Falling Leaves Background Effect */}
+      <FallingLeaves count={18} />
 
       {/* ============================================================== */}
       {/* 1. SIDEBAR (Emerald Green Aesthetic)                          */}

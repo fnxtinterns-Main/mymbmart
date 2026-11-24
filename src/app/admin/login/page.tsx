@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Lock, Eye, EyeOff, ArrowRight, AlertCircle, KeyRound } from 'lucide-react';
+import FallingLeaves from '@/components/FallingLeaves';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -53,6 +54,9 @@ export default function AdminLoginPage() {
         <div className="absolute top-1/3 -right-32 w-96 h-96 bg-teal-600/8 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-emerald-400/8 rounded-full blur-3xl"></div>
       </div>
+
+      {/* Gentle Falling Leaves Background Effect */}
+      <FallingLeaves count={22} />
 
       {/* Top Header */}
       <header className="glass-panel border-b border-emerald-950/10 px-6 py-4 flex items-center justify-between relative z-10 backdrop-blur-xl">
