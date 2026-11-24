@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 /**
  * Safe JWT Secret getter that fails closed in production if unset
@@ -146,7 +147,6 @@ export function isAdminAuthorized(req: Request): boolean {
   const adminTokenMatch = cookieHeader.match(/mbm_admin_token=([^;]+)/);
   if (adminTokenMatch) {
     try {
-      const jwt = require('jsonwebtoken');
       const decoded: any = jwt.verify(adminTokenMatch[1], getJwtSecret(), { algorithms: ['HS256'] });
       if (decoded && decoded.role === 'ADMIN') return true;
     } catch {}

@@ -14,17 +14,21 @@ assert.strictEqual(feeWithPickup, 0, 'Self-Pickup delivery fee must be ₹0');
 assert.strictEqual(feeWithoutPickup, 29, 'Home Delivery under ₹199 must be ₹29');
 console.log('✅ Fix 1 Verified: Self-Pickup fee is ₹0.');
 
+import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../src/lib/securityUtils.ts';
+
 // 2. Verify Admin Authorization protection helper
 const unauthReq = new Request('http://localhost:3000/api/admin/products', { method: 'POST' });
 // In production mode simulation:
 process.env.NODE_ENV = 'production';
 assert.strictEqual(isAdminAuthorized(unauthReq), false, 'Unauthenticated request must be denied');
 
+const validAdminToken = jwt.sign({ role: 'ADMIN', email: 'admin@mbm.com' }, getJwtSecret(), { algorithm: 'HS256' });
 const authReq = new Request('http://localhost:3000/api/admin/products', {
   method: 'POST',
-  headers: { cookie: 'mbm_admin_authenticated=true' }
+  headers: { cookie: `mbm_admin_token=${validAdminToken}` }
 });
-assert.strictEqual(isAdminAuthorized(authReq), true, 'Admin cookie must be authorized');
+assert.strictEqual(isAdminAuthorized(authReq), true, 'Cryptographic Admin JWT cookie must be authorized');
 console.log('✅ Fix 2 Verified: Admin POST routes properly protected.');
 
 // 3. Verify Catalog Stock Decrement

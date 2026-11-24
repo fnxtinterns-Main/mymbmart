@@ -2,6 +2,7 @@
 // Handles Partner Registration, KYC verification, Admin Approvals, Credential Dispatch,
 // and Bulk CSV Inventory Ingestion with instant Live Storefront synchronization.
 
+import crypto from 'crypto';
 import type { ProductItem } from './types';
 import { inventoryStore } from './inventoryStore';
 import { addCatalogProducts, getCatalogProducts } from './catalog';
@@ -515,11 +516,12 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       let matchesPassword = false;
       if (a.passwordHash && a.passwordHash.length === cleanPassword.length) {
         try {
-          const crypto = require('crypto');
           matchesPassword = crypto.timingSafeEqual(Buffer.from(a.passwordHash), Buffer.from(cleanPassword));
         } catch {
-          matchesPassword = false;
+          matchesPassword = a.passwordHash === cleanPassword;
         }
+      } else if (a.passwordHash) {
+        matchesPassword = a.passwordHash === cleanPassword;
       }
       return (matchesId || matchesEmail || matchesPhone) && matchesPassword;
     });
