@@ -899,9 +899,9 @@ export default function AdminDashboardPage() {
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight flex items-center space-x-2">
                     <span>Operations Executive Dashboard</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-[#064E3B] border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-2xs">
+                    {/* <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-[#064E3B] border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-2xs">
                       Emerald & Off-White
-                    </span>
+                    </span> */}
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Live operational metrics across quick commerce orders, catalog inventory, and prosumer savings.
