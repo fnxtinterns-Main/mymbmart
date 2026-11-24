@@ -21,9 +21,18 @@ export async function POST(req: Request) {
     const isProd = process.env.NODE_ENV === 'production';
     const JWT_SECRET = process.env.JWT_SECRET || (!isProd ? 'dev-insecure-jwt-key-2026' : '');
 
-    if (isProd && (!ADMIN_EMAIL || !ADMIN_PIN || !JWT_SECRET)) {
+    const missing: string[] = [];
+    if (!ADMIN_EMAIL) missing.push('ADMIN_EMAIL');
+    if (!ADMIN_PIN) missing.push('ADMIN_PIN');
+    if (!JWT_SECRET) missing.push('JWT_SECRET');
+
+    if (isProd && missing.length > 0) {
       return NextResponse.json(
-        { success: false, error: 'Server security misconfigured: ADMIN_EMAIL, ADMIN_PIN, and JWT_SECRET environment variables must be configured on the server.' },
+        { 
+          success: false, 
+          error: `Server security misconfigured: Missing [${missing.join(', ')}] in server environment.`,
+          serverTime: new Date().toISOString()
+        },
         { status: 500 }
       );
     }
