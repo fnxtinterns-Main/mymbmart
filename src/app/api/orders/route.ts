@@ -1,42 +1,28 @@
 import { NextResponse } from 'next/server';
 import { ordersStore, syncOrdersFromDisk, syncOrdersFromRedis } from '@/lib/ordersStore';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
     const cookieHeader = req.headers.get('cookie') || '';
-    const authHeader = req.headers.get('authorization') || '';
-    const isProd = process.env.NODE_ENV === 'production';
-    const ADMIN_PIN = process.env.ADMIN_PIN || 'MMBM@Admin2026';
-    const isAdmin = 
-      cookieHeader.includes('mbm_admin_authenticated=true') ||
-      cookieHeader.includes('mbm_admin_token=') ||
-      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
+    const isAdmin = isAdminAuthorized(req);
 
-    // Extract customer session if present
+    // Extract customer session from cryptographic JWT cookie
     let sessionUserId: string | null = null;
     let sessionPhone: string | null = null;
     const sessionMatch = cookieHeader.match(/mbm_session=([^;]+)/);
     if (sessionMatch) {
       try {
         const { default: jwt } = await import('jsonwebtoken');
-        const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
-        const decoded: any = jwt.verify(sessionMatch[1], JWT_SECRET);
-        if (decoded?.userId) sessionUserId = decoded.userId;
-        if (decoded?.phone) sessionPhone = decoded.phone;
+        const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'dev-jwt-secret-key' : '');
+        if (JWT_SECRET) {
+          const decoded: any = jwt.verify(sessionMatch[1], JWT_SECRET, { algorithms: ['HS256'] });
+          if (decoded?.userId) sessionUserId = decoded.userId;
+          if (decoded?.phone) sessionPhone = decoded.phone;
+        }
       } catch {}
-    }
-
-    if (!sessionUserId) {
-      const userCookieMatch = cookieHeader.match(/mbm_user_data=([^;]+)/);
-      if (userCookieMatch) {
-        try {
-          const parsed = JSON.parse(decodeURIComponent(userCookieMatch[1]));
-          if (parsed?.id) sessionUserId = parsed.id;
-          if (parsed?.phone) sessionPhone = parsed.phone;
-        } catch {}
-      }
     }
 
     if (!isAdmin && !sessionUserId && process.env.NODE_ENV === 'production') {

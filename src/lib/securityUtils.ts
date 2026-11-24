@@ -1,12 +1,29 @@
 import crypto from 'crypto';
 
-const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET || 'mbm_webhook_secret_key_2026';
+/**
+ * Safe JWT Secret getter that fails closed in production if unset
+ */
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET environment variable is required in production.');
+    }
+    return 'dev-insecure-jwt-key-2026';
+  }
+  return secret;
+}
 
 /**
  * Timing-safe cryptographic HMAC-SHA256 signature verification for payment webhooks
  */
-export function verifyWebhookSignature(rawPayload: string, signature?: string | null, secret = WEBHOOK_SECRET): boolean {
+export function verifyWebhookSignature(rawPayload: string, signature?: string | null, customSecret?: string): boolean {
   if (!signature) return false;
+  const secret = customSecret || process.env.PAYMENT_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error('PAYMENT_WEBHOOK_SECRET environment variable is missing.');
+    return false;
+  }
   try {
     const expected = crypto
       .createHmac('sha256', secret)
@@ -98,37 +115,36 @@ export function processReturnRequest(order: {
 }
 
 /**
- * Verifies admin session cookie or Bearer authorization token
+ * Verifies admin session cookie or Bearer authorization token.
+ * Strictly verifies cryptographic JWT or constant-time PIN match. Never trusts plaintext cookies.
  */
 export function isAdminAuthorized(req: Request): boolean {
   const cookieHeader = req.headers.get('cookie') || '';
   const authHeader = req.headers.get('authorization') || '';
-  const ADMIN_PIN = process.env.ADMIN_PIN || 'MMBM@Admin2026';
+  const ADMIN_PIN = process.env.ADMIN_PIN;
 
-  // 1. Direct Bearer PIN check
-  if (authHeader.startsWith('Bearer ') && (authHeader.slice(7).trim() === ADMIN_PIN || authHeader.length > 15)) {
-    return true;
+  // 1. Direct Bearer PIN check with timing-safe comparison
+  if (ADMIN_PIN && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token.length === ADMIN_PIN.length) {
+      try {
+        if (crypto.timingSafeEqual(Buffer.from(token), Buffer.from(ADMIN_PIN))) {
+          return true;
+        }
+      } catch {}
+    }
   }
 
-  // 2. Cryptographic signed JWT check
+  // 2. Cryptographic signed JWT check (strictly verifies mbm_admin_token)
   const adminTokenMatch = cookieHeader.match(/mbm_admin_token=([^;]+)/);
   if (adminTokenMatch) {
     try {
       const jwt = require('jsonwebtoken');
-      const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
-      const decoded: any = jwt.verify(adminTokenMatch[1], JWT_SECRET);
+      const decoded: any = jwt.verify(adminTokenMatch[1], getJwtSecret(), { algorithms: ['HS256'] });
       if (decoded && decoded.role === 'ADMIN') return true;
     } catch {}
   }
 
-  // 3. Non-production or test cookie fallback
-  const hasAdminCookie = 
-    cookieHeader.includes('mbm_admin_authenticated=true') || 
-    cookieHeader.includes('mbm_session=');
-
-  if (process.env.NODE_ENV !== 'production' && !process.env.STRICT_ADMIN_AUTH) {
-    return true;
-  }
-  return hasAdminCookie;
+  return false;
 }
 

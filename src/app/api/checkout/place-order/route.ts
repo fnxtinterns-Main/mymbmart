@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
 import { addOrder, type OrderRecord } from '@/lib/ordersStore';
 import { isRedisConfigured, redisGet, redisSet } from '@/lib/redis';
 import { prisma } from '@/lib/prisma';
 import { financialLedger } from '@/lib/ledgerStore';
+import { getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,8 +92,7 @@ export async function POST(req: Request) {
     if (sessionCookieMatch) {
       try {
         const { default: jwt } = await import('jsonwebtoken');
-        const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
-        const decoded: any = jwt.verify(sessionCookieMatch[1], JWT_SECRET);
+        const decoded: any = jwt.verify(sessionCookieMatch[1], getJwtSecret(), { algorithms: ['HS256'] });
         if (decoded && decoded.userId) {
           authenticatedUserId = decoded.userId;
           if (decoded.phone) realCustomerPhone = decoded.phone;
@@ -137,9 +138,9 @@ export async function POST(req: Request) {
     const totalPayable = Math.max(0, totalBachatPrice + totalDeliveryFee - creditDeduction);
     const shoppingSavings = totalMRP - totalBachatPrice;
 
-    // Generate unique order number and 4-digit Delivery OTP
-    const orderNumber = `MBM-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    // Generate unique order number and 4-digit Delivery OTP using cryptographically secure PRNG
+    const orderNumber = `MBM-2026-${crypto.randomInt(10000, 100000)}`;
+    const deliveryOtp = crypto.randomInt(1000, 10000).toString();
 
     const splitShipments: OrderRecord['splitShipments'] = [];
     if (quickItems.length > 0) {

@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server';
 import { ordersStore, updateOrderStatus, getOrderById, getOrderByIdAsync, syncOrdersFromRedis } from '@/lib/ordersStore';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 function checkStoreAuth(req: Request): boolean {
+  if (isAdminAuthorized(req)) return true;
   const cookieHeader = req.headers.get('cookie') || '';
-  const authHeader = req.headers.get('authorization') || '';
-  const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
-
-  const isAuthorized = 
-    cookieHeader.includes('mbm_partner_session=') ||
-    cookieHeader.includes('mbm_admin_authenticated=true') ||
-    cookieHeader.includes('mbm_session=') ||
-    (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
-
-  if (!isAuthorized && process.env.NODE_ENV === 'production') {
-    return false;
-  }
-  return true;
+  return cookieHeader.includes('mbm_partner_session=');
 }
 
 export async function GET(req: Request) {

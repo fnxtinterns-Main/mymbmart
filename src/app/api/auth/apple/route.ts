@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
 
 export async function POST(req: Request) {
   try {
@@ -98,8 +97,8 @@ export async function POST(req: Request) {
         email: userProfile.email,
         provider: 'APPLE',
       },
-      JWT_SECRET,
-      { expiresIn: '30d' }
+      getJwtSecret(),
+      { expiresIn: '30d', algorithm: 'HS256' }
     );
 
     return NextResponse.json({

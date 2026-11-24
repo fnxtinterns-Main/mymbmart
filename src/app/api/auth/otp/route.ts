@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { sendOtpEmail } from '@/lib/emailService';
 import { getDeterministicReferralCode, getDeterministicMemberId } from '@/lib/userSession';
@@ -6,7 +7,6 @@ import { redisSet, redisGet, redisDel, redisCommand, isRedisConfigured } from '@
 
 export const dynamic = 'force-dynamic';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
 const memoryOtpStore = new Map<string, { code: string; expiresAt: number }>();
 
 // Ephemeral in-memory fallback store if Redis is ever unreachable
@@ -14,6 +14,16 @@ const localOtpStore = new Map<string, { otp: string; expiresAt: number }>();
 
 export async function POST(req: Request) {
   try {
+    const isProd = process.env.NODE_ENV === 'production';
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (isProd && !JWT_SECRET) {
+      return NextResponse.json(
+        { error: 'Server authentication misconfigured: JWT_SECRET environment variable is required.' },
+        { status: 500 }
+      );
+    }
+    const effectiveJwtSecret = JWT_SECRET || 'dev-insecure-jwt-key-2026';
+
     const body = await req.json();
     const { identifier, action = 'SEND', otp, referralCode } = body;
 
@@ -26,8 +36,8 @@ export async function POST(req: Request) {
     // 1. VERIFY ACTION
     if (action === 'VERIFY') {
       const submittedOtp = otp?.toString().trim();
-      const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.E2E_TEST_MODE === 'true';
-      const isTestOtp = isTestEnv && submittedOtp === '123456';
+      // Universal test OTP is strictly forbidden in production
+      const isTestOtp = !isProd && submittedOtp === '123456';
 
       // Verify against memory fallback store first, then Upstash Redis
       let isVerified = isTestOtp;
@@ -141,8 +151,8 @@ export async function POST(req: Request) {
           role: userProfile.role,
           phone: userProfile.phone 
         },
-        JWT_SECRET,
-        { expiresIn: '30d' }
+        effectiveJwtSecret,
+        { expiresIn: '30d', algorithm: 'HS256' }
       );
 
       const response = NextResponse.json({
@@ -186,7 +196,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Cryptographically secure PRNG for OTP generation
+    const generatedOtp = crypto.randomInt(100000, 1000000).toString();
     memoryOtpStore.set(identifier, { code: generatedOtp, expiresAt: Date.now() + 600 * 1000 });
     if (isRedisConfigured()) {
       redisSet(`otp:${identifier}`, generatedOtp, 600).catch(() => {});
@@ -204,12 +215,10 @@ export async function POST(req: Request) {
       }
     }
 
-    const isTestEnv = process.env.NODE_ENV !== 'production' || process.env.E2E_TEST_MODE === 'true';
-
     return NextResponse.json({
       success: true,
       message: `OTP dispatched to ${identifier}`,
-      ...(isTestEnv ? { testOtp: '123456' } : {}),
+      ...(!isProd ? { testOtp: '123456' } : {}),
       expiresInSeconds: 600,
     });
   } catch (error: any) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,12 +112,9 @@ export async function GET(req: Request) {
     }
 
     const cookieHeader = req.headers.get('cookie') || '';
-    const authHeader = req.headers.get('authorization') || '';
     const isAuthorized =
-      cookieHeader.includes('mbm_admin_authenticated=true') ||
-      cookieHeader.includes('mbm_partner_session=') ||
-      cookieHeader.includes('mbm_session=') ||
-      authHeader.startsWith('Bearer ');
+      isAdminAuthorized(req) ||
+      cookieHeader.includes('mbm_partner_session=');
 
     if (!isAuthorized) {
       return NextResponse.json({ success: false, message: 'Unauthorized. KYC documents are restricted.' }, { status: 401 });

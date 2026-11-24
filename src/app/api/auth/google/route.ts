@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { getDeterministicReferralCode, getDeterministicMemberId } from '@/lib/userSession';
+import { getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 
@@ -88,8 +88,8 @@ export async function GET(req: Request) {
         email: userProfile.email,
         provider: 'GOOGLE',
       },
-      JWT_SECRET,
-      { expiresIn: '30d' }
+      getJwtSecret(),
+      { expiresIn: '30d', algorithm: 'HS256' }
     );
 
     const response = NextResponse.redirect(new URL('/shop?auth=success', req.url));
@@ -204,8 +204,8 @@ export async function POST(req: Request) {
         email: userProfile.email,
         provider: 'GOOGLE',
       },
-      JWT_SECRET,
-      { expiresIn: '30d' }
+      getJwtSecret(),
+      { expiresIn: '30d', algorithm: 'HS256' }
     );
 
     const response = NextResponse.json({

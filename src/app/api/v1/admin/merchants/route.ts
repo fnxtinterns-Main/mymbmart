@@ -1,24 +1,17 @@
 import { NextResponse } from 'next/server';
 import { shopPartnerStore, ApplicationStatus } from '@/lib/shopPartnerStore';
 import { sendPartnerApprovalEmail } from '@/lib/emailService';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const authHeader = req.headers.get('authorization') || '';
-    const isProd = process.env.NODE_ENV === 'production';
-    const ADMIN_PIN = process.env.ADMIN_PIN || 'MMBM@Admin2026';
-
-    const isAdmin = 
-      cookieHeader.includes('mbm_admin_authenticated=true') ||
-      cookieHeader.includes('mbm_admin_token=') ||
-      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
-
-    if (!isAdmin && isProd) {
+    if (!isAdminAuthorized(req)) {
       return NextResponse.json({ success: false, message: 'Unauthorized: Admin authentication required.' }, { status: 401 });
     }
+
+    const isProd = process.env.NODE_ENV === 'production';
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') as ApplicationStatus | 'ALL' | null;
@@ -101,17 +94,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const authHeader = req.headers.get('authorization') || '';
-    const isProd = process.env.NODE_ENV === 'production';
-    const ADMIN_PIN = process.env.ADMIN_PIN || 'MMBM@Admin2026';
-
-    const isAdmin = 
-      cookieHeader.includes('mbm_admin_authenticated=true') ||
-      cookieHeader.includes('mbm_admin_token=') ||
-      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
-
-    if (!isAdmin && isProd) {
+    if (!isAdminAuthorized(req)) {
       return NextResponse.json({ success: false, message: 'Unauthorized: Admin authentication required.' }, { status: 401 });
     }
 

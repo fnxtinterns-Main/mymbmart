@@ -1,20 +1,12 @@
 import { NextResponse } from 'next/server';
 import { generateMasterPlatformReportCsv } from '@/lib/reportGenerator';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const authHeader = req.headers.get('authorization') || '';
-    const ADMIN_PIN = process.env.ADMIN_PIN || 'MMBM@Admin2026';
-
-    const isAdmin = 
-      cookieHeader.includes('mbm_admin_authenticated=true') ||
-      cookieHeader.includes('mbm_admin_token=') ||
-      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
-
-    if (!isAdmin && process.env.NODE_ENV === 'production') {
+    if (!isAdminAuthorized(req)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin credentials or active session required.' },
         { status: 401 }
