@@ -90,6 +90,7 @@ export interface CsvProductRow {
   expiryDate: string;
   batchNumber: string;
   imageUrl?: string;
+  imageFile?: string;
   isReturnable?: boolean;
 }
 
