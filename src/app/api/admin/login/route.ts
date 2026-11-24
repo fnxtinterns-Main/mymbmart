@@ -3,11 +3,21 @@ import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
-const ADMIN_PIN = (process.env.ADMIN_PIN || '').trim();
-
 export async function POST(req: Request) {
   try {
+    // Ensure environment variables are loaded dynamically if not yet attached to process.env
+    if (!process.env.ADMIN_PIN || !process.env.ADMIN_EMAIL || !process.env.JWT_SECRET) {
+      try {
+        const dotenv = await import('dotenv');
+        dotenv.config();
+        const path = await import('path');
+        dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+        dotenv.config({ path: path.resolve(process.cwd(), '.env.production') });
+      } catch {}
+    }
+
+    const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
+    const ADMIN_PIN = (process.env.ADMIN_PIN || '').trim();
     const isProd = process.env.NODE_ENV === 'production';
     const JWT_SECRET = process.env.JWT_SECRET || (!isProd ? 'dev-insecure-jwt-key-2026' : '');
 

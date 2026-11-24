@@ -4,6 +4,11 @@ import crypto from 'crypto';
  * Safe JWT Secret getter that fails closed in production if unset
  */
 export function getJwtSecret(): string {
+  if (!process.env.JWT_SECRET) {
+    try {
+      require('dotenv').config();
+    } catch {}
+  }
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
@@ -119,6 +124,11 @@ export function processReturnRequest(order: {
  * Strictly verifies cryptographic JWT or constant-time PIN match. Never trusts plaintext cookies.
  */
 export function isAdminAuthorized(req: Request): boolean {
+  if (!process.env.ADMIN_PIN) {
+    try {
+      require('dotenv').config();
+    } catch {}
+  }
   const cookieHeader = req.headers.get('cookie') || '';
   const authHeader = req.headers.get('authorization') || '';
   const ADMIN_PIN = process.env.ADMIN_PIN;
