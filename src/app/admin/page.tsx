@@ -663,8 +663,12 @@ export default function AdminDashboardPage() {
         <div className="h-16 border-b border-emerald-800/60 px-4 flex items-center justify-between">
           {!sidebarCollapsed ? (
             <div className="flex items-center space-x-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-xl bg-white text-[#064E3B] font-black flex items-center justify-center shrink-0 shadow-md text-xs">
-                MBM
+              <div className="w-9 h-9 rounded-xl bg-white p-0.5 shrink-0 shadow-md flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/mymbmart-logo.jpg" 
+                  alt="MegaBachatMart Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div className="truncate">
                 <h1 className="text-sm font-black tracking-tight text-white leading-tight">MegaBachatMart</h1>
@@ -672,8 +676,12 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-xl bg-white text-[#064E3B] font-black flex items-center justify-center mx-auto shadow-md text-xs">
-              M
+            <div className="w-9 h-9 rounded-xl bg-white p-0.5 shrink-0 shadow-md flex items-center justify-center mx-auto overflow-hidden">
+              <img 
+                src="/images/mymbmart-logo.jpg" 
+                alt="MegaBachatMart Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
           )}
 

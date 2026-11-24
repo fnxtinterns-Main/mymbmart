@@ -61,8 +61,12 @@ export default function AdminLoginPage() {
       {/* Top Header */}
       <header className="glass-panel border-b border-emerald-950/10 px-6 py-4 flex items-center justify-between relative z-10 backdrop-blur-xl">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-[#064E3B] flex items-center justify-center text-white font-black text-sm shadow-sm">
-            MBM
+          <div className="w-10 h-10 rounded-xl bg-white p-0.5 shadow-sm flex items-center justify-center overflow-hidden border border-emerald-900/10">
+            <img 
+              src="/images/mymbmart-logo.jpg" 
+              alt="MegaBachatMart Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <h1 className="text-sm font-extrabold text-[#064E3B] tracking-tight">
@@ -86,8 +90,12 @@ export default function AdminLoginPage() {
       <div className="flex-1 flex items-center justify-center p-4 relative z-10">
         <div className="w-full max-w-md glass-panel-glow border border-emerald-900/10 rounded-3xl p-8 shadow-xl space-y-6 backdrop-blur-2xl">
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#064E3B] flex items-center justify-center mx-auto shadow-xs">
-              <ShieldCheck className="w-7 h-7" />
+            <div className="w-16 h-16 rounded-2xl bg-white p-1 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm overflow-hidden">
+              <img 
+                src="/images/mymbmart-logo.jpg" 
+                alt="MegaBachatMart Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <h2 className="text-xl font-black text-[#0F172A]">
               Administrator Sign In
