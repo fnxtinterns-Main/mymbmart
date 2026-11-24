@@ -27,7 +27,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onSavingsClick,
 }) => {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand-mint/40 via-white to-slate-50 pt-4 pb-10 sm:pt-6 sm:pb-14 border-b border-emerald-100">
+    <section className="relative overflow-hidden w-full max-w-full bg-gradient-to-b from-brand-mint/40 via-white to-slate-50 pt-4 pb-10 sm:pt-6 sm:pb-14 border-b border-emerald-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
         
         {/* 1. Top Hero Graphic Banner (High-Resolution 3072x1017 for Smart Boards & 4K Displays) */}

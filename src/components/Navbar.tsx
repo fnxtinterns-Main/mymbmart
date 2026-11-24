@@ -212,13 +212,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100/80 shadow-xs">
-      <div className="w-full px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24 lg:h-26 gap-3 sm:gap-6">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100/80 shadow-xs w-full max-w-full">
+      <div className="w-full max-w-full px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20 sm:h-24 lg:h-26 gap-2 sm:gap-4 lg:gap-6 min-w-0">
           
           {/* Logo & Brand Identity in Left Corner */}
           <Link href="/" className="flex items-center space-x-2 shrink-0 group" aria-label="MegaBachatMart Home">
-            <div className="relative w-52 sm:w-64 md:w-76 lg:w-88 xl:w-[380px] h-14 sm:h-18 md:h-20 lg:h-22">
+            <div className="relative w-48 sm:w-60 md:w-68 lg:w-76 xl:w-84 h-14 sm:h-18 md:h-20 lg:h-22">
               <Image
                 src="/images/LOgo.jpeg"
                 alt="MegaBachatMart"
@@ -232,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Center Search Bar (Blinkit Style) */}
           <form 
             onSubmit={handleSearchSubmit}
-            className="hidden md:flex flex-1 max-w-lg lg:max-w-xl xl:max-w-2xl min-w-[260px] items-center relative mx-3 lg:mx-6"
+            className="hidden md:flex flex-1 max-w-md lg:max-w-lg xl:max-w-xl min-w-0 items-center relative mx-2 lg:mx-4"
           >
             <input
               type="text"

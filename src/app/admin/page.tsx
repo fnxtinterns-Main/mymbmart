@@ -644,7 +644,7 @@ export default function AdminDashboardPage() {
       {/* 1. SIDEBAR (Emerald Green Aesthetic)                          */}
       {/* ============================================================== */}
       <aside 
-        className={`fixed lg:static inset-y-0 left-0 z-40 bg-[#064E3B] text-white flex flex-col transition-all duration-300 shadow-2xl lg:shadow-[4px_0_24px_rgba(6,78,59,0.15)] border-r border-[#043E30] ${
+        className={`fixed lg:static inset-y-0 left-0 z-30 bg-[#064E3B] text-white flex flex-col transition-all duration-300 shadow-2xl lg:shadow-[4px_0_24px_rgba(6,78,59,0.15)] border-r border-[#043E30] ${
           sidebarCollapsed ? 'w-20' : 'w-64'
         } ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
@@ -762,7 +762,7 @@ export default function AdminDashboardPage() {
       {/* ============================================================== */}
       {/* 2. MAIN WORKSPACE (Emerald Green & Off-White Header)           */}
       {/* ============================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
+      <div className="flex-1 flex flex-col min-w-0 relative">
         
         {/* Top Navigation Bar */}
         <header className="h-16 bg-white/85 backdrop-blur-2xl border-b border-emerald-950/10 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_4px_20px_rgba(6,78,59,0.04)]">
@@ -2673,7 +2673,7 @@ export default function AdminDashboardPage() {
       {/* MODAL 1: ORDER INSPECTION & PRINTABLE INVOICE                   */}
       {/* ============================================================== */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-6 my-8 max-h-[90vh] overflow-y-auto">
             
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
@@ -2774,7 +2774,7 @@ export default function AdminDashboardPage() {
       {/* MODAL 2: STORE PICKUP QR & OTP HANDOVER VERIFICATION           */}
       {/* ============================================================== */}
       {verificationModalOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-6 animate-in fade-in">
             <div className="text-center space-y-2">
               <div className="w-14 h-14 bg-blue-50 text-[#0284C7] rounded-2xl mx-auto flex items-center justify-center border border-blue-200">
@@ -2850,7 +2850,7 @@ export default function AdminDashboardPage() {
       {/* MODAL 3: HYBRID FLEET RIDER ALLOCATION                         */}
       {/* ============================================================== */}
       {assignRiderOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-6 animate-in fade-in">
             <div className="text-center space-y-1">
               <div className="w-12 h-12 bg-emerald-50 text-[#16A34A] rounded-2xl mx-auto flex items-center justify-center border border-emerald-200">
@@ -2955,7 +2955,7 @@ export default function AdminDashboardPage() {
       {/* MODAL 4: MANUAL STOCK ADJUSTMENT (IMMUTABLE LEDGER POST)        */}
       {/* ============================================================== */}
       {adjustModalSku && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-5 animate-in fade-in">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2">
@@ -3054,7 +3054,7 @@ export default function AdminDashboardPage() {
       {/* MODAL 5: GOODS RECEIPT NOTE (GRN) INWARD ENTRY                 */}
       {/* ============================================================== */}
       {isGrnModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-5 animate-in fade-in max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2">
@@ -3191,7 +3191,7 @@ export default function AdminDashboardPage() {
       {/* MODAL 6: ADD NEW SKU CATALOG ITEM                              */}
       {/* ============================================================== */}
       {isAddSkuModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 space-y-5 animate-in fade-in max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2">
@@ -3360,7 +3360,7 @@ export default function AdminDashboardPage() {
       {/* MODAL 7: BARCODE & LABEL PRINT PREVIEW                         */}
       {/* ============================================================== */}
       {barcodeModalSku && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-slate-200 space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-black text-[#0F172A]">Barcode Label Preview</h3>
