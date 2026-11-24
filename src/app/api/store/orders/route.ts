@@ -1,13 +1,21 @@
 import { NextResponse } from 'next/server';
 import { ordersStore, updateOrderStatus, getOrderById, getOrderByIdAsync, syncOrdersFromRedis } from '@/lib/ordersStore';
-import { isAdminAuthorized } from '@/lib/securityUtils';
+import { isAdminAuthorized, getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 function checkStoreAuth(req: Request): boolean {
   if (isAdminAuthorized(req)) return true;
   const cookieHeader = req.headers.get('cookie') || '';
-  return cookieHeader.includes('mbm_partner_session=');
+  const partnerMatch = cookieHeader.match(/mbm_partner_session=([^;]+)/);
+  if (partnerMatch) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded: any = jwt.verify(partnerMatch[1], getJwtSecret(), { algorithms: ['HS256'] });
+      if (decoded?.role === 'SHOP_PARTNER' || decoded?.shopId) return true;
+    } catch {}
+  }
+  return false;
 }
 
 export async function GET(req: Request) {

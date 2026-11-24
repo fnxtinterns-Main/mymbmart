@@ -337,29 +337,15 @@ export default function ShopPartnerPortalPage() {
       if (saved) {
         setPartner(JSON.parse(saved));
       } else {
-        // Fallback for demonstration if direct link opened
-        const fallback = {
-          shopId: 'MBM-SHP-834006-03',
-          shopName: 'Chotanagpur Tribal & Retail Hub',
-          ownerName: 'Sunita Soren',
-          phone: '9431109876',
-          email: 'chotanagpurtribalhub@gmail.com',
-          pincode: '834006',
-          address: 'B-9, Kanke Road, Near Birsa Agricultural Univ Gate, Ranchi',
-          status: 'ACTIVE',
-          totalProductsListed: 3,
-          totalStockUnits: 150,
-          totalOrdersFulfilled: 14,
-          rating: 4.9,
-        };
-        setPartner(fallback);
+        router.push('/shop/login');
       }
     } catch (e) {
       console.error(e);
+      router.push('/shop/login');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   // Fetch current store products from API
   const refreshStoreProducts = async () => {

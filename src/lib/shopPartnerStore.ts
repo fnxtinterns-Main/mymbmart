@@ -522,7 +522,15 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       const matchesId = a.shopId.toLowerCase() === cleanId;
       const matchesEmail = a.email.toLowerCase() === cleanId;
       const matchesPhone = cleanPhone.length >= 10 && a.phone.replace(/\D/g, '').slice(-10) === cleanPhone.slice(-10);
-      const matchesPassword = a.passwordHash === cleanPassword;
+      let matchesPassword = false;
+      if (a.passwordHash && a.passwordHash.length === cleanPassword.length) {
+        try {
+          const crypto = require('crypto');
+          matchesPassword = crypto.timingSafeEqual(Buffer.from(a.passwordHash), Buffer.from(cleanPassword));
+        } catch {
+          matchesPassword = false;
+        }
+      }
       return (matchesId || matchesEmail || matchesPhone) && matchesPassword;
     });
     return account || null;

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { isAdminAuthorized } from '@/lib/securityUtils';
+import { isAdminAuthorized, getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,9 +112,19 @@ export async function GET(req: Request) {
     }
 
     const cookieHeader = req.headers.get('cookie') || '';
-    const isAuthorized =
-      isAdminAuthorized(req) ||
-      cookieHeader.includes('mbm_partner_session=');
+    let isPartner = false;
+    const partnerCookieMatch = cookieHeader.match(/mbm_partner_session=([^;]+)/);
+    if (partnerCookieMatch) {
+      try {
+        const { default: jwt } = await import('jsonwebtoken');
+        const decoded: any = jwt.verify(partnerCookieMatch[1], getJwtSecret(), { algorithms: ['HS256'] });
+        if (decoded?.role === 'SHOP_PARTNER' || decoded?.shopId) {
+          isPartner = true;
+        }
+      } catch {}
+    }
+
+    const isAuthorized = isAdminAuthorized(req) || isPartner;
 
     if (!isAuthorized) {
       return NextResponse.json({ success: false, message: 'Unauthorized. KYC documents are restricted.' }, { status: 401 });

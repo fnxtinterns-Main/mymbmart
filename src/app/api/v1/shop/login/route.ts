@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { shopPartnerStore } from '@/lib/shopPartnerStore';
 import { getJwtSecret } from '@/lib/securityUtils';
+import { redisCommand, redisDel } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,13 +18,41 @@ export async function POST(req: Request) {
       );
     }
 
+    const cleanId = String(identifier).trim().toLowerCase();
+    const rateLimitKey = `rate-limit:partner-login:${cleanId}`;
+
+    // Rate Limiting: Max 5 failed attempts per 10 minutes
+    try {
+      const attempts = await redisCommand('get', rateLimitKey);
+      if (attempts && Number(attempts) >= 5) {
+        return NextResponse.json(
+          { success: false, message: 'Too many failed login attempts. Please wait 10 minutes before retrying.' },
+          { status: 429 }
+        );
+      }
+    } catch {
+      // Redis unavailable - proceed gracefully
+    }
+
     const account = shopPartnerStore.authenticateShop(identifier, password);
     if (!account) {
+      try {
+        const count = await redisCommand('incr', rateLimitKey);
+        if (count === 1) {
+          await redisCommand('expire', rateLimitKey, 600);
+        }
+      } catch {}
+
       return NextResponse.json(
         { success: false, message: 'Invalid credentials. Please verify your Store ID and password.' },
         { status: 401 }
       );
     }
+
+    // Clear failed attempts on successful login
+    try {
+      await redisDel(rateLimitKey);
+    } catch {}
 
     if (account.status !== 'ACTIVE') {
       return NextResponse.json(
