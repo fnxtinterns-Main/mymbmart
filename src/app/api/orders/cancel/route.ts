@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { orderId, reason = 'Customer requested cancellation' } = body;
+    const { orderId, reason = 'Customer requested cancellation', otp, phone } = body;
 
     if (!orderId) {
       return NextResponse.json({ success: false, message: 'orderId is required' }, { status: 400 });
@@ -17,6 +17,74 @@ export async function POST(req: Request) {
     const order = await getOrderByIdAsync(orderId);
     if (!order) {
       return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
+    }
+
+    // Verify caller ownership or admin status
+    const cookieHeader = req.headers.get('cookie') || '';
+    const authHeader = req.headers.get('authorization') || '';
+    const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
+    const ADMIN_PIN = process.env.ADMIN_PIN || (process.env.NODE_ENV !== 'production' ? 'MBM@Admin2026' : '');
+
+    let callerUserId: string | null = null;
+    let isCallerAdmin = false;
+
+    if (authHeader.startsWith('Bearer ')) {
+      const token = authHeader.slice(7).trim();
+      if (ADMIN_PIN && token === ADMIN_PIN) isCallerAdmin = true;
+      try {
+        const { default: jwt } = await import('jsonwebtoken');
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+        if (decoded?.role === 'ADMIN' || decoded?.role === 'SUPER_ADMIN') isCallerAdmin = true;
+        if (decoded?.userId) callerUserId = decoded.userId;
+      } catch {}
+    }
+
+    const adminTokenMatch = cookieHeader.match(/mbm_admin_token=([^;]+)/);
+    if (adminTokenMatch) {
+      try {
+        const { default: jwt } = await import('jsonwebtoken');
+        const decoded: any = jwt.verify(adminTokenMatch[1], JWT_SECRET);
+        if (decoded?.role === 'ADMIN' || decoded?.role === 'SUPER_ADMIN') isCallerAdmin = true;
+      } catch {}
+    }
+
+    const sessionMatch = cookieHeader.match(/mbm_session=([^;]+)/);
+    if (sessionMatch) {
+      try {
+        const { default: jwt } = await import('jsonwebtoken');
+        const decoded: any = jwt.verify(sessionMatch[1], JWT_SECRET);
+        if (decoded?.userId) callerUserId = decoded.userId;
+      } catch {}
+    }
+
+    if (!callerUserId) {
+      const userMatch = cookieHeader.match(/mbm_user_data=([^;]+)/);
+      if (userMatch) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(userMatch[1]));
+          if (parsed?.id) callerUserId = parsed.id;
+        } catch {}
+      }
+    }
+
+    const cleanPhone = (phone || '').replace(/\D/g, '');
+    const orderPhone = (order.userPhone || (order as any).customerPhone || '').replace(/\D/g, '');
+    const isGuestVerified = Boolean(
+      (otp && (otp === order.deliveryOtp || otp === order.pickupDetails?.pickupOtp)) ||
+      (cleanPhone && orderPhone && cleanPhone.slice(-10) === orderPhone.slice(-10) && otp && otp === order.deliveryOtp)
+    );
+
+    const isOwner = Boolean(
+      (callerUserId && order.userId === callerUserId) ||
+      (callerUserId && orderPhone && callerUserId.replace(/\D/g, '').slice(-10) === orderPhone.slice(-10)) ||
+      isGuestVerified
+    );
+
+    if (!isCallerAdmin && !isOwner) {
+      return NextResponse.json({
+        success: false,
+        message: 'Unauthorized: You can only cancel your own orders.'
+      }, { status: 403 });
     }
 
     // Cancellation policy: Only allowed before packing or dispatch
@@ -51,9 +119,13 @@ export async function POST(req: Request) {
       // Restore PostgreSQL StoreInventory if available
       try {
         const { prisma } = await import('@/lib/prisma');
+        const storeId = order.darkStore?.id || 'store-ranchi-central';
         for (const item of order.items) {
           await prisma.storeInventory.updateMany({
-            where: { productId: item.productId },
+            where: {
+              productId: item.productId,
+              storeId: storeId,
+            },
             data: {
               quantityAvailable: { increment: item.quantity },
               quantityReserved: { decrement: item.quantity },
@@ -61,13 +133,24 @@ export async function POST(req: Request) {
           });
         }
 
-        await prisma.order.update({
-          where: { id: order.id },
+        await prisma.order.updateMany({
+          where: { OR: [{ id: order.id }, { orderNumber: order.orderNumber }] },
           data: {
             orderStatus: 'CANCELLED',
             paymentStatus: order.paymentStatus === 'PAID' ? 'REFUNDED' : 'PENDING',
           },
         });
+
+        // Record double-entry financial ledger refund reversal if order was paid
+        if (order.paymentStatus === 'PAID') {
+          const { financialLedger } = await import('@/lib/ledgerStore');
+          await financialLedger.recordRefundReversal({
+            orderId: order.id,
+            gatewayRefund: order.totalPayable,
+            walletRefund: order.creditDeduction || 0,
+            refundId: `ref-cancel-${order.id}`,
+          }).catch((err) => console.warn('Ledger refund reversal notice on cancellation:', err));
+        }
       } catch (dbErr) {
         // Safe fallback
       }
@@ -102,7 +185,6 @@ export async function POST(req: Request) {
             where: { userId: order.userId },
             data: {
               balance: { increment: refundAmount },
-              lifetimeEarned: { increment: refundAmount },
             },
           });
         }

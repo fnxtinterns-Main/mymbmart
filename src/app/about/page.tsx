@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { ShieldCheck, HeartHandshake, Zap, Store, Award, Users, CheckCircle2, ArrowRight } from 'lucide-react';
+import { HeartHandshake, Zap, Store } from 'lucide-react';
 
 export const metadata = {
   title: 'About Us | MegaBachatMart (mymbmart.com)',

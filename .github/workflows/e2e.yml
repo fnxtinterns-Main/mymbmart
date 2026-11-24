@@ -17,6 +17,7 @@ jobs:
       JWT_SECRET: megabachatmart-ci-secret-key-2026
       RAZORPAY_WEBHOOK_SECRET: ci_mock_webhook_secret_key_2026
       NEXT_PUBLIC_ADMIN_PIN: MBM#Test001@2026
+      ADMIN_PIN: MBM#Test001@2026
 
     steps:
       - name: Checkout Codebase

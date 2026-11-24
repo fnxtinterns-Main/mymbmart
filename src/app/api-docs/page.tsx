@@ -1,20 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
   Compass, 
-  ShieldCheck, 
   Send, 
   Code2, 
-  CheckCircle2, 
-  AlertCircle, 
-  Layers, 
-  Search,
-  ExternalLink,
-  ChevronDown,
-  ArrowRight,
-  Database
+  ExternalLink
 } from 'lucide-react';
 
 export default function ApiDocsPage() {

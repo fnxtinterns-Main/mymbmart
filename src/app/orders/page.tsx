@@ -16,19 +16,10 @@ import {
   MapPin, 
   CreditCard, 
   PiggyBank, 
-  Clock, 
-  CheckCircle2, 
-  ChevronRight, 
   ArrowRight, 
   ShoppingBag, 
-  Truck, 
   Zap, 
-  ShieldCheck, 
-  KeyRound, 
-  Phone, 
-  Plus, 
-  ExternalLink,
-  RotateCcw
+  KeyRound
 } from 'lucide-react';
 
 export default function CustomerOrdersPage() {
@@ -40,7 +31,7 @@ export default function CustomerOrdersPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [savedAddresses, setSavedAddresses] = useState<Array<{ id: string; label: string; address: string; isDefault: boolean }>>([
+  const [savedAddresses] = useState<Array<{ id: string; label: string; address: string; isDefault: boolean }>>([
     {
       id: 'addr-default',
       label: 'Home (Default)',
@@ -141,10 +132,16 @@ export default function CustomerOrdersPage() {
       return;
     }
     try {
+      const targetOrder = orders.find((o) => o.id === orderId || o.orderNumber === orderNumber);
       const res = await fetch('/api/orders/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, reason: 'Customer cancelled from orders page' }),
+        body: JSON.stringify({
+          orderId,
+          reason: 'Customer cancelled from orders page',
+          otp: targetOrder?.deliveryOtp || targetOrder?.pickupDetails?.pickupOtp,
+          phone: targetOrder?.userPhone || (targetOrder as any)?.customerPhone,
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -303,7 +300,6 @@ export default function CustomerOrdersPage() {
               </div>
             ) : (
               orders.map((order) => {
-                const isQuick = order.splitShipments?.some((s) => s.type === 'QUICK_COMMERCE') || order.fulfilmentType === 'HOME_DELIVERY';
                 const statusColor = 
                   order.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                   order.status === 'OUT_FOR_DELIVERY' ? 'bg-blue-50 text-blue-800 border-blue-300' :
@@ -327,7 +323,7 @@ export default function CustomerOrdersPage() {
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-400">
-                          Placed on: {order.createdAt ? new Date(order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Today'}
+                          Placed on: {order.createdAt ? new Date(order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Not Available'}
                         </p>
                       </div>
 

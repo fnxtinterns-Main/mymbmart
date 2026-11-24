@@ -44,6 +44,20 @@ export async function POST(req: Request) {
       );
     }
 
+    if (fssaiNumber && !/^\d{14}$/.test(String(fssaiNumber).trim())) {
+      return NextResponse.json(
+        { success: false, message: 'FSSAI License Number must be a valid 14-digit number.' },
+        { status: 400 }
+      );
+    }
+
+    if (panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(String(panNumber).trim())) {
+      return NextResponse.json(
+        { success: false, message: 'PAN Number must be a valid 10-character code (e.g. ABCDE1234F).' },
+        { status: 400 }
+      );
+    }
+
     const effectivePincode = pincode || '834001';
     const effectiveEmail = email && String(email).trim() !== '' 
       ? String(email).trim() 

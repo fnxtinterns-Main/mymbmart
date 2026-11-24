@@ -723,8 +723,6 @@ export class RoutingEngine {
     const dMin = Math.min(...distances);
     const dMax = Math.max(...distances);
 
-    const ratings = candidates.map(c => c.shop.ratingAvg);
-
     const acceptances = candidates.map(c => c.shop.acceptanceRate30d);
     const aMin = Math.min(...acceptances);
     const aMax = Math.max(...acceptances);
@@ -1052,7 +1050,7 @@ export class RoutingEngine {
   // ----------------------------------------------------
   public async rerouteOrder(
     ctx: RoutingOrderContext,
-    reason: 'SHOP_REJECTED' | 'SLA_EXPIRED' | 'PICKING_OOS' | 'SHOP_OFFLINE' | 'RESERVATION_FAILED',
+    _reason: 'SHOP_REJECTED' | 'SLA_EXPIRED' | 'PICKING_OOS' | 'SHOP_OFFLINE' | 'RESERVATION_FAILED',
     rejectedShopId: string
   ): Promise<RoutingResult> {
     const currentAttempt = (ctx.attemptNumber || 1) + 1;

@@ -13,12 +13,12 @@ import {
 
 interface MobileBottomNavProps {
   cartCount: number;
-  onOpenCart: () => void;
+  onOpenCart?: () => void;
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   cartCount,
-  onOpenCart,
+  onOpenCart: _onOpenCart,
 }) => {
   const pathname = usePathname();
 

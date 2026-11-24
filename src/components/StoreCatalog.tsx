@@ -3,23 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { 
-  ShoppingBag, 
   Tag, 
-  Sparkles, 
   Plus, 
   Minus,
   Search, 
   MapPin, 
-  Clock, 
   ChevronDown, 
   X, 
   Compass, 
-  Check, 
-  ShieldCheck, 
   Zap,
   Truck,
-  Building2,
-  BadgePercent
+  Building2
 } from 'lucide-react';
 import { CartItem, ProductItem } from '@/lib/types';
 
@@ -487,15 +481,6 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
                       </p>
                     )}
                     <p className="text-xs text-slate-500 mt-0.5">{product.unit}</p>
-                  </div>
-
-                  {/* Cashback Micro-Reward Callout */}
-                  <div className="bg-emerald-50/70 rounded-xl px-2.5 py-1 flex items-center justify-between text-[11px] font-bold text-emerald-800 border border-emerald-100">
-                    <span className="flex items-center space-x-1">
-                      <Sparkles className="w-3 h-3 text-brand-orange" />
-                      <span>Cashback</span>
-                    </span>
-                    <span>+₹{product.cashbackAmount}</span>
                   </div>
 
                   {/* Price & Blinkit-Style Stepper / ADD Button */}

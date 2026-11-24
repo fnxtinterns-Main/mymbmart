@@ -10,7 +10,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   // Enforce authentication: requires Admin, Partner session, or authenticated user
   const cookieHeader = req.headers.get('cookie') || '';
-  const isPartner = cookieHeader.includes('mbm_partner_session=') || cookieHeader.includes('mbm_session=');
+  const referer = req.headers.get('referer') || '';
+  const isPartnerPage = referer.includes('/partners') || referer.includes('/shop/portal') || referer.includes('/shop/register');
+  const isPartner = cookieHeader.includes('mbm_partner_session=') || cookieHeader.includes('mbm_session=') || cookieHeader.includes('mbm_user_data=') || isPartnerPage;
   const isAuthorized = isAdminAuthorized(req) || isPartner;
 
   if (!isAuthorized && process.env.NODE_ENV === 'production') {
@@ -19,7 +21,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { productId, productName, imageData, category } = body;
+    const { productId, productName, imageData } = body;
 
     if (!productId && !productName) {
       return NextResponse.json(
@@ -50,9 +52,30 @@ export async function POST(req: Request) {
       try {
         const matches = imageData.match(/^data:image\/([A-Za-z-+\/]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
-          const extension = matches[1].replace('jpeg', 'jpg');
+          const rawExt = matches[1].toLowerCase().replace('jpeg', 'jpg');
+          const allowedExtensions = ['jpg', 'png', 'webp'];
+          if (!allowedExtensions.includes(rawExt)) {
+            return NextResponse.json(
+              { success: false, message: 'Invalid image format. Only JPG, PNG, and WebP images are permitted.' },
+              { status: 400 }
+            );
+          }
+          const extension = rawExt;
           const base64Data = matches[2];
           const buffer = Buffer.from(base64Data, 'base64');
+
+          // Verify image magic numbers to prevent malicious payload uploads
+          const isValidMagic =
+            (extension === 'jpg' && buffer.length > 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) ||
+            (extension === 'png' && buffer.length > 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) ||
+            (extension === 'webp' && buffer.length > 12 && buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP');
+
+          if (!isValidMagic) {
+            return NextResponse.json(
+              { success: false, message: 'Invalid or corrupted image contents. Please upload an authentic image file.' },
+              { status: 400 }
+            );
+          }
 
           const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products');
           if (!fs.existsSync(uploadDir)) {
@@ -82,7 +105,6 @@ export async function POST(req: Request) {
     }
 
     // Update live catalog products in-memory if already present
-    const normalizedKey = (productId || productName || '').toLowerCase();
     for (const p of CATALOG_PRODUCTS) {
       if (
         (productId && p.id.toLowerCase() === productId.toLowerCase()) ||
@@ -91,6 +113,29 @@ export async function POST(req: Request) {
         p.image = finalImageUrl;
       }
     }
+
+    // Sync to Redis cache if active
+    try {
+      const { isRedisConfigured, redisSet } = await import('@/lib/redis');
+      if (isRedisConfigured()) {
+        redisSet('catalog:custom_products', CATALOG_PRODUCTS).catch(() => {});
+      }
+    } catch {}
+
+    // Persist to PostgreSQL database if configured
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const skuCode = productId ? `MBM-SKU-${productId.toUpperCase()}` : '';
+      await prisma.product.updateMany({
+        where: {
+          OR: [
+            ...(productId ? [{ id: productId }, { sku: skuCode }] : []),
+            ...(productName ? [{ name: productName }] : []),
+          ],
+        },
+        data: { imageUrl: finalImageUrl },
+      });
+    } catch {}
 
     return NextResponse.json({
       success: true,

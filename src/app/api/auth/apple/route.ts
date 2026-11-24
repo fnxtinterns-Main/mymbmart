@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-k
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { idToken, code, user: clientUser, authorization } = body;
+    const { idToken, user: clientUser, authorization } = body;
 
     let email = clientUser?.email || '';
     let name = '';

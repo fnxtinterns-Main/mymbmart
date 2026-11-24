@@ -5,15 +5,10 @@ import Link from 'next/link';
 import { 
   X, 
   Smartphone, 
-  Mail, 
   Lock, 
   Sparkles, 
-  ShieldCheck, 
-  ArrowRight,
-  CheckCircle2,
-  KeyRound,
-  Store,
-  Eye,
+  Store, 
+  Eye, 
   EyeOff
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
@@ -123,10 +118,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onLoginSuccess(fallbackUser);
       onClose();
     }
-  };
-
-  const fillTestOtp = () => {
-    setOtp(['1', '2', '3', '4', '5', '6']);
   };
 
   const handlePasswordLogin = (e: React.FormEvent) => {

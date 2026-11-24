@@ -719,7 +719,7 @@ export function atomicReserveStock(params: {
 }
 
 // Release reservation function
-export function releaseStockReservation(reservationId: string, reason?: string): boolean {
+export function releaseStockReservation(reservationId: string, _reason?: string): boolean {
   const res = inventoryStore.reservations.find(r => r.id === reservationId);
   if (!res || res.status !== 'ACTIVE') return false;
   res.status = 'RELEASED';

@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
+import { initialUser } from '@/lib/data';
 import { CartItem, UserProfile } from '@/lib/types';
 import { calculateSplitPayment } from '@/lib/securityUtils';
 import { getStoredUserSession } from '@/lib/userSession';
@@ -13,11 +12,9 @@ import {
   ShieldCheck, 
   Wallet, 
   CreditCard, 
-  ArrowRight, 
   CheckCircle2, 
   ShoppingBag,
-  MapPin,
-  Tag
+  MapPin
 } from 'lucide-react';
 
 export default function CheckoutPage() {

@@ -11,8 +11,7 @@ import {
   ShieldCheck, 
   Sparkles, 
   BadgeCheck, 
-  CheckCircle2,
-  ChevronRight
+  CheckCircle2
 } from 'lucide-react';
 
 interface HeroSectionProps {

@@ -167,41 +167,43 @@ export default function ShopPartnerLoginPage() {
               </button>
             </form>
 
-            {/* Quick Demo Fill Buttons for Testing */}
-            <div className="pt-3 border-t border-slate-100 space-y-2">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">
-                Quick Test Merchant Accounts
-              </p>
-              <div className="space-y-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoFill('MBM-SHP-834001-23', 'MBM#Test001@2026')}
-                  className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-slate-700 text-[11px] transition flex items-center justify-between group cursor-pointer"
-                >
-                  <div>
-                    <span className="font-bold text-slate-900 group-hover:text-emerald-800">Test Store (Prop: RAJ)</span>
-                    <span className="text-slate-500 block text-[10px]">ID: MBM-SHP-834001-23 • Pwd: MBM#Test001@2026</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                    Click to Fill
-                  </span>
-                </button>
+            {/* Quick Demo Fill Buttons for Testing (Dev only) */}
+            {process.env.NODE_ENV !== 'production' && (
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">
+                  Quick Test Merchant Accounts (Dev Only)
+                </p>
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemoFill('MBM-SHP-834001-23', 'MBM#Test001@2026')}
+                    className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-slate-700 text-[11px] transition flex items-center justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <span className="font-bold text-slate-900 group-hover:text-emerald-800">Test Store (Prop: RAJ)</span>
+                      <span className="text-slate-500 block text-[10px]">ID: MBM-SHP-834001-23 • Pwd: MBM#Test001@2026</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                      Click to Fill
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleQuickDemoFill('MBM-SHP-834006-03', 'MBM#Chot834@2026')}
-                  className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-slate-700 text-[11px] transition flex items-center justify-between group cursor-pointer"
-                >
-                  <div>
-                    <span className="font-bold text-slate-900 group-hover:text-emerald-800">Chotanagpur Tribal Hub</span>
-                    <span className="text-slate-500 block text-[10px]">ID: MBM-SHP-834006-03</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                    Pre-Approved
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickDemoFill('MBM-SHP-834006-03', 'MBM#Chot834@2026')}
+                    className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-slate-700 text-[11px] transition flex items-center justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <span className="font-bold text-slate-900 group-hover:text-emerald-800">Chotanagpur Tribal Hub</span>
+                      <span className="text-slate-500 block text-[10px]">ID: MBM-SHP-834006-03</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                      Pre-Approved
+                    </span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="text-center pt-2">
               <p className="text-xs text-slate-500">

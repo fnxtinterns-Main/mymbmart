@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, ShieldCheck, Sparkles, Database, CheckCircle2, Lock, Cpu, ExternalLink } from 'lucide-react';
+import { X, ShieldCheck, Database, CheckCircle2, Lock } from 'lucide-react';
 
 interface BlockTransaction {
   txHash: string;
@@ -44,7 +44,6 @@ export const SmartChainExplorerModal: React.FC<SmartChainExplorerModalProps> = (
   selectedTxHash,
 }) => {
   const [data, setData] = useState<ExplorerResponse | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -52,9 +51,8 @@ export const SmartChainExplorerModal: React.FC<SmartChainExplorerModalProps> = (
         .then((res) => res.json())
         .then((json) => {
           if (json.success) setData(json);
-          setLoading(false);
         })
-        .catch(() => setLoading(false));
+        .catch(() => {});
     }
   }, [isOpen]);
 

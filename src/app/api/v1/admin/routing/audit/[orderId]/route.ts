@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { routingAuditLogs } from '@/lib/routingEngine';
 
 // GET /api/v1/admin/routing/audit/:orderId
 export async function GET(
-  req: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   const { orderId } = await params;

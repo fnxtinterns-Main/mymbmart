@@ -1,29 +1,16 @@
 import { NextResponse } from 'next/server';
-import { ordersStore, syncOrdersFromDisk, syncOrdersFromRedis } from '@/lib/ordersStore';
+import { ordersStore, syncOrdersFromRedis } from '@/lib/ordersStore';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const authHeader = req.headers.get('authorization') || '';
-    const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
-    const isAdmin = 
-      cookieHeader.includes('mbm_admin_authenticated=true') ||
-      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
-
-    if (!isAdmin && process.env.NODE_ENV === 'production') {
+    if (!isAdminAuthorized(req)) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin credentials or active session required.' }, 
-        { 
-          status: 401,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          }
-        }
+        { status: 401 }
       );
     }
 

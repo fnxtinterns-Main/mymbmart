@@ -173,6 +173,17 @@ export async function POST(req: Request) {
     }
 
     // 2. SEND OTP ACTION
+    const hasSmsConfig = Boolean(process.env.SMS_API_KEY || process.env.FAST2SMS_API_KEY || process.env.TWILIO_AUTH_TOKEN);
+    if (!cleanId.includes('@') && !hasSmsConfig && process.env.NODE_ENV === 'production' && process.env.E2E_TEST_MODE !== 'true') {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'SMS service is currently unavailable. Please sign in using your registered Email address to receive your verification code.' 
+        },
+        { status: 503 }
+      );
+    }
+
     // Redis Rate Limiting: Max 5 attempts per 10 minutes per identifier
     const rateLimitKey = `rate-limit:otp:${cleanId}`;
     const attempts = await redisCommand('incr', rateLimitKey);

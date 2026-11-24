@@ -9,7 +9,7 @@ import { WithdrawModal } from '@/components/WithdrawModal';
 import { SmartChainExplorerModal } from '@/components/SmartChainExplorerModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
-import { initialUser, initialWallet, initialTransactions, monthlySavings, sampleProducts } from '@/lib/data';
+import { initialUser, initialWallet, initialTransactions } from '@/lib/data';
 import { CartItem, Transaction, UserProfile, WalletState } from '@/lib/types';
 import { getStoredUserSession } from '@/lib/userSession';
 import { 
@@ -20,13 +20,10 @@ import {
   CheckCircle2, 
   ArrowRight, 
   Sparkles, 
-  TrendingUp, 
   Tag, 
   Coins, 
   Gift, 
-  ShieldCheck,
-  ChevronRight,
-  ShoppingBag
+  ShieldCheck
 } from 'lucide-react';
 
 export default function SavingsPage() {

@@ -11,6 +11,13 @@ jobs:
     name: Lint, Validate & Build
     runs-on: ubuntu-latest
 
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/megabachatmart?schema=public
+      JWT_SECRET: ci_test_jwt_secret_key_2026
+      NEXT_PUBLIC_ADMIN_PIN: MBM@Admin2026
+      ADMIN_PIN: MBM@Admin2026
+
     services:
       postgres:
         image: postgres:15-alpine

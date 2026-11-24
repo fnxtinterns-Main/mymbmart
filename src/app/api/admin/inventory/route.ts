@@ -4,11 +4,14 @@ import {
   inventoryStore,
   adjustStock,
   postGoodsReceipt,
-  createStockReservation,
   SKUItem
 } from '@/lib/inventoryStore';
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   const skus = inventoryStore.skus;
   const buckets = inventoryStore.stockBuckets;
   const batches = inventoryStore.batches;
@@ -81,17 +84,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const authHeader = req.headers.get('authorization') || '';
-    const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
-    const isAdmin = 
-      cookieHeader.includes('mbm_admin_authenticated=true') ||
-      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
-
-    if (!isAdmin && process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ success: false, message: 'Unauthorized: Admin authentication required.' }, { status: 401 });
-    }
-
     const body = await req.json();
     const { action } = body;
 

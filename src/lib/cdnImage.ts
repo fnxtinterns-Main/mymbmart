@@ -20,6 +20,11 @@ export function getCdnImageUrl(
 ): string {
   if (!imagePath) return '/images/products/placeholder.png';
 
+  // Preserve raw base64 data URIs and blob URIs directly
+  if (imagePath.startsWith('data:image/') || imagePath.startsWith('blob:')) {
+    return imagePath;
+  }
+
   // Already a full external URL
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     if (!CDN_BASE_URL) return imagePath;

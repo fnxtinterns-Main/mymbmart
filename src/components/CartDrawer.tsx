@@ -13,15 +13,13 @@ import {
   ShoppingBag, 
   Tag, 
   Wallet, 
-  Sparkles,
   ShieldCheck,
   Zap,
   Truck,
   Check,
   QrCode,
   Smartphone,
-  Copy,
-  CreditCard
+  Copy
 } from 'lucide-react';
 import { CartItem } from '@/lib/types';
 import { getStoredUserSession } from '@/lib/userSession';
@@ -31,7 +29,7 @@ interface CartDrawerProps {
   onClose: () => void;
   cartItems: CartItem[];
   onUpdateQuantity: (productId: string, delta: number) => void;
-  onRemoveItem: (productId: string) => void;
+  onRemoveItem?: (productId: string) => void;
   onClearCart: () => void;
   walletBalance: number;
   onOrderSuccess: (orderData: any) => void;
@@ -42,7 +40,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onClose,
   cartItems,
   onUpdateQuantity,
-  onRemoveItem,
+  onRemoveItem: _onRemoveItem,
   onClearCart,
   walletBalance,
   onOrderSuccess,
@@ -53,7 +51,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [applyCredits, setApplyCredits] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [deliveryAddress, setDeliveryAddress] = useState('Main Road, Ranchi Central, Jharkhand - 834001');
+  const [deliveryAddress] = useState('Main Road, Ranchi Central, Jharkhand - 834001');
 
   // Debounced server preview validation (250ms debounce with AbortController stale-request protection)
   useEffect(() => {
@@ -103,12 +101,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const quickDeliveryFee = quickItems.length > 0 ? (quickSubtotal >= 199 ? 0 : 29) : 0;
   const marketplaceDeliveryFee = marketplaceItems.length > 0 ? (marketplaceSubtotal >= 499 ? 0 : 49) : 0;
   const totalDeliveryFee = quickDeliveryFee + marketplaceDeliveryFee;
-
-  // Total Cashback earnable
-  const totalCashbackEarnable = cartItems.reduce(
-    (acc, item) => acc + (item.product.cashbackAmount || 0) * item.quantity, 
-    0
-  );
 
   // Max wallet credit that can be applied (up to 40% of subtotal or available balance)
   const maxCreditToUse = Math.min(walletBalance, Math.round(totalBachatPrice * 0.4));
@@ -200,11 +192,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <span className="text-[10px] text-slate-400 line-through">
             ₹{item.product.mrp}
           </span>
-          {item.product.cashbackAmount && item.product.cashbackAmount > 0 && (
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-              +₹{item.product.cashbackAmount * item.quantity} back
-            </span>
-          )}
         </div>
       </div>
 

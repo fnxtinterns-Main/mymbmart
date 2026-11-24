@@ -7,13 +7,9 @@ import {
   Check, 
   Gift, 
   MessageCircle, 
-  Sparkles, 
   Users, 
   ArrowRight,
-  TrendingUp,
-  ShieldCheck,
-  Lock,
-  CheckCircle2
+  Lock
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 import { getDeterministicReferralCode } from '@/lib/userSession';
@@ -31,7 +27,7 @@ export const ReferAndEarn: React.FC<ReferAndEarnProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [referralCount, setReferralCount] = useState(5);
-  const [avgSpend, setAvgSpend] = useState(1500);
+  const [avgSpend] = useState(1500);
 
   const userSeed = user?.email || user?.phone || user?.id || user?.name || '';
   const activeReferralCode =

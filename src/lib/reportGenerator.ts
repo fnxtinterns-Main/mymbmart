@@ -20,7 +20,7 @@ export interface ShopReportData {
 /**
  * Generate CSV Report for a Specific Partner Shop
  */
-export function generateShopReportCsv(data: ShopReportData): string {
+export function generateShopReportCsv(data: ShopReportData, orders: any[] = []): string {
   const timestamp = new Date().toISOString();
   
   const headers = [
@@ -37,14 +37,15 @@ export function generateShopReportCsv(data: ShopReportData): string {
     'Status'
   ].join(',');
 
-  const rows = [
-    `"${new Date().toLocaleDateString('en-IN')}","ORDER_DISPATCH","ORD-2026-9081","Ananya Sen","3","1280.00","0.00 (0%)","0.00","0.00","1280.00","SETTLED_T1"`,
-    `"${new Date().toLocaleDateString('en-IN')}","ORDER_DISPATCH","ORD-2026-9082","Vikram Singh","5","2150.00","0.00 (0%)","0.00","0.00","2150.00","SETTLED_T1"`,
-    `"${new Date().toLocaleDateString('en-IN')}","ORDER_DISPATCH","ORD-2026-9085","Kavita Soren","2","640.00","0.00 (0%)","0.00","0.00","640.00","SETTLED_T1"`,
-    `"${new Date().toLocaleDateString('en-IN')}","ORDER_DISPATCH","ORD-2026-9089","Rajesh Verma","4","820.00","0.00 (0%)","0.00","0.00","820.00","PENDING_T1"`,
-    `"${new Date().toLocaleDateString('en-IN')}","CUSTOMER_REFUND","REF-2026-102","Deepak Oraon","1","-140.00","0.00","140.00","0.00","-140.00","REVERSED_UPI"`,
-    `"${new Date().toLocaleDateString('en-IN')}","CREDIT_LINE_DRAW","CRD-WH-091","Wholesale Atta Depot","0","0.00","0.00","0.00","24500.00","0.00","ACTIVE_0_PCT_INTEREST"`,
-  ];
+  const rows = orders.length > 0
+    ? orders.map((o) => {
+        const amt = (o.totalPayable || o.total || 0).toFixed(2);
+        const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : 'Not Available';
+        return `"${dateStr}","ORDER_DISPATCH","${o.orderNumber || o.id}","${o.userName || o.customerName || 'Customer'}","${o.items?.length || 0}","${amt}","0.00 (0%)","0.00","0.00","${amt}","${o.status || 'SETTLED'}"`;
+      })
+    : [
+        `"${new Date().toLocaleDateString('en-IN')}","NO_TRANSACTIONS","N/A","No transactions recorded","0","0.00","0.00","0.00","0.00","0.00","N/A"`
+      ];
 
   const summary = [
     '',
@@ -91,81 +92,32 @@ export function generateMasterPlatformReportCsv(partners: any[] = []): string {
     'Status'
   ].join(',');
 
-  const defaultPartners = partners.length > 0 ? partners : [
-    {
-      shopId: 'MBM-SHP-834006-03',
-      shopName: 'Chotanagpur Tribal & Retail Hub',
-      ownerName: 'Sunita Soren',
-      phone: '9431109876',
-      pincode: '834006',
-      businessType: 'SHG_COOPERATIVE',
-      totalOrders: 14,
-      gmv: 34500,
-      refunds: 140,
-      creditLimit: 100000,
-      creditDrawn: 24500,
-      status: 'ACTIVE',
-    },
-    {
-      shopId: 'MBM-SHP-834001-01',
-      shopName: 'Ranchi Central Retail & General Store',
-      ownerName: 'Manoj Kumar Gupta',
-      phone: '9835012345',
-      pincode: '834001',
-      businessType: 'KIRANA_GENERAL',
-      totalOrders: 38,
-      gmv: 89400,
-      refunds: 220,
-      creditLimit: 250000,
-      creditDrawn: 65000,
-      status: 'ACTIVE',
-    },
-    {
-      shopId: 'MBM-SHP-834002-02',
-      shopName: 'Doranda Organic Staples Co-op',
-      ownerName: 'Poonam Devi',
-      phone: '9430156789',
-      pincode: '834002',
-      businessType: 'SHG_COOPERATIVE',
-      totalOrders: 21,
-      gmv: 48900,
-      refunds: 0,
-      creditLimit: 150000,
-      creditDrawn: 12000,
-      status: 'ACTIVE',
-    },
-    {
-      shopId: 'MBM-SHP-834005-04',
-      shopName: 'Bariatu Daily Essentials Mart',
-      ownerName: 'Sanjay Pandey',
-      phone: '9431789012',
-      pincode: '834005',
-      businessType: 'SUPERMARKET',
-      totalOrders: 45,
-      gmv: 112000,
-      refunds: 410,
-      creditLimit: 300000,
-      creditDrawn: 95000,
-      status: 'ACTIVE',
-    }
-  ];
+  const actualPartners = Array.isArray(partners) ? partners : [];
 
-  const rows = defaultPartners.map((p) => {
-    const availableCredit = (p.creditLimit || 100000) - (p.creditDrawn || 0);
-    const netDisbursed = (p.gmv || 0) - (p.refunds || 0);
-    return `"${p.shopId}","${p.shopName}","${p.ownerName}","${p.phone}","${p.pincode}","${p.businessType}","${p.totalOrders || 0}","${p.gmv?.toFixed(2) || '0.00'}","${p.refunds?.toFixed(2) || '0.00'}","${p.creditLimit?.toFixed(2) || '100000.00'}","${p.creditDrawn?.toFixed(2) || '0.00'}","${availableCredit.toFixed(2)}","0.00 (0% promo)","${netDisbursed.toFixed(2)}","${p.status || 'ACTIVE'}"`;
-  });
+  const rows = actualPartners.length > 0
+    ? actualPartners.map((p) => {
+        const creditLimit = (p as any).creditLimit || 0;
+        const creditDrawn = (p as any).creditDrawn || 0;
+        const availableCredit = Math.max(0, creditLimit - creditDrawn);
+        const gmv = (p as any).gmv || 0;
+        const refunds = (p as any).refunds || 0;
+        const netDisbursed = Math.max(0, gmv - refunds);
+        return `"${p.shopId}","${p.shopName}","${p.ownerName}","${p.phone || 'Not Available'}","${p.pincode || 'Not Available'}","${p.businessType || 'Not Available'}","${(p as any).totalOrdersFulfilled || 0}","${gmv.toFixed(2)}","${refunds.toFixed(2)}","${creditLimit.toFixed(2)}","${creditDrawn.toFixed(2)}","${availableCredit.toFixed(2)}","0.00","${netDisbursed.toFixed(2)}","${p.status || 'ACTIVE'}"`;
+      })
+    : [
+        `"N/A","No Registered Partners","Not Available","Not Available","Not Available","Not Available","0","0.00","0.00","0.00","0.00","0.00","0.00","0.00","NOT_AVAILABLE"`
+      ];
 
-  const totalGmv = defaultPartners.reduce((acc, p) => acc + (p.gmv || 0), 0);
-  const totalRefunds = defaultPartners.reduce((acc, p) => acc + (p.refunds || 0), 0);
-  const totalCreditAllocated = defaultPartners.reduce((acc, p) => acc + (p.creditLimit || 0), 0);
-  const totalCreditInUse = defaultPartners.reduce((acc, p) => acc + (p.creditDrawn || 0), 0);
+  const totalGmv = actualPartners.reduce((acc, p: any) => acc + (p.gmv || 0), 0);
+  const totalRefunds = actualPartners.reduce((acc, p: any) => acc + (p.refunds || 0), 0);
+  const totalCreditAllocated = actualPartners.reduce((acc, p: any) => acc + (p.creditLimit || 0), 0);
+  const totalCreditInUse = actualPartners.reduce((acc, p: any) => acc + (p.creditDrawn || 0), 0);
 
   const summary = [
     '',
     `"=== MEGABACHATMART ALL-PARTNER MASTER CONSOLIDATED AUDIT ==="`,
     `"Generated At: ${timestamp}"`,
-    `"Total Registered Partners: ${defaultPartners.length}"`,
+    `"Total Registered Partners: ${actualPartners.length}"`,
     `"Total Platform GMV: INR ${totalGmv.toFixed(2)}"`,
     `"Total Platform Customer Refunds: INR ${totalRefunds.toFixed(2)}"`,
     `"Total Working Capital Credit Line Extended: INR ${totalCreditAllocated.toFixed(2)}"`,

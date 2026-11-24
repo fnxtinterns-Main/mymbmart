@@ -4,8 +4,9 @@
 
 import type { ProductItem } from './types';
 import { inventoryStore } from './inventoryStore';
-import { addCatalogProducts, getCatalogProducts } from './catalog';
+import { addCatalogProducts } from './catalog';
 import { productImageLibrary } from './productImageLibrary';
+import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 
@@ -92,6 +93,7 @@ export interface CsvProductRow {
   expiryDate: string;
   batchNumber: string;
   imageUrl?: string;
+  imageFile?: string;
   isReturnable?: boolean;
 }
 
@@ -259,7 +261,7 @@ const INITIAL_ACCOUNTS: ShopPartnerAccount[] = [
     totalProductsListed: 0,
     totalStockUnits: 0,
     totalOrdersFulfilled: 0,
-    rating: 5.0,
+    rating: 0,
   },
   {
     shopId: 'MBM-SHP-834006-03',
@@ -275,10 +277,10 @@ const INITIAL_ACCOUNTS: ShopPartnerAccount[] = [
     fssaiNumber: '11519011000123',
     status: 'ACTIVE',
     joinedAt: '2026-11-14T11:30:00.000Z',
-    totalProductsListed: 3,
-    totalStockUnits: 150,
-    totalOrdersFulfilled: 14,
-    rating: 4.9,
+    totalProductsListed: 0,
+    totalStockUnits: 0,
+    totalOrdersFulfilled: 0,
+    rating: 0,
   },
 ];
 
@@ -515,7 +517,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       ownerName: app.ownerName,
       email: app.email,
       phone: app.phone,
-      passwordHash: generatedPassword,
+      passwordHash: bcrypt.hashSync(generatedPassword, 10),
       pincode: app.pincode,
       address: `${app.address}, ${app.city}, ${app.state}`,
       businessType: app.businessType,
@@ -571,8 +573,20 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       const matchesId = a.shopId.toLowerCase() === cleanId;
       const matchesEmail = a.email.toLowerCase() === cleanId;
       const matchesPhone = cleanPhone.length >= 10 && a.phone.replace(/\D/g, '').slice(-10) === cleanPhone.slice(-10);
-      const matchesPassword = a.passwordHash === cleanPassword;
-      return (matchesId || matchesEmail || matchesPhone) && matchesPassword;
+      if (!matchesId && !matchesEmail && !matchesPhone) return false;
+
+      let matchesPassword = false;
+      if (a.passwordHash && (a.passwordHash.startsWith('$2a$') || a.passwordHash.startsWith('$2b$'))) {
+        matchesPassword = bcrypt.compareSync(cleanPassword, a.passwordHash);
+      } else {
+        matchesPassword = a.passwordHash === cleanPassword;
+        if (matchesPassword) {
+          // Transparently upgrade legacy plaintext password to secure bcrypt hash
+          a.passwordHash = bcrypt.hashSync(cleanPassword, 10);
+          this.saveToFile();
+        }
+      }
+      return matchesPassword;
     });
     return account || null;
   }
@@ -594,7 +608,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       'stockQuantity',
       'expiryDate',
       'batchNumber',
-      'imageUrl',
+      'image',
       'isReturnable',
     ];
 
@@ -609,7 +623,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '60',
         '2027-04-15',
         'BCH-FTN-2026-A1',
-        'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=1200&auto=format&fit=crop&q=80',
+        'RCH-KRN-101.jpg',
         'true',
       ],
       [
@@ -622,7 +636,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '40',
         '2027-08-20',
         'BCH-TTG-2026-X4',
-        'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=1200&auto=format&fit=crop&q=80',
+        'RCH-KRN-102.jpg',
         'true',
       ],
       [
@@ -635,7 +649,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '50',
         '2026-12-10',
         'BCH-ASH-2026-M2',
-        'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200&auto=format&fit=crop&q=80',
+        'RCH-KRN-103.jpg',
         'true',
       ],
       [
@@ -648,7 +662,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '75',
         '2027-02-28',
         'BCH-BRT-2026-K9',
-        'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=1200&auto=format&fit=crop&q=80',
+        'RCH-KRN-104.jpg',
         'false',
       ],
       [
@@ -661,7 +675,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '35',
         '2028-06-30',
         'BCH-DTL-2026-D3',
-        'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=1200&auto=format&fit=crop&q=80',
+        'RCH-KRN-105.jpg',
         'true',
       ],
       [
@@ -674,7 +688,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         '45',
         '2026-11-30',
         'BCH-VAD-2026-S1',
-        'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1200&auto=format&fit=crop&q=80',
+        'RCH-KRN-106.jpg',
         'true',
       ],
     ];
@@ -742,10 +756,19 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       const unit = getColVal('unit') || '1 Unit';
       const mrp = parseFloat(getColVal('mrp')) || 0;
       const bachatPrice = parseFloat(getColVal('bachatPrice')) || mrp;
-      const stock = parseInt(getColVal('stockQuantity'), 10) || 10;
-      const expiry = getColVal('expiryDate') || '2027-12-31';
+      const stock = parseInt(getColVal('stockQuantity'), 10) || 0;
+      const expiry = getColVal('expiryDate') || 'Not Available';
       const batch = getColVal('batchNumber') || `BATCH-${Date.now()}`;
-      const img = getColVal('imageUrl') || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1200&auto=format&fit=crop&q=80';
+      const explicitImg = getColVal('imagefile') || getColVal('image') || getColVal('imageurl') || getColVal('photo');
+      const isWebUrl = explicitImg.startsWith('http://') || explicitImg.startsWith('https://') || explicitImg.startsWith('/uploads/') || explicitImg.startsWith('data:image/');
+      const img = isWebUrl
+        ? explicitImg
+        : productImageLibrary.resolveImage({
+            productId: pid,
+            productName: name,
+            category: cat,
+            explicitUrl: explicitImg || undefined,
+          });
       const ret = getColVal('isReturnable').toLowerCase() !== 'false';
 
       if (!name) {
@@ -772,6 +795,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
         expiryDate: expiry,
         batchNumber: batch,
         imageUrl: img,
+        imageFile: explicitImg,
         isReturnable: ret,
       });
     }

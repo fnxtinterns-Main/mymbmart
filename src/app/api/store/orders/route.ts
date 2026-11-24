@@ -1,23 +1,68 @@
 import { NextResponse } from 'next/server';
-import { ordersStore, updateOrderStatus, getOrderById, getOrderByIdAsync, syncOrdersFromRedis } from '@/lib/ordersStore';
+import jwt from 'jsonwebtoken';
+import { updateOrderStatus, getOrderByIdAsync, syncOrdersFromRedis } from '@/lib/ordersStore';
 
 export const dynamic = 'force-dynamic';
 
 function checkStoreAuth(req: Request): boolean {
   const cookieHeader = req.headers.get('cookie') || '';
   const authHeader = req.headers.get('authorization') || '';
-  const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
+  const ADMIN_PIN = process.env.ADMIN_PIN || (process.env.NODE_ENV !== 'production' ? 'MBM@Admin2026' : '');
+  const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
 
-  const isAuthorized = 
-    cookieHeader.includes('mbm_partner_session=') ||
-    cookieHeader.includes('mbm_admin_authenticated=true') ||
-    cookieHeader.includes('mbm_session=') ||
-    (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
-
-  if (!isAuthorized && process.env.NODE_ENV === 'production') {
-    return false;
+  // 1. Bearer PIN or token
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (ADMIN_PIN && token === ADMIN_PIN) return true;
+    try {
+      const decoded: any = jwt.verify(token, JWT_SECRET);
+      if (decoded && (decoded.role === 'ADMIN' || decoded.role === 'SUPER_ADMIN' || decoded.role === 'STORE_MANAGER' || decoded.role === 'SELLER' || decoded.role === 'SHOP_PARTNER')) {
+        return true;
+      }
+    } catch {}
   }
-  return true;
+
+  // 2. Cryptographic Admin or Partner JWT Cookie
+  const adminTokenMatch = cookieHeader.match(/mbm_admin_token=([^;]+)/);
+  if (adminTokenMatch) {
+    try {
+      const decoded: any = jwt.verify(adminTokenMatch[1], JWT_SECRET);
+      if (decoded && (decoded.role === 'ADMIN' || decoded.role === 'SUPER_ADMIN')) return true;
+    } catch {}
+  }
+
+  const partnerTokenMatch = cookieHeader.match(/mbm_partner_session=([^;]+)/);
+  if (partnerTokenMatch) {
+    try {
+      const decoded: any = jwt.verify(partnerTokenMatch[1], JWT_SECRET);
+      if (decoded && (decoded.role === 'STORE_MANAGER' || decoded.role === 'SELLER' || decoded.role === 'ADMIN' || decoded.role === 'SHOP_PARTNER')) {
+        return true;
+      }
+    } catch {}
+  }
+
+  // 3. Dev-only mock fallback for local E2E tests
+  if (process.env.NODE_ENV !== 'production' && process.env.E2E_TEST_MODE === 'true') {
+    return cookieHeader.includes('mbm_admin_authenticated=true');
+  }
+
+  return false;
+}
+
+async function syncPrismaOrderStatus(orderId: string, orderStatus: string, paymentStatus?: string) {
+  if (!process.env.DATABASE_URL) return;
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    await prisma.order.updateMany({
+      where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+      data: {
+        orderStatus: orderStatus as any,
+        ...(paymentStatus ? { paymentStatus: paymentStatus as any } : {}),
+      },
+    });
+  } catch (err) {
+    console.warn(`Prisma order ${orderId} status sync warning:`, err);
+  }
 }
 
 export async function GET(req: Request) {
@@ -66,6 +111,7 @@ export async function POST(req: Request) {
 
     if (action === 'CONFIRM') {
       updateOrderStatus(order.id, 'CONFIRMED');
+      await syncPrismaOrderStatus(order.id, 'PROCESSING');
       return NextResponse.json({
         success: true,
         message: `Order #${order.orderNumber} confirmed by store manager.`,
@@ -75,6 +121,7 @@ export async function POST(req: Request) {
 
     if (action === 'PROCESS') {
       updateOrderStatus(order.id, 'PROCESSING');
+      await syncPrismaOrderStatus(order.id, 'PROCESSING');
       return NextResponse.json({
         success: true,
         message: `Order #${order.orderNumber} is now being picked and prepared.`,
@@ -84,6 +131,7 @@ export async function POST(req: Request) {
 
     if (action === 'PACK' || action === 'READY_FOR_DISPATCH') {
       updateOrderStatus(order.id, 'READY_FOR_DISPATCH');
+      await syncPrismaOrderStatus(order.id, 'PACKED');
       return NextResponse.json({
         success: true,
         message: `Order #${order.orderNumber} packed and staged for rider pick-up.`,
@@ -93,6 +141,7 @@ export async function POST(req: Request) {
 
     if (action === 'READY_FOR_PICKUP') {
       updateOrderStatus(order.id, 'READY_FOR_PICKUP');
+      await syncPrismaOrderStatus(order.id, 'PACKED');
       return NextResponse.json({
         success: true,
         message: `Order #${order.orderNumber} is READY FOR PICKUP. Customer notified with QR Code & OTP.`,
@@ -104,8 +153,9 @@ export async function POST(req: Request) {
       const { pickupCode, paymentCollected, paymentMethod, staffName } = body;
       const expectedCode = order.pickupDetails?.pickupOtp || order.deliveryOtp;
       const expectedToken = order.pickupDetails?.qrToken;
+      const isTestBypass = process.env.NODE_ENV !== 'production' && pickupCode === '123456';
 
-      if (pickupCode !== expectedCode && pickupCode !== expectedToken && pickupCode !== '123456') {
+      if (pickupCode !== expectedCode && pickupCode !== expectedToken && !isTestBypass) {
         return NextResponse.json({ error: 'Invalid Pickup QR Token or OTP. Verification failed.' }, { status: 400 });
       }
 
@@ -124,6 +174,7 @@ export async function POST(req: Request) {
       }
 
       updateOrderStatus(order.id, 'COLLECTED');
+      await syncPrismaOrderStatus(order.id, 'DELIVERED', order.paymentStatus);
       if (order.pickupDetails) {
         order.pickupDetails.collectedAt = new Date().toISOString();
         order.pickupDetails.verifiedByStaff = staffName || 'Store Operations Staff';
@@ -139,6 +190,7 @@ export async function POST(req: Request) {
     if (action === 'DISPATCH') {
       const { fleetType, partnerName, riderName, riderPhone, vehicle } = body;
       updateOrderStatus(order.id, 'OUT_FOR_DELIVERY');
+      await syncPrismaOrderStatus(order.id, 'OUT_FOR_DELIVERY');
       if (fleetType) {
         order.assignedRider = {
           name: riderName || (fleetType === 'THIRD_PARTY' ? `${partnerName || 'Shadowfax'} Fleet Rider` : 'MBM Fleet Rider'),
@@ -160,6 +212,7 @@ export async function POST(req: Request) {
 
     if (action === 'DELIVER') {
       updateOrderStatus(order.id, 'DELIVERED');
+      await syncPrismaOrderStatus(order.id, 'DELIVERED', order.paymentStatus);
       return NextResponse.json({
         success: true,
         message: `Order #${order.orderNumber} marked as successfully delivered.`,
