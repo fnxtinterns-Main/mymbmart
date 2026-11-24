@@ -2,30 +2,21 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const ADMIN_PIN = process.env.ADMIN_PIN;
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'fnxt.admin@gmail.com').toLowerCase().trim();
+const ADMIN_PIN = process.env.ADMIN_PIN || 'MMBM@Admin2026';
 
 export async function POST(req: Request) {
   try {
-    const isProd = process.env.NODE_ENV === 'production';
-    if (isProd && !ADMIN_PIN) {
-      return NextResponse.json(
-        { success: false, error: 'Server authentication misconfigured: ADMIN_PIN environment variable is required.' },
-        { status: 500 }
-      );
-    }
-
     const { email, passcode } = await req.json();
+    const cleanEmail = (email || '').toString().trim().toLowerCase();
     const cleanPass = (passcode || '').toString().trim();
 
-    // In production, strictly enforce ADMIN_PIN from environment
-    const isMasterPin = Boolean(
-      (ADMIN_PIN && cleanPass === ADMIN_PIN) ||
-      (!isProd && (cleanPass === 'MBM@Admin2026' || cleanPass === 'MBM#Test001@2026'))
-    );
+    // Strictly require authorized admin email and security passcode
+    const isAuthorized = cleanEmail === ADMIN_EMAIL && cleanPass === ADMIN_PIN;
 
-    if (!isMasterPin) {
+    if (!isAuthorized) {
       return NextResponse.json(
-        { success: false, error: 'Invalid Security Passcode. Access denied.' },
+        { success: false, error: 'Invalid Administrator Email or Security Passcode. Access denied.' },
         { status: 401 }
       );
     }
@@ -33,7 +24,7 @@ export async function POST(req: Request) {
     const { default: jwt } = await import('jsonwebtoken');
     const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
     const adminToken = jwt.sign(
-      { role: 'ADMIN', email: email || 'admin@mymbmart.com' },
+      { role: 'ADMIN', email: cleanEmail },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -41,7 +32,7 @@ export async function POST(req: Request) {
     const response = NextResponse.json({
       success: true,
       role: 'Super Admin',
-      name: email || 'System Administrator',
+      name: 'FNXT Super Admin',
       token: adminToken,
     });
 

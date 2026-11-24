@@ -103,7 +103,7 @@ export default function AdminLoginPage() {
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@mymbmart.com"
+                placeholder="fnxt.admin@gmail.com"
                 className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 focus:border-[#16A34A] focus:bg-white rounded-xl text-sm text-[#0F172A] placeholder-slate-400 outline-hidden transition shadow-2xs"
               />
             </div>

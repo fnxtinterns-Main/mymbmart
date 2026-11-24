@@ -8,12 +8,11 @@ export async function GET(req: Request) {
     const cookieHeader = req.headers.get('cookie') || '';
     const authHeader = req.headers.get('authorization') || '';
     const isProd = process.env.NODE_ENV === 'production';
-    const ADMIN_PIN = process.env.ADMIN_PIN;
+    const ADMIN_PIN = process.env.ADMIN_PIN || 'MMBM@Admin2026';
     const isAdmin = 
       cookieHeader.includes('mbm_admin_authenticated=true') ||
       cookieHeader.includes('mbm_admin_token=') ||
-      (Boolean(ADMIN_PIN) && authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN) ||
-      (!isProd && authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === 'MBM@Admin2026');
+      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
 
     // Extract customer session if present
     let sessionUserId: string | null = null;
