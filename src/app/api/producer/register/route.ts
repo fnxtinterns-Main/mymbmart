@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { redisGet, redisSet } from '@/lib/redis';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ interface ProducerInput {
 
 const registeredProducers: any[] = [];
 
-export async function GET() {
+export async function GET(req: Request) {
   let list = registeredProducers;
   try {
     const cached = await redisGet<any[]>('producers:list');
@@ -26,10 +27,17 @@ export async function GET() {
     }
   } catch {}
 
+  const isAdmin = isAdminAuthorized(req);
+  const safeList = list.map((item) => {
+    if (isAdmin) return item;
+    const { bankAccount, ifscCode, ...publicInfo } = item;
+    return publicInfo;
+  });
+
   return NextResponse.json({
     success: true,
-    totalProducers: list.length,
-    producers: list,
+    totalProducers: safeList.length,
+    producers: safeList,
   });
 }
 

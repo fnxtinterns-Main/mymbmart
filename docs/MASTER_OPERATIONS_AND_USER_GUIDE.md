@@ -251,7 +251,7 @@ This allows any onboarded shopkeeper to upload their inventory spreadsheet. When
 3. Click **"Download CSV Template"** (or use the one-click **"Load 6 Demo FMCG Items"** button for testing).
 4. The official CSV structure is:
    ```csv
-   productId,productName,category,unit,mrp,bachatPrice,stockQuantity,expiryDate,batchNumber,imageUrl,isReturnable
+   productId,productName,category,unit,mrp,bachatPrice,stockQuantity,expiryDate,batchNumber,image,isReturnable
    ```
 
 #### Field Specifications:
@@ -266,7 +266,7 @@ This allows any onboarded shopkeeper to upload their inventory spreadsheet. When
 | `stockQuantity` | Integer | Yes | Available stock units in store | `60` |
 | `expiryDate` | YYYY-MM-DD | Yes | Product expiration date for FEFO | `2027-04-15` |
 | `batchNumber` | String | Yes | Manufacturer batch number | `BCH-FTN-2026-A1` |
-| `imageUrl` | URL | Optional | Web image link (uses fallback if empty) | `https://images.unsplash.com/...` |
+| `image` | File / Image | Optional | Product photo file name (e.g. `RCH-KRN-101.jpg`) or upload real photo directly in table | `RCH-KRN-101.jpg` |
 | `isReturnable` | Boolean | Optional | `true` or `false` | `true` |
 
 5. Drag & Drop or select your `.csv` file in the upload zone.

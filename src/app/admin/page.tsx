@@ -6,10 +6,8 @@ import { useRouter } from 'next/navigation';
 import { 
   ShoppingBag, 
   TrendingUp, 
-  Users, 
   Bike, 
   ShieldCheck, 
-  AlertTriangle,
   Search,
   CheckCircle2,
   Clock,
@@ -25,36 +23,16 @@ import {
   Check,
   Sliders,
   Store,
-  Wallet,
   Printer,
-  FileText,
-  MapPin,
-  Phone,
-  Calendar,
-  CreditCard,
   Truck,
-  RotateCcw,
-  Zap,
-  Package,
-  Receipt,
-  Eye,
   QrCode,
-  KeyRound,
-  CheckSquare,
-  Square,
-  ChevronRight,
-  Filter,
   Boxes,
   FileSpreadsheet,
   History,
   CalendarClock,
-  AlertOctagon,
-  ArrowUpRight,
-  ArrowDownRight,
   Plus,
   Tag,
   Barcode,
-  ClipboardList,
   Compass,
   Rocket,
   UserCheck
@@ -123,8 +101,6 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState('');
   const [producersList, setProducersList] = useState<any[]>([]);
-  const [pendingRefunds, setPendingRefunds] = useState<any[]>([]);
-  const [lowStockList, setLowStockList] = useState<any[]>([]);
 
   // Orders & Dispatch Filter States
   const [orderFilterTab, setOrderFilterTab] = useState<string>('ALL');
@@ -137,7 +113,7 @@ export default function AdminDashboardPage() {
   const [verificationModalOrder, setVerificationModalOrder] = useState<any | null>(null);
   const [pickupCodeInput, setPickupCodeInput] = useState('');
   const [paymentCollectedCheckbox, setPaymentCollectedCheckbox] = useState(false);
-  const [inStorePaymentMethod, setInStorePaymentMethod] = useState('UPI_QR');
+  const [inStorePaymentMethod] = useState('UPI_QR');
   const [verificationError, setVerificationError] = useState('');
 
   // Download All Partners Consolidated Audit Report
@@ -173,13 +149,13 @@ export default function AdminDashboardPage() {
 
   const [isGrnModalOpen, setIsGrnModalOpen] = useState(false);
   const [grnForm, setGrnForm] = useState({
-    poNumber: 'PO-2026-RCH-089',
-    skuCode: 'MB-GRO-AASH-5K',
-    receivedQty: 50,
-    batchNumber: 'B-2026-901',
+    poNumber: '',
+    skuCode: '',
+    receivedQty: 0,
+    batchNumber: '',
     manufactureDate: new Date().toISOString().split('T')[0],
-    expiryDate: '2027-05-30',
-    costPrice: 215,
+    expiryDate: '',
+    costPrice: 0,
   });
 
   const [isAddSkuModalOpen, setIsAddSkuModalOpen] = useState(false);
@@ -233,9 +209,6 @@ export default function AdminDashboardPage() {
         } catch {}
 
         setMetrics(data);
-        if (data.darkStore?.lowStockSKUs) {
-          setLowStockList(data.darkStore.lowStockSKUs);
-        }
       } else {
         // Fallback: hydrate from client-placed orders
         try {
@@ -458,12 +431,6 @@ export default function AdminDashboardPage() {
     } catch {
       alert('Dispatch allocation failed');
     }
-  };
-
-  const triggerReorder = (sku: string) => {
-    setLowStockList(prev => prev.map(item => item.sku === sku ? { ...item, reordered: true } : item));
-    setActionMessage(`Purchase order dispatched for SKU ${sku}`);
-    setTimeout(() => setActionMessage(''), 4000);
   };
 
   const handleAdjustStockSubmit = async (e: React.FormEvent) => {
@@ -1154,7 +1121,7 @@ export default function AdminDashboardPage() {
                               <td className="p-3.5 font-bold font-mono text-[#064E3B]">{order.id}</td>
                               <td className="p-3.5">
                                 <p className="font-semibold text-[#0F172A]">{order.customerName}</p>
-                                <p className="text-[11px] text-slate-500">{order.items?.length || 1} items</p>
+                                <p className="text-[11px] text-slate-500">{order.items?.length ?? 0} items</p>
                               </td>
                               <td className="p-3.5 font-bold text-[#0F172A]">₹{order.totalAmount}</td>
                               <td className="p-3.5">
@@ -1454,7 +1421,7 @@ export default function AdminDashboardPage() {
                                 </td>
 
                                 <td className="p-3.5">
-                                  <span className="font-bold text-slate-800">{order.items?.length || 1} item(s)</span>
+                                  <span className="font-bold text-slate-800">{order.items?.length ?? 0} item(s)</span>
                                 </td>
 
                                 <td className="p-3.5">

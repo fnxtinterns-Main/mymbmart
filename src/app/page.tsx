@@ -11,25 +11,18 @@ import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
 
-import { initialUser, initialWallet } from '@/lib/data';
+import { initialWallet } from '@/lib/data';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
 import { CartItem, ProductItem, UserProfile } from '@/lib/types';
 import { OrderRecord } from '@/lib/ordersStore';
 import { getStoredUserSession, saveUserSession, hydrateUserProfile } from '@/lib/userSession';
 
 import { 
-  Sparkles, 
   ArrowRight, 
   CheckCircle2, 
-  ChevronRight,
-  Plus,
-  Check,
-  Tag,
-  ShieldCheck,
-  HeartHandshake,
-  Users,
-  Store,
-  Clock
+  ChevronRight, 
+  Check, 
+  Clock 
 } from 'lucide-react';
 
 export default function Home() {

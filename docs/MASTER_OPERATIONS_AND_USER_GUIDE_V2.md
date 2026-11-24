@@ -265,7 +265,7 @@ When a partner store uploads a validated CSV, **items are published to the store
 3. Click **"Download CSV Template"** (or click **"Load 6 Demo FMCG Items"** for quick testing).
 4. The official CSV format contains 11 columns:
    ```csv
-   productId,productName,category,unit,mrp,bachatPrice,stockQuantity,expiryDate,batchNumber,imageUrl,isReturnable
+   productId,productName,category,unit,mrp,bachatPrice,stockQuantity,expiryDate,batchNumber,image,isReturnable
    ```
 
 #### Column Specifications & Validation Rules:
@@ -280,7 +280,7 @@ When a partner store uploads a validated CSV, **items are published to the store
 | `stockQuantity` | Integer | Yes | Count of available units ($\ge 0$) | `60` |
 | `expiryDate` | Date | Yes | Expiration date (`YYYY-MM-DD`) for FEFO compliance | `2027-04-15` |
 | `batchNumber` | String | Yes | Manufacturer batch identification | `BCH-FTN-2026-A1` |
-| `imageUrl` | URL | Optional | Web image URL. If omitted, smart category fallback renders | `https://images.unsplash.com/...` |
+| `image` | File / Image | Optional | Product photo file name (e.g. `RCH-KRN-101.jpg`) or upload real photo directly in table | `RCH-KRN-101.jpg` |
 | `isReturnable` | Boolean | Yes | `true` or `false` | `true` |
 
 5. Drag & Drop your `.csv` file onto the upload dropzone.

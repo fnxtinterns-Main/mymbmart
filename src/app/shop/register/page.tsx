@@ -8,22 +8,12 @@ import {
   Store, 
   FileText, 
   CreditCard, 
-  Upload, 
   ArrowRight, 
   ShieldCheck, 
   Sparkles, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  ChevronRight,
   AlertCircle,
   Camera,
-  Image as ImageIcon,
   Trash2,
-  Paperclip,
-  FileCheck,
-  RefreshCw,
-  Eye,
   FileUp
 } from 'lucide-react';
 import Image from 'next/image';

@@ -4,20 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Rocket, 
   CheckCircle2, 
-  AlertCircle, 
-  Clock, 
   Store, 
   Users, 
-  TrendingUp, 
-  MapPin, 
-  FileText, 
   MessageSquare, 
   ShieldCheck, 
   Award,
-  ChevronRight,
-  Sparkles,
-  HelpCircle,
-  PhoneCall
+  HelpCircle
 } from 'lucide-react';
 
 export const PilotPlaybookTab: React.FC = () => {
@@ -278,7 +270,7 @@ export const PilotPlaybookTab: React.FC = () => {
             </div>
 
             <div className="flex space-x-2 overflow-x-auto pb-1">
-              {objections.map((o, idx) => (
+              {objections.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedObjection(idx)}

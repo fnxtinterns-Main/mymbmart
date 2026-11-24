@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { orderId, deliveryOtp, riderNotes } = body;
+    const { orderId, deliveryOtp } = body;
 
     if (!orderId || !deliveryOtp) {
       return NextResponse.json(
@@ -62,6 +62,22 @@ export async function POST(req: Request) {
 
     // Mark as DELIVERED
     updateOrderStatus(order.id, 'DELIVERED');
+
+    // Persist status to PostgreSQL
+    if (process.env.DATABASE_URL) {
+      try {
+        const { prisma } = await import('@/lib/prisma');
+        await prisma.order.updateMany({
+          where: { OR: [{ id: order.id }, { orderNumber: order.orderNumber }] },
+          data: {
+            orderStatus: 'DELIVERED',
+            paymentStatus: 'PAID',
+          },
+        });
+      } catch (dbErr) {
+        console.warn('Prisma delivery status update notice:', dbErr);
+      }
+    }
 
     // Generate cryptographic SmartChain proof hash
     const blockPayload = `${order.orderNumber}:${order.totalPayable}:${Date.now()}:${order.deliveryOtp}`;

@@ -8,10 +8,10 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { AuthModal } from '@/components/AuthModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
-import { initialUser, initialWallet, sampleProducts } from '@/lib/data';
+import { initialUser, initialWallet } from '@/lib/data';
 import { CartItem, UserProfile } from '@/lib/types';
 import { getStoredUserSession } from '@/lib/userSession';
-import { Sparkles, Users, Award, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Users, ShieldCheck } from 'lucide-react';
 
 export default function ReferPage() {
   const [user, setUser] = useState<UserProfile>(initialUser);

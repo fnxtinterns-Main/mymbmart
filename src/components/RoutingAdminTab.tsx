@@ -9,19 +9,12 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   Clock, 
-  MapPin, 
   RefreshCw, 
-  Check, 
-  Info, 
-  Layers, 
-  Store,
-  Truck,
   Activity,
   Award
 } from 'lucide-react';
 
 export const RoutingAdminTab: React.FC = () => {
-  const [config, setConfig] = useState<any>(null);
   const [weights, setWeights] = useState({
     distance: 0.25,
     rating: 0.15,
@@ -51,7 +44,6 @@ export const RoutingAdminTab: React.FC = () => {
       .then((res) => res.json())
       .then((data) => {
         if (data.config) {
-          setConfig(data.config);
           setWeights(data.config.weights);
         }
       })

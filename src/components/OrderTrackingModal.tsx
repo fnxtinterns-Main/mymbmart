@@ -4,18 +4,12 @@ import React, { useState } from 'react';
 import { 
   X, 
   CheckCircle2, 
-  Clock, 
-  MapPin, 
   Phone, 
   Zap, 
-  Truck, 
   ShieldCheck, 
   Sparkles, 
-  ArrowRight,
-  PackageCheck,
-  Bike,
-  ExternalLink,
-  Store
+  PackageCheck, 
+  Bike
 } from 'lucide-react';
 import { OrderRecord } from '@/lib/ordersStore';
 
@@ -195,7 +189,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   <span className={item.completed ? 'font-bold text-slate-900' : 'text-slate-500'}>
                     {item.step}
                   </span>
-                  <span className="text-slate-400 font-medium">{item.time}</span>
+                  <span className="text-slate-400 font-medium">{item.time || 'Not Available'}</span>
                 </div>
               </div>
             ))}

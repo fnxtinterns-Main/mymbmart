@@ -9,7 +9,6 @@ import {
   Store,
   PiggyBank,
   Users,
-  User as UserIcon,
   ShoppingCart,
   Bell, 
   Search, 

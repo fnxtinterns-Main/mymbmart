@@ -3,16 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { 
-  ShieldCheck, 
-  HeartHandshake, 
-  Sparkles, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  FileText,
-  Lock
-} from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (

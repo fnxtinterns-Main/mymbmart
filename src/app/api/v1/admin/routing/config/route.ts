@@ -1,8 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { routingEngine } from '@/lib/routingEngine';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 // GET /api/v1/admin/routing/config
-export async function GET() {
+export async function GET(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   const config = routingEngine.getConfig();
   const history = routingEngine.getConfigHistory();
 
@@ -13,7 +18,11 @@ export async function GET() {
 }
 
 // PUT /api/v1/admin/routing/config
-export async function PUT(req: NextRequest) {
+export async function PUT(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { weights, ...otherSettings } = body;

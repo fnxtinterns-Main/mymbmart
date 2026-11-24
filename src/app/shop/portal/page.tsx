@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { 
   Building2, 
@@ -12,17 +13,12 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Sparkles, 
-  ShoppingBag, 
-  Tag, 
   Plus, 
-  Layers, 
-  Calendar, 
   Trash2, 
   ExternalLink,
   LogOut,
   RefreshCw,
   Clock,
-  ShieldCheck,
   Check,
   Camera,
   Image as ImageIcon,
@@ -33,12 +29,10 @@ import {
   MapPin,
   Phone,
   User,
-  Play,
   Printer,
   Volume2,
   VolumeX
 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import type { CsvProductRow } from '@/lib/shopPartnerStore';
 import { productImageLibrary } from '@/lib/productImageLibrary';
@@ -53,6 +47,20 @@ export default function ShopPartnerPortalPage() {
   const [photoToast, setPhotoToast] = useState<string | null>(null);
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
 
+  // Live Store Order Management State
+  const [storeOrders, setStoreOrders] = useState<any[]>([]);
+  const [activePortalTab, setActivePortalTab] = useState<'orders' | 'inventory' | 'finance'>('orders');
+  const [orderActionMsg, setOrderActionMsg] = useState<string | null>(null);
+  const [verifyingOrder, setVerifyingOrder] = useState<any | null>(null);
+  const [otpInput, setOtpInput] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [soundAlertsEnabled, setSoundAlertsEnabled] = useState(true);
+
+  // Real Computed Financial Stats (Zero Fake Data)
+  const deliveredOrders = storeOrders.filter((o) => o.status === 'DELIVERED');
+  const realTodaySales = deliveredOrders.reduce((sum, o) => sum + (o.totalPayable || o.total || 0), 0);
+  const realDeliveredCount = deliveredOrders.length;
+
   // Generate and Download Shop Report (Sales, Refunds, Credit Line)
   const handleDownloadShopReport = () => {
     if (!partner) return;
@@ -62,17 +70,38 @@ export default function ShopPartnerPortalPage() {
       ownerName: partner.ownerName,
       pincode: partner.pincode,
       dateRange: 'Live Operational Shift',
-      grossSales: 4890,
-      totalOrders: partner.totalOrdersFulfilled || 14,
-      refundsDeducted: 140,
-      creditLineLimit: 100000,
-      creditLineUtilized: 24500,
-      creditLineAvailable: 75500,
-      commissionSaved: 1220,
-      netPayoutTransferred: 4750,
+      grossSales: realTodaySales,
+      totalOrders: realDeliveredCount > 0 ? realDeliveredCount : (partner.totalOrdersFulfilled && partner.totalOrdersFulfilled !== 14 ? partner.totalOrdersFulfilled : 0),
+      refundsDeducted: partner.refundsDeducted || 0,
+      creditLineLimit: partner.creditLineLimit || 0,
+      creditLineUtilized: partner.creditLineUtilized || 0,
+      creditLineAvailable: partner.creditLineAvailable || 0,
+      commissionSaved: 0,
+      netPayoutTransferred: realTodaySales,
     });
     triggerCsvDownload(`MBM_Shop_Financial_Report_${partner.shopId}_${new Date().toISOString().slice(0, 10)}.csv`, csv);
   };
+
+  // Inventory Ingestion Mode: 'bulk' CSV or 'single' 1-product at a time
+  const [uploadMethod, setUploadMethod] = useState<'bulk' | 'single'>('bulk');
+
+  // Single Product Upload State
+  const [singleProduct, setSingleProduct] = useState({
+    name: '',
+    category: 'Groceries',
+    unit: '1 kg',
+    mrp: '',
+    bachatPrice: '',
+    stockQuantity: '10',
+    sku: '',
+    expiryDate: '',
+    batchNumber: '',
+    isReturnable: true,
+  });
+  const [singleImageFile, setSingleImageFile] = useState<File | null>(null);
+  const [singleImagePreview, setSingleImagePreview] = useState<string>('');
+  const [isPublishingSingle, setIsPublishingSingle] = useState(false);
+  const [singleProductError, setSingleProductError] = useState<string | null>(null);
 
   // CSV States
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -85,15 +114,11 @@ export default function ShopPartnerPortalPage() {
   // Storefront products uploaded by this partner
   const [myProducts, setMyProducts] = useState<any[]>([]);
 
-  // Live Store Order Management State
-  const [storeOrders, setStoreOrders] = useState<any[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [activePortalTab, setActivePortalTab] = useState<'orders' | 'inventory' | 'finance'>('orders');
-  const [orderActionMsg, setOrderActionMsg] = useState<string | null>(null);
-  const [verifyingOrder, setVerifyingOrder] = useState<any | null>(null);
-  const [otpInput, setOtpInput] = useState('');
-  const [otpError, setOtpError] = useState('');
-  const [soundAlertsEnabled, setSoundAlertsEnabled] = useState(true);
+  // Real Computed Store Metrics (Zero Fake Data - Defaults to 0 until updated)
+  const liveStockUnits = myProducts.reduce((sum, p) => sum + (Number(p.stockQuantity) || 0), 0);
+  const displayStockUnits = liveStockUnits > 0 ? liveStockUnits : (Number(partner?.totalStockUnits) || 0);
+  const displayOrdersFulfilled = realDeliveredCount > 0 ? realDeliveredCount : (Number(partner?.totalOrdersFulfilled) || 0);
+  const displayRating = partner?.rating && Number(partner.rating) > 0 ? `★ ${Number(partner.rating).toFixed(1)}` : '0';
 
   const knownOrderIdsRef = React.useRef<Set<string>>(new Set());
   const initialOrdersLoadedRef = React.useRef(false);
@@ -335,7 +360,40 @@ export default function ShopPartnerPortalPage() {
     try {
       const saved = localStorage.getItem('mbm_shop_partner');
       if (saved) {
-        setPartner(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        let changed = false;
+        if (parsed.totalStockUnits === 150 || parsed.totalStockUnits === 160) {
+          parsed.totalStockUnits = 0;
+          changed = true;
+        }
+        if (parsed.totalOrdersFulfilled === 14) {
+          parsed.totalOrdersFulfilled = 0;
+          changed = true;
+        }
+        if (parsed.rating === 4.9 || parsed.rating === 5) {
+          parsed.rating = 0;
+          changed = true;
+        }
+        if (parsed.totalProductsListed === 3 || parsed.totalProductsListed === 4) {
+          parsed.totalProductsListed = 0;
+          changed = true;
+        }
+        if (parsed.creditLineAvailable === 75500) {
+          delete parsed.creditLineAvailable;
+          changed = true;
+        }
+        if (parsed.creditLineLimit === 100000) {
+          delete parsed.creditLineLimit;
+          changed = true;
+        }
+        if (parsed.creditLineUtilized === 24500) {
+          delete parsed.creditLineUtilized;
+          changed = true;
+        }
+        if (changed) {
+          localStorage.setItem('mbm_shop_partner', JSON.stringify(parsed));
+        }
+        setPartner(parsed);
       } else {
         router.push('/shop/login');
       }
@@ -372,8 +430,9 @@ export default function ShopPartnerPortalPage() {
   const handleLogout = () => {
     try {
       localStorage.removeItem('mbm_shop_partner');
+      document.cookie = 'mbm_partner_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     } catch (e) {}
-    router.push('/shop/login');
+    router.push('/partners');
   };
 
   // Client-side CSV parser
@@ -435,16 +494,18 @@ export default function ShopPartnerPortalPage() {
       const unit = getColVal('unit') || '1 Unit';
       const mrp = parseFloat(getColVal('mrp')) || 0;
       const bachatPrice = parseFloat(getColVal('bachatPrice')) || mrp;
-      const stock = parseInt(getColVal('stockQuantity'), 10) || 10;
-      const expiry = getColVal('expiryDate') || '2027-12-31';
+      const stock = parseInt(getColVal('stockQuantity'), 10) || 0;
+      const expiry = getColVal('expiryDate') || 'Not Available';
       const batch = getColVal('batchNumber') || `BATCH-${Date.now()}`;
-      const explicitImg = getColVal('imageUrl');
-      const img = explicitImg && explicitImg.length > 5 && !explicitImg.includes('photo-1540420773420-3366772f4999')
+      const explicitImg = getColVal('imagefile') || getColVal('image') || getColVal('imageurl') || getColVal('photo');
+      const isWebUrl = explicitImg.startsWith('http://') || explicitImg.startsWith('https://') || explicitImg.startsWith('/uploads/') || explicitImg.startsWith('data:image/');
+      const img = isWebUrl
         ? explicitImg
         : productImageLibrary.resolveImage({
             productId: pid,
             productName: name,
             category: cat,
+            explicitUrl: explicitImg || undefined,
           });
       const ret = getColVal('isReturnable').toLowerCase() !== 'false';
 
@@ -472,6 +533,7 @@ export default function ShopPartnerPortalPage() {
         expiryDate: expiry,
         batchNumber: batch,
         imageUrl: img,
+        imageFile: explicitImg,
         isReturnable: ret,
       });
     }
@@ -513,6 +575,117 @@ export default function ShopPartnerPortalPage() {
     } catch (err: any) {
       setUploadingPhotoFor(null);
       alert('Photo upload failed: ' + err.message);
+    }
+  };
+
+  const [uploadingPreviewRowIdx, setUploadingPreviewRowIdx] = useState<number | null>(null);
+  const [isBatchUploadingImages, setIsBatchUploadingImages] = useState(false);
+
+  // Upload or Change Real Photo for a Product in CSV Preview before publishing
+  const handleUploadPreviewRowPhoto = async (rowIdx: number, file: File) => {
+    const row = parsedRows[rowIdx];
+    if (!row) return;
+    setUploadingPreviewRowIdx(rowIdx);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+        const res = await fetch('/api/products/image-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: row.productId,
+            productName: row.productName,
+            category: row.category,
+            imageData: base64,
+          }),
+        });
+        const data = await res.json();
+        setUploadingPreviewRowIdx(null);
+        if (data.success && data.imageUrl) {
+          // Update the preview row immediately with the uploaded photo
+          setParsedRows((prev) =>
+            prev.map((r, idx) => (idx === rowIdx ? { ...r, imageUrl: data.imageUrl } : r))
+          );
+          productImageLibrary.saveProductImage(row.productId, data.imageUrl);
+          productImageLibrary.saveProductImage(row.productName, data.imageUrl);
+          setPhotoToast(`📸 Real photo attached for "${row.productName}"! It will be shown on the live store when published.`);
+          setTimeout(() => setPhotoToast(null), 6000);
+        } else {
+          alert(data.message || 'Failed to upload photo.');
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      setUploadingPreviewRowIdx(null);
+      alert('Photo upload failed: ' + err.message);
+    }
+  };
+
+  // Batch upload multiple image files directly from device and map them to CSV rows
+  const handleBatchImageUpload = async (files: FileList | File[]) => {
+    if (!files || files.length === 0 || parsedRows.length === 0) return;
+    setIsBatchUploadingImages(true);
+    let matchedCount = 0;
+    const fileArray = Array.from(files);
+
+    for (const file of fileArray) {
+      const cleanFileName = file.name.toLowerCase().replace(/\.[^/.]+$/, '').trim();
+      
+      const targetIdx = parsedRows.findIndex((row) => {
+        const pid = row.productId.toLowerCase().trim();
+        const pname = row.productName.toLowerCase().trim();
+        const pfile = (row as any).imageFile ? (row as any).imageFile.toLowerCase().replace(/\.[^/.]+$/, '').trim() : '';
+
+        if (cleanFileName === pid || cleanFileName.includes(pid) || pid.includes(cleanFileName)) return true;
+        if (pfile && (cleanFileName === pfile || pfile.includes(cleanFileName))) return true;
+        if (cleanFileName.length > 3 && pname.includes(cleanFileName)) return true;
+        return false;
+      });
+
+      const matchedIndex = targetIdx >= 0 ? targetIdx : (fileArray.length === 1 && parsedRows.length === 1 ? 0 : -1);
+
+      if (matchedIndex >= 0) {
+        const row = parsedRows[matchedIndex];
+        try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          const res = await fetch('/api/products/image-upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              productId: row.productId,
+              productName: row.productName,
+              category: row.category,
+              imageData: base64,
+            }),
+          });
+          const data = await res.json();
+          if (data.success && data.imageUrl) {
+            setParsedRows((prev) =>
+              prev.map((r, i) => (i === matchedIndex ? { ...r, imageUrl: data.imageUrl } : r))
+            );
+            productImageLibrary.saveProductImage(row.productId, data.imageUrl);
+            productImageLibrary.saveProductImage(row.productName, data.imageUrl);
+            matchedCount++;
+          }
+        } catch (err) {
+          console.warn('Failed to upload image file:', file.name, err);
+        }
+      }
+    }
+
+    setIsBatchUploadingImages(false);
+    if (matchedCount > 0) {
+      setPhotoToast(`📸 Successfully matched & attached ${matchedCount} product photos! Ready to publish to live store.`);
+      setTimeout(() => setPhotoToast(null), 6000);
+    } else {
+      alert(`Uploaded ${fileArray.length} photos, but could not auto-match by SKU code or product name. You can use the "Upload Real Photo" button on each row below!`);
     }
   };
 
@@ -600,60 +773,250 @@ export default function ShopPartnerPortalPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#070A13] text-slate-100 flex flex-col justify-between relative overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
-      
-      {/* Ambient background glow orbs (Glassmorphism Dashboard V22 aesthetic) */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
-      </div>
+  // Single Product Image Selection with instant preview
+  const handleSingleImageSelect = (file: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (JPG, PNG, WebP).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image file size exceeds 5MB limit. Please choose a smaller photo.');
+      return;
+    }
+    setSingleImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setSingleImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
-      <Navbar cartCount={0} onOpenCart={() => {}} onOpenAuth={() => {}} />
+  // Publish 1 Single Product directly to storefront catalog
+  const handlePublishSingleProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partner) return;
+    setSingleProductError(null);
+
+    const name = singleProduct.name.trim();
+    if (!name) {
+      setSingleProductError('Product name is required.');
+      return;
+    }
+
+    const mrp = parseFloat(singleProduct.mrp);
+    const bachatPrice = parseFloat(singleProduct.bachatPrice);
+    const stock = parseInt(singleProduct.stockQuantity, 10);
+
+    if (isNaN(mrp) || mrp <= 0) {
+      setSingleProductError('Please enter a valid MRP greater than 0.');
+      return;
+    }
+    if (isNaN(bachatPrice) || bachatPrice <= 0) {
+      setSingleProductError('Please enter a valid Bachat Price greater than 0.');
+      return;
+    }
+    if (bachatPrice > mrp) {
+      setSingleProductError('Bachat Price cannot be higher than MRP.');
+      return;
+    }
+    if (isNaN(stock) || stock < 0) {
+      setSingleProductError('Please enter a valid stock quantity (0 or more).');
+      return;
+    }
+
+    setIsPublishingSingle(true);
+
+    try {
+      const generatedId = (singleProduct.sku.trim() || `PRD-${Date.now().toString(36).toUpperCase()}`)
+        .toUpperCase()
+        .replace(/[^A-Z0-9_-]/g, '-');
+
+      let finalImageUrl = singleImagePreview;
+
+      // If user uploaded a custom image file, upload to server storage
+      if (singleImageFile && singleImagePreview && singleImagePreview.startsWith('data:image/')) {
+        try {
+          const imgRes = await fetch('/api/products/image-upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              productId: generatedId,
+              productName: name,
+              category: singleProduct.category,
+              imageData: singleImagePreview,
+            }),
+          });
+          const imgData = await imgRes.json();
+          if (imgData.success && imgData.imageUrl) {
+            finalImageUrl = imgData.imageUrl;
+          }
+        } catch (imgErr) {
+          console.warn('Image upload fallback notice:', imgErr);
+        }
+      }
+
+      const row: CsvProductRow = {
+        productId: generatedId,
+        productName: name,
+        category: singleProduct.category,
+        unit: singleProduct.unit.trim() || '1 Unit',
+        mrp,
+        bachatPrice,
+        stockQuantity: stock,
+        expiryDate: singleProduct.expiryDate.trim() || 'Not Available',
+        batchNumber: singleProduct.batchNumber.trim() || 'BATCH-01',
+        imageUrl: finalImageUrl || undefined,
+        isReturnable: singleProduct.isReturnable,
+      };
+
+      const res = await fetch('/api/v1/shop/upload-csv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shopId: partner.shopId,
+          rows: [row],
+        }),
+      });
+
+      const data = await res.json();
+      setIsPublishingSingle(false);
+
+      if (data.success) {
+        setUploadSuccess({
+          message: `🎉 Successfully published "${name}" to your live storefront!`,
+          importedCount: 1,
+        });
+        setSingleProduct({
+          name: '',
+          category: 'Groceries',
+          unit: '1 kg',
+          mrp: '',
+          bachatPrice: '',
+          stockQuantity: '10',
+          sku: '',
+          expiryDate: '',
+          batchNumber: '',
+          isReturnable: true,
+        });
+        setSingleImageFile(null);
+        setSingleImagePreview('');
+        refreshStoreProducts();
+      } else {
+        setSingleProductError(data.message || 'Failed to publish product.');
+      }
+    } catch (err: any) {
+      setIsPublishingSingle(false);
+      setSingleProductError(err.message || 'Network error while publishing product.');
+    }
+  };
+
+  if (loading || !partner) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center text-slate-600">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-600 mr-3"></div>
+        <span className="font-bold text-sm">Authenticating Merchant Partner...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col justify-between relative overflow-x-hidden">
+      
+      {/* ============================================================== */}
+      {/* DEDICATED B2B PARTNER PORTAL HEADER (REPLACES CONSUMER NAVBAR) */}
+      {/* ============================================================== */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
+            
+            {/* Logo & Hub Badge */}
+            <div className="flex items-center space-x-3">
+              <Link href="/" className="relative w-40 sm:w-52 h-10 sm:h-12 block group" aria-label="MegaBachatMart Home">
+                <Image
+                  src="/images/LOgo.jpeg"
+                  alt="MegaBachatMart"
+                  fill
+                  priority
+                  className="object-contain object-left group-hover:scale-102 transition-transform"
+                />
+              </Link>
+              <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Partner Portal</span>
+              </span>
+            </div>
+
+            {/* Quick Portal Controls */}
+            <div className="flex items-center space-x-2.5 sm:space-x-3">
+              <Link
+                href="/shop"
+                target="_blank"
+                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs transition flex items-center space-x-1.5"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-emerald-700" />
+                <span className="hidden sm:inline">View Live Storefront</span>
+                <span className="sm:hidden">Storefront</span>
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                className="bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 font-bold px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-xs transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5 text-slate-500" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </header>
 
       <main className="flex-1 py-8 px-4 sm:px-6 relative z-10">
         <div className="max-w-6xl mx-auto space-y-6">
           
-          {/* Store Partner Top Banner (Glassmorphic Glow) */}
+          {/* Store Partner Top Banner (Clean White Card with High-Contrast Typography) */}
           {partner && (
-            <div className="glass-panel-glow rounded-3xl p-6 sm:p-8 text-white shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden border border-cyan-500/30">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-emerald-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#064E3B] via-emerald-600 to-[#16A34A]" />
+
               <div className="space-y-2 relative z-10">
-                <div className="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-400/40 px-3 py-1 rounded-full text-xs font-semibold text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
+                <div className="inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold text-emerald-800">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                   <span>Store Status: ONLINE (Receiving 20-min Quick Orders)</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white">{partner.shopName}</h1>
-                <p className="text-xs text-slate-300">
-                  Merchant ID: <code className="bg-white/10 border border-white/10 font-mono px-2 py-0.5 rounded font-bold text-cyan-300">{partner.shopId}</code> • Pincode: <strong>{partner.pincode}</strong> • Prop: {partner.ownerName}
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{partner.shopName}</h1>
+                <p className="text-xs text-slate-600">
+                  Merchant ID: <code className="bg-slate-100 border border-slate-200 font-mono px-2 py-0.5 rounded font-bold text-slate-800">{partner.shopId}</code> • Pincode: <strong className="text-slate-800">{partner.pincode}</strong> • Prop: <span className="font-medium text-slate-800">{partner.ownerName}</span>
                 </p>
-                <p className="text-[11px] text-cyan-300/80">
-                  📍 {partner.address}
+                <p className="text-xs text-slate-500 flex items-center space-x-1">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>{partner.address}</span>
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 relative z-10">
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 relative z-10">
                 <button
                   onClick={handleDownloadShopReport}
-                  className="bg-emerald-600/80 hover:bg-emerald-500 text-white font-black px-4 py-2.5 rounded-2xl text-xs transition flex items-center space-x-1.5 shadow-[0_0_15px_rgba(16,185,129,0.25)] border border-emerald-400/30 cursor-pointer backdrop-blur-md"
+                  className="bg-[#064E3B] hover:bg-emerald-950 text-white font-black px-4 py-2.5 rounded-xl text-xs transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
                   title="Download Sales, Refunds, and Credit Line Audit CSV"
                 >
-                  <FileSpreadsheet className="w-4 h-4" />
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-200" />
                   <span>Generate Shop Report</span>
                 </button>
 
                 <Link
                   href="/shop"
                   target="_blank"
-                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 shadow-[0_0_20px_rgba(6,182,212,0.35)]"
+                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5"
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-4 h-4 text-emerald-700" />
                   <span>View Live Consumer Store</span>
                 </Link>
 
                 <button
                   onClick={handleLogout}
-                  className="glass-card hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 border border-white/10 hover:border-rose-500/40 cursor-pointer"
+                  className="bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200 hover:border-rose-200 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
@@ -664,43 +1027,70 @@ export default function ShopPartnerPortalPage() {
 
           {/* Order Action Feedback Notification */}
           {orderActionMsg && (
-            <div className="glass-panel-glow border border-cyan-400/40 text-cyan-200 px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-5 py-3.5 rounded-2xl shadow-sm flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                 <span>{orderActionMsg}</span>
               </div>
-              <button onClick={() => setOrderActionMsg(null)} className="text-cyan-300 hover:text-white">✕</button>
+              <button onClick={() => setOrderActionMsg(null)} className="text-emerald-700 hover:text-emerald-950 font-black cursor-pointer">✕</button>
             </div>
           )}
 
           {/* Photo Upload Toast Notification */}
           {photoToast && (
-            <div className="glass-panel-glow border border-emerald-400/40 text-emerald-200 px-5 py-3.5 rounded-2xl shadow-xl flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-5 py-3.5 rounded-2xl shadow-sm flex items-center justify-between text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                 <span>{photoToast}</span>
               </div>
-              <button onClick={() => setPhotoToast(null)} className="text-emerald-300 hover:text-white ml-3">
+              <button onClick={() => setPhotoToast(null)} className="text-emerald-700 hover:text-emerald-950 ml-3 font-black cursor-pointer">
                 ✕
               </button>
             </div>
           )}
 
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Catalog Items</span>
+              <div className="text-2xl font-black text-slate-900 mt-1">{myProducts.length} Listed</div>
+              <p className="text-[10px] text-slate-400 mt-0.5">Live on MegaBachatMart</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">In-Stock Units</span>
+              <div className="text-2xl font-black text-[#16A34A] mt-1">{displayStockUnits}</div>
+              <p className="text-[10px] text-slate-400 mt-0.5">Ready for 20-min dispatch</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Orders Fulfilled</span>
+              <div className="text-2xl font-black text-blue-600 mt-1">{displayOrdersFulfilled}</div>
+              <p className="text-[10px] text-slate-400 mt-0.5">Zero cancellation record</p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Store Rating</span>
+              <div className="text-2xl font-black text-amber-500 mt-1">{displayRating}</div>
+              <p className="text-[10px] text-slate-400 mt-0.5">Verified Ranchi customers</p>
+            </div>
+          </div>
+
           {/* Navigation Tabs for Partner Operations */}
-          <div className="glass-panel p-2 rounded-2xl border border-white/10 shadow-lg flex flex-wrap gap-2">
+          <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setActivePortalTab('orders')}
-              className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
+              className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
                 activePortalTab === 'orders'
-                  ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
-                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                  ? 'bg-[#064E3B] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <PackageOpen className="w-4 h-4" />
               <span>Live Orders & Packing Desk</span>
               {storeOrders.filter((o) => ['PLACED', 'CONFIRMED', 'PACKING', 'PROCESSING'].includes(o.status)).length > 0 && (
-                <span className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-black animate-pulse shadow-xs">
+                <span className="bg-[#FF5722] text-white px-2 py-0.5 rounded-full text-[10px] font-black animate-pulse shadow-xs">
                   {storeOrders.filter((o) => ['PLACED', 'CONFIRMED', 'PACKING', 'PROCESSING'].includes(o.status)).length} TO PACK
                 </span>
               )}
@@ -709,10 +1099,10 @@ export default function ShopPartnerPortalPage() {
             <button
               type="button"
               onClick={() => setActivePortalTab('inventory')}
-              className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
+              className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
                 activePortalTab === 'inventory'
-                  ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
-                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                  ? 'bg-[#064E3B] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -722,28 +1112,28 @@ export default function ShopPartnerPortalPage() {
             <button
               type="button"
               onClick={() => setActivePortalTab('finance')}
-              className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
+              className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
                 activePortalTab === 'finance'
-                  ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
-                  : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                  ? 'bg-[#064E3B] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <Building2 className="w-4 h-4" />
-              <span>Financial Cockpit & Khata (₹75,500)</span>
+              <span>Financial Cockpit & Khata{partner?.creditLineAvailable ? ` (₹${partner.creditLineAvailable.toLocaleString('en-IN')})` : ''}</span>
             </button>
           </div>
 
           {/* TAB 1: LIVE ORDERS & PACKING DESK */}
           {activePortalTab === 'orders' && (
             <div className="space-y-6">
-              <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                   <div>
-                    <div className="inline-flex items-center space-x-1.5 text-cyan-400 text-xs font-black uppercase tracking-wider mb-1">
-                      <PackageOpen className="w-4 h-4 text-cyan-400" />
+                    <div className="inline-flex items-center space-x-1.5 text-emerald-800 text-xs font-black uppercase tracking-wider mb-1">
+                      <PackageOpen className="w-4 h-4 text-emerald-600" />
                       <span>Store Fulfilment Center</span>
                     </div>
-                    <h2 className="text-xl font-black text-slate-900">Live Orders & Packing Queue</h2>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900">Live Orders & Packing Queue</h2>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Orders routed to {partner?.shopName} ({partner?.pincode}). Pack items promptly for Customer Self-Pickup or Rider Delivery.
                     </p>
@@ -833,7 +1223,7 @@ export default function ShopPartnerPortalPage() {
 
                             <div className="flex items-center space-x-2">
                               <span className="text-xs text-slate-400 font-mono">
-                                {order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
+                                {order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not Available'}
                               </span>
                               <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
                                 order.status === 'PLACED' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
@@ -893,7 +1283,7 @@ export default function ShopPartnerPortalPage() {
                           {/* Items to Pack Checklist */}
                           <div className="space-y-2">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wider block">
-                              Items to Pack ({order.items?.length || 1}):
+                              Items to Pack ({order.items?.length ?? 0}):
                             </span>
                             <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
                               {order.items && order.items.map((item: any, idx: number) => (
@@ -909,7 +1299,7 @@ export default function ShopPartnerPortalPage() {
                                   </div>
                                   <div className="text-right">
                                     <span className="bg-emerald-100 text-[#064E3B] font-black px-2.5 py-1 rounded-xl text-xs">
-                                      QTY: {item.quantity || 1}
+                                      QTY: {item.quantity ?? 0}
                                     </span>
                                   </div>
                                 </div>
@@ -1009,6 +1399,88 @@ export default function ShopPartnerPortalPage() {
             </div>
           )}
 
+
+
+          {/* TAB 3: FINANCIAL COCKPIT: SALES, REFUND, AND WORKING CAPITAL CREDIT LINE */}
+          {activePortalTab === 'finance' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Card 1: Today's Sales & GMV */}
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Today&apos;s Store Sales</span>
+                    <span className="text-2xl font-black text-slate-900 mt-1 block">₹{realTodaySales.toFixed(2)}</span>
+                  </div>
+                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200">
+                    {realDeliveredCount} Orders Delivered
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <span>Monthly Gross GMV</span>
+                  <span className="font-bold text-slate-900">{partner?.monthlyGmv ? `₹${partner.monthlyGmv.toFixed(2)}` : '₹0.00'}</span>
+                </div>
+                <div className="text-[11px] text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 font-semibold flex items-center justify-between">
+                  <span>0% Commission Kept:</span>
+                  <span className="font-bold">₹0 saved today</span>
+                </div>
+              </div>
+
+              {/* Card 2: B2B Working Capital Credit Line */}
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Working Capital Credit Line</span>
+                    <span className="text-2xl font-black text-teal-800 mt-1 block">
+                      {partner?.creditLineAvailable ? `₹${partner.creditLineAvailable.toLocaleString('en-IN')}` : 'Not Available'}
+                    </span>
+                  </div>
+                  <span className="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-teal-200">
+                    0% Interest (14 Days)
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <span>Total Approved Khata Limit</span>
+                  <span className="font-bold text-slate-900">
+                    {partner?.creditLineLimit ? `₹${partner.creditLineLimit.toLocaleString('en-IN')}` : 'Not Available'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600 flex items-center justify-between">
+                  <span>In-Use for Wholesale Restock:</span>
+                  <span className="font-bold text-amber-700">
+                    {partner?.creditLineUtilized ? `₹${partner.creditLineUtilized.toLocaleString('en-IN')}` : '₹0.00'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 3: Refunds & Net Payout */}
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Customer Refunds</span>
+                    <span className="text-2xl font-black text-slate-900 mt-1 block">
+                      {partner?.refundsDeducted ? `₹${partner.refundsDeducted.toFixed(2)}` : '₹0.00'}
+                    </span>
+                  </div>
+                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200">
+                    0% Return Rate
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <span>Next Bank Payout (T+1)</span>
+                  <span className="font-black text-emerald-700">₹{realTodaySales.toFixed(2)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadShopReport}
+                  className="w-full text-center py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer flex items-center justify-center space-x-1.5"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Download Itemized Tax & Audit CSV ↓</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* TAB 2: INVENTORY & BULK CSV UPLOAD */}
           {activePortalTab === 'inventory' && (
             <div className="space-y-6">
@@ -1031,146 +1503,69 @@ export default function ShopPartnerPortalPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Catalog Items</span>
-              <div className="text-2xl font-black text-slate-900 mt-1">{myProducts.length} Listed</div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Live on MegaBachatMart</p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">In-Stock Units</span>
-              <div className="text-2xl font-black text-[#16A34A] mt-1">{partner?.totalStockUnits || 150}</div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Ready for 20-min dispatch</p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Orders Fulfilled</span>
-              <div className="text-2xl font-black text-blue-600 mt-1">{partner?.totalOrdersFulfilled || 14}</div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Zero cancellation record</p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Store Rating</span>
-              <div className="text-2xl font-black text-amber-500 mt-1">★ {partner?.rating || 4.9}</div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Verified Ranchi customers</p>
-            </div>
-          </div>
-
-          {/* TAB 3: FINANCIAL COCKPIT: SALES, REFUND, AND WORKING CAPITAL CREDIT LINE */}
-          {activePortalTab === 'finance' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Card 1: Today's Sales & GMV */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Today&apos;s Store Sales</span>
-                    <span className="text-2xl font-black text-slate-900 mt-1 block">₹4,890.00</span>
-                  </div>
-                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200">
-                    12 Orders Delivered
-                  </span>
-                </div>
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span>Monthly Gross GMV</span>
-                  <span className="font-bold text-slate-900">₹34,500.00</span>
-                </div>
-                <div className="text-[11px] text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 font-semibold flex items-center justify-between">
-                  <span>0% Commission Kept:</span>
-                  <span className="font-bold">₹1,220 saved today</span>
-                </div>
-              </div>
-
-              {/* Card 2: B2B Working Capital Credit Line */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Working Capital Credit Line</span>
-                    <span className="text-2xl font-black text-teal-800 mt-1 block">₹75,500 Avail.</span>
-                  </div>
-                  <span className="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-teal-200">
-                    0% Interest (14 Days)
-                  </span>
-                </div>
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span>Total Approved Khata Limit</span>
-                  <span className="font-bold text-slate-900">₹1,00,000.00</span>
-                </div>
-                <div className="text-[11px] text-slate-600 flex items-center justify-between">
-                  <span>In-Use for Wholesale Restock:</span>
-                  <span className="font-bold text-amber-700">₹24,500.00</span>
-                </div>
-              </div>
-
-              {/* Card 3: Refunds & Net Payout */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Customer Refunds</span>
-                    <span className="text-2xl font-black text-slate-900 mt-1 block">₹140.00</span>
-                  </div>
-                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200">
-                    0.28% Return Rate
-                  </span>
-                </div>
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span>Next Bank Payout (T+1)</span>
-                  <span className="font-black text-emerald-700">₹4,750.00 Tomorrow</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleDownloadShopReport}
-                  className="w-full text-center py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer flex items-center justify-center space-x-1.5"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>Download Itemized Tax & Audit CSV ↓</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: INVENTORY & BULK CSV UPLOAD */}
-          {activePortalTab === 'inventory' && (
-            <div className="space-y-6">
-              {/* SECTION: BULK CSV INVENTORY UPLOAD */}
+              {/* SECTION: INVENTORY INGESTION (BULK CSV OR 1 PRODUCT AT A TIME) */}
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-6">
             
-            {/* Header & Template Download */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-              <div>
-                <div className="inline-flex items-center space-x-1.5 text-emerald-800 text-xs font-black uppercase tracking-wider mb-1">
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                  <span>Direct Inventory Ingestion</span>
-                </div>
-                <h2 className="text-xl font-black text-slate-900">Bulk Product Upload via CSV</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Upload your spreadsheet containing product ID, name, expiry date, MRP, and your offered Bachat Price.
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <a
-                  href="/api/v1/shop/template-csv"
-                  download="megabachatmart_inventory_template.csv"
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200"
-                >
-                  <Download className="w-4 h-4 text-slate-600" />
-                  <span>Download CSV Template</span>
-                </a>
-
+            {/* INVENTORY UPLOAD METHOD SWITCHER */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
+              <div className="flex items-center bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
                 <button
                   type="button"
-                  onClick={handleLoadSampleCsv}
-                  className="bg-emerald-50 hover:bg-emerald-100 text-[#064E3B] px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 border border-emerald-200 cursor-pointer"
+                  onClick={() => { setUploadMethod('bulk'); setSingleProductError(null); }}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+                    uploadMethod === 'bulk'
+                      ? 'bg-[#064E3B] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
                 >
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
-                  <span>Load 6 Demo FMCG Items</span>
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Bulk Product Upload via CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setUploadMethod('single'); setSingleProductError(null); }}
+                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-extrabold text-xs transition cursor-pointer ${
+                    uploadMethod === 'single'
+                      ? 'bg-[#064E3B] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Upload 1 Product at a Time (with Photo)</span>
                 </button>
               </div>
+
+              {uploadMethod === 'bulk' ? (
+                <div className="flex items-center space-x-2">
+                  <a
+                    href="/api/v1/shop/template-csv"
+                    download="megabachatmart_inventory_template.csv"
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200"
+                  >
+                    <Download className="w-4 h-4 text-slate-600" />
+                    <span>Download CSV Template</span>
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={handleLoadSampleCsv}
+                    className="bg-emerald-50 hover:bg-emerald-100 text-[#064E3B] px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 border border-emerald-200 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    <span>Load 6 Demo FMCG Items</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setUploadMethod('bulk')}
+                  className="text-xs font-bold text-slate-500 hover:text-emerald-800 transition flex items-center space-x-1 cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Switch to Bulk CSV Upload instead</span>
+                </button>
+              )}
             </div>
 
             {/* Success Alert */}
@@ -1194,6 +1589,342 @@ export default function ShopPartnerPortalPage() {
                 </div>
               </div>
             )}
+
+            {/* OPTION 2: SINGLE PRODUCT UPLOAD FORM (WITH PHOTO) */}
+            {uploadMethod === 'single' && (
+              <form onSubmit={handlePublishSingleProduct} className="space-y-6 animate-in fade-in duration-150">
+                <div className="border-b border-slate-100 pb-3">
+                  <div className="inline-flex items-center space-x-1.5 text-emerald-800 text-xs font-black uppercase tracking-wider mb-1">
+                    <Plus className="w-4 h-4 text-emerald-600" />
+                    <span>Instant Single Product Ingestion</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900">Add 1 Product at a Time with Image</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Upload a product photo and enter price details. Your product will go live immediately on the customer storefront.
+                  </p>
+                </div>
+
+                {singleProductError && (
+                  <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{singleProductError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Image Upload Box */}
+                  <div className="lg:col-span-4 space-y-2">
+                    <label className="block text-xs font-extrabold text-slate-700">
+                      Product Photo <span className="text-rose-500">*</span>
+                    </label>
+
+                    <div className="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-3xl p-4 bg-slate-50/60 transition flex flex-col items-center justify-center text-center relative overflow-hidden group min-h-[220px]">
+                      {singleImagePreview ? (
+                        <div className="relative w-full h-48 rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm flex items-center justify-center">
+                          <img
+                            src={singleImagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-contain"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center space-x-2">
+                            <label className="bg-white/90 hover:bg-white text-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer shadow-sm flex items-center space-x-1">
+                              <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Change Photo</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleSingleImageSelect(file);
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSingleImageFile(null);
+                                setSingleImagePreview('');
+                              }}
+                              className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer shadow-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center cursor-pointer w-full h-full py-6">
+                          <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2 shadow-xs group-hover:scale-105 transition">
+                            <Camera className="w-6 h-6" />
+                          </div>
+                          <span className="text-xs font-extrabold text-slate-800">
+                            Click or Drag to Upload Product Image
+                          </span>
+                          <span className="text-[11px] text-slate-400 mt-1">
+                            JPG, PNG, WebP up to 5MB
+                          </span>
+                          <span className="mt-3 inline-flex items-center space-x-1 bg-[#064E3B] text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs">
+                            <ImageIcon className="w-3 h-3" />
+                            <span>Select Photo from Device</span>
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleSingleImageSelect(file);
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-tight">
+                      Tip: If left empty, our Smart Auto-Image Bank will automatically match an official verified photo for known FMCG brands.
+                    </p>
+                  </div>
+
+                  {/* Product Details Form */}
+                  <div className="lg:col-span-8 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Product Name */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          Product Name <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={singleProduct.name}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, name: e.target.value })}
+                          placeholder="e.g. Aashirvaad Shudh Chakki Atta, Fortune Mustard Oil, Amul Butter"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
+                        />
+                      </div>
+
+                      {/* Category */}
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          Category <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          value={singleProduct.category}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, category: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
+                        >
+                          <option value="Groceries">Groceries & Staples (Atta, Rice, Dal, Oil)</option>
+                          <option value="Dairy & Bakery">Dairy & Bakery (Milk, Paneer, Bread, Eggs)</option>
+                          <option value="Fruits & Vegetables">Fruits & Vegetables</option>
+                          <option value="FMCG">FMCG & Packaged Snacks (Biscuits, Noodles, Tea)</option>
+                          <option value="Spices">Spices & Seasonings</option>
+                          <option value="SHG Specials">SHG Specials (Tribal Honey, Organic Goods)</option>
+                          <option value="Consumables">Personal Care & Hygiene</option>
+                          <option value="Stationery">Stationery & Office</option>
+                          <option value="Home & Kitchen">Home & Kitchen</option>
+                        </select>
+                      </div>
+
+                      {/* Unit / Packaging */}
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          Packaging Unit / Weight <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={singleProduct.unit}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, unit: e.target.value })}
+                          placeholder="e.g. 1 kg, 500 g, 1 L, 1 Pack, 6 pcs"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
+                        />
+                      </div>
+
+                      {/* Pricing Row: MRP & Bachat Price */}
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          MRP (₹) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          required
+                          value={singleProduct.mrp}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, mrp: e.target.value })}
+                          placeholder="Original printed price"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          Bachat Price (₹) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          required
+                          value={singleProduct.bachatPrice}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, bachatPrice: e.target.value })}
+                          placeholder="Your customer discount price"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
+                        />
+                      </div>
+
+                      {/* Stock Quantity */}
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          Stock Quantity (Units) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          required
+                          value={singleProduct.stockQuantity}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, stockQuantity: e.target.value })}
+                          placeholder="e.g. 50"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
+                        />
+                      </div>
+
+                      {/* Product SKU */}
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          Product ID / SKU <span className="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={singleProduct.sku}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, sku: e.target.value })}
+                          placeholder="Auto-generated if blank"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white font-mono"
+                        />
+                      </div>
+
+                      {/* Expiry Date */}
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          Expiry Date <span className="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={singleProduct.expiryDate}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, expiryDate: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white"
+                        />
+                      </div>
+
+                      {/* Batch Number */}
+                      <div>
+                        <label className="block text-xs font-extrabold text-slate-700 mb-1">
+                          Batch Number <span className="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={singleProduct.batchNumber}
+                          onChange={(e) => setSingleProduct({ ...singleProduct, batchNumber: e.target.value })}
+                          placeholder="e.g. BATCH-2026-A"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 bg-white font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Submit Actions */}
+                    <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                      <div className="text-xs text-slate-500">
+                        {singleProduct.mrp && singleProduct.bachatPrice && Number(singleProduct.mrp) > Number(singleProduct.bachatPrice) && (
+                          <span className="font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                            Save ₹{(Number(singleProduct.mrp) - Number(singleProduct.bachatPrice)).toFixed(2)} ({Math.round(((Number(singleProduct.mrp) - Number(singleProduct.bachatPrice)) / Number(singleProduct.mrp)) * 100)}% OFF)
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSingleProduct({
+                              name: '',
+                              category: 'Groceries',
+                              unit: '1 kg',
+                              mrp: '',
+                              bachatPrice: '',
+                              stockQuantity: '10',
+                              sku: '',
+                              expiryDate: '',
+                              batchNumber: '',
+                              isReturnable: true,
+                            });
+                            setSingleImageFile(null);
+                            setSingleImagePreview('');
+                            setSingleProductError(null);
+                          }}
+                          className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                        >
+                          Clear
+                        </button>
+
+                        <button
+                          type="submit"
+                          disabled={isPublishingSingle}
+                          className="bg-[#16A34A] hover:bg-[#15803d] text-white font-black px-6 py-2.5 rounded-xl text-xs shadow-md shadow-emerald-700/20 transition flex items-center space-x-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {isPublishingSingle ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Publishing Product...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>Publish Product to Storefront</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {/* OPTION 1: BULK CSV INVENTORY UPLOAD */}
+            {uploadMethod === 'bulk' && (
+              <div className="space-y-6">
+                {/* Header & Template Download */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                  <div>
+                    <div className="inline-flex items-center space-x-1.5 text-emerald-800 text-xs font-black uppercase tracking-wider mb-1">
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                      <span>Direct Inventory Ingestion</span>
+                    </div>
+                    <h2 className="text-xl font-black text-slate-900">Bulk Product Upload via CSV</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Upload your spreadsheet containing product ID, name, expiry date, MRP, and your offered Bachat Price.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <a
+                      href="/api/v1/shop/template-csv"
+                      download="megabachatmart_inventory_template.csv"
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200"
+                    >
+                      <Download className="w-4 h-4 text-slate-600" />
+                      <span>Download CSV Template</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleCsv}
+                      className="bg-emerald-50 hover:bg-emerald-100 text-[#064E3B] px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 border border-emerald-200 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <span>Load 6 Demo FMCG Items</span>
+                    </button>
+                  </div>
+                </div>
 
             {/* Error Alerts */}
             {parseErrors.length > 0 && (
@@ -1230,7 +1961,7 @@ export default function ShopPartnerPortalPage() {
                   {csvFile ? `Selected: ${csvFile.name}` : 'Drag & Drop your completed CSV file here'}
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Supports .csv with productId, productName, category, unit, mrp, bachatPrice, stockQuantity, expiryDate
+                  Supports .csv with productId, productName, category, unit, mrp, bachatPrice, stockQuantity, expiryDate, image
                 </p>
               </div>
 
@@ -1243,24 +1974,53 @@ export default function ShopPartnerPortalPage() {
             {/* PREVIEW & IMPORT TABLE */}
             {parsedRows.length > 0 && (
               <div className="space-y-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="text-sm font-extrabold text-slate-900">
                       Validated Products Preview ({parsedRows.length} items ready to import)
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Verify original MRP and your offered Bachat Price before publishing to live shoppers.
+                      No image URLs needed! Use the Image column below to add images directly to your products.
                     </p>
                   </div>
 
-                  <button
-                    onClick={handlePublishProducts}
-                    disabled={isUploading}
-                    className="bg-[#16A34A] hover:bg-[#15803d] text-white font-black px-6 py-3 rounded-2xl text-xs shadow-lg shadow-emerald-700/20 transition flex items-center space-x-2 cursor-pointer disabled:opacity-50"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{isUploading ? 'Publishing to Storefront...' : 'Publish & Add to Main Site'}</span>
-                  </button>
+                  <div className="flex items-center space-x-2.5">
+                    <label className="bg-emerald-50 hover:bg-emerald-100 text-[#064E3B] border border-emerald-300 font-bold px-4 py-2.5 rounded-2xl text-xs transition flex items-center space-x-1.5 cursor-pointer shadow-xs">
+                      <Camera className="w-4 h-4 text-emerald-600" />
+                      <span>{isBatchUploadingImages ? 'Uploading Photos...' : 'Batch Upload Images'}</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isBatchUploadingImages}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            handleBatchImageUpload(e.target.files);
+                          }
+                        }}
+                      />
+                    </label>
+
+                    <button
+                      onClick={handlePublishProducts}
+                      disabled={isUploading}
+                      className="bg-[#16A34A] hover:bg-[#15803d] text-white font-black px-6 py-2.5 rounded-2xl text-xs shadow-lg shadow-emerald-700/20 transition flex items-center space-x-2 cursor-pointer disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{isUploading ? 'Publishing to Storefront...' : 'Publish & Add to Main Site'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Direct Photo Instruction Callout */}
+                <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center justify-between text-xs text-slate-700">
+                  <div className="flex items-center space-x-2.5">
+                    <Camera className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>
+                      <strong>Direct Image Column:</strong> Click <strong>&quot;+ Add Image&quot;</strong> in the Image column below to attach a real photo from your camera or computer, or use <strong>&quot;Batch Upload Images&quot;</strong> for all files at once.
+                    </span>
+                  </div>
                 </div>
 
                 <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
@@ -1268,7 +2028,8 @@ export default function ShopPartnerPortalPage() {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
                         <tr>
-                          <th className="py-3 px-4">Item</th>
+                          <th className="py-3.5 px-4 text-center w-36 font-extrabold text-emerald-950 uppercase tracking-wider bg-emerald-50/70">Image (Add Photo)</th>
+                          <th className="py-3.5 px-4 font-bold text-slate-900">Product Name & SKU</th>
                           <th className="py-3 px-4">Category</th>
                           <th className="py-3 px-4">Pack Unit</th>
                           <th className="py-3 px-4">Original MRP</th>
@@ -1286,18 +2047,73 @@ export default function ShopPartnerPortalPage() {
 
                           return (
                             <tr key={idx} className="hover:bg-slate-50/80 transition">
-                              <td className="py-3 px-4 flex items-center space-x-3">
-                                <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                                  <img 
-                                    src={row.imageUrl} 
-                                    alt={row.productName} 
-                                    className="w-full h-full object-cover" 
-                                  />
+                              {/* Dedicated Image Column */}
+                              <td className="py-3 px-4 text-center bg-emerald-50/20">
+                                <div className="flex flex-col items-center justify-center space-y-1.5">
+                                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-white shrink-0 border-2 border-emerald-200 group shadow-xs">
+                                    <img 
+                                      src={row.imageUrl} 
+                                      alt={row.productName} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                    <label 
+                                      className="absolute inset-0 bg-black/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                                      title="Click to change photo"
+                                    >
+                                      <Camera className="w-4 h-4 text-emerald-300" />
+                                      <span className="text-[8px] font-bold mt-0.5">Change</span>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        disabled={uploadingPreviewRowIdx === idx}
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) handleUploadPreviewRowPhoto(idx, file);
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+
+                                  <label 
+                                    className={`inline-flex items-center space-x-1 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border transition cursor-pointer shadow-2xs ${
+                                      row.imageUrl?.includes('/uploads/') || row.imageUrl?.startsWith('data:')
+                                        ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
+                                        : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
+                                    }`}
+                                    title="Add or change image for this product"
+                                  >
+                                    <Camera className="w-3 h-3" />
+                                    <span>
+                                      {uploadingPreviewRowIdx === idx 
+                                        ? 'Uploading...' 
+                                        : row.imageUrl?.includes('/uploads/') || row.imageUrl?.startsWith('data:')
+                                        ? '✓ Image Added' 
+                                        : '+ Add Image'}
+                                    </span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      disabled={uploadingPreviewRowIdx === idx}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleUploadPreviewRowPhoto(idx, file);
+                                      }}
+                                    />
+                                  </label>
                                 </div>
-                                <div>
-                                  <div className="font-bold text-slate-900">{row.productName}</div>
-                                  <div className="font-mono text-[10px] text-slate-400">{row.productId}</div>
-                                </div>
+                              </td>
+
+                              {/* Product Name & SKU */}
+                              <td className="py-3 px-4">
+                                <div className="font-extrabold text-slate-900 text-sm">{row.productName}</div>
+                                <div className="font-mono text-[11px] text-slate-400 mt-0.5">SKU: {row.productId}</div>
+                                {(row as any).imageFile && (
+                                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                    File: {(row as any).imageFile}
+                                  </div>
+                                )}
                               </td>
 
                               <td className="py-3 px-4">
@@ -1322,10 +2138,10 @@ export default function ShopPartnerPortalPage() {
 
                               <td className="py-3 px-4 font-bold text-slate-900">{row.stockQuantity} Units</td>
 
-                              <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">{row.expiryDate}</td>
+                              <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">{row.expiryDate || 'Not Available'}</td>
 
                               <td className="py-3 px-4 text-right font-mono text-[10px] text-slate-400">
-                                {row.batchNumber}
+                                {row.batchNumber || 'Not Available'}
                               </td>
                             </tr>
                           );
@@ -1353,6 +2169,9 @@ export default function ShopPartnerPortalPage() {
                     <span>{isUploading ? 'Publishing to Storefront...' : 'Publish & Add to Main Site'}</span>
                   </button>
                 </div>
+              </div>
+            )}
+
               </div>
             )}
 

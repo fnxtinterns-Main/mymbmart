@@ -4,7 +4,7 @@ import React, { use } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { CheckCircle2, Clock, MapPin, Truck, Sparkles, ShoppingBag, Package } from 'lucide-react';
+import { CheckCircle2, Clock, Truck, Sparkles, ShoppingBag, Package } from 'lucide-react';
 
 interface OrderConfirmationPageProps {
   params: Promise<{ id: string }>;

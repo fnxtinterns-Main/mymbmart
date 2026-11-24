@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { RefreshCw, ShieldCheck, Clock, CheckCircle2 } from 'lucide-react';
+import { RefreshCw, ShieldCheck, Clock } from 'lucide-react';
 
 export const metadata = {
   title: 'Refund & Return Policy | MegaBachatMart (mymbmart.com)',

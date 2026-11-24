@@ -290,7 +290,36 @@ export async function POST(req: Request) {
           });
         }
 
-        // 1. Create permanent order in PostgreSQL
+        // Ensure products exist in PostgreSQL so relational foreign key constraint is satisfied
+        for (const item of newOrder.items) {
+          const dbProduct = await tx.product.findUnique({
+            where: { id: item.productId }
+          });
+          if (!dbProduct) {
+            let cat = await tx.category.findFirst();
+            if (!cat) {
+              cat = await tx.category.create({
+                data: { name: 'Groceries', slug: 'groceries' }
+              });
+            }
+            const catProd = CATALOG_PRODUCTS.find((p) => p.id === item.productId);
+            await tx.product.create({
+              data: {
+                id: item.productId,
+                sku: catProd?.sku || `MBM-SKU-${item.productId.toUpperCase()}`,
+                name: item.name || catProd?.name || 'Product',
+                slug: catProd?.slug || item.productId.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                unit: catProd?.unit || '1 unit',
+                categoryId: cat.id,
+                mrp: catProd?.mrp || item.unitPrice,
+                bachatPrice: item.unitPrice,
+                imageUrl: item.image || '/images/products/atta.png',
+              }
+            });
+          }
+        }
+
+        // 1. Create permanent order in PostgreSQL with full item relations
         await tx.order.create({
           data: {
             id: newOrder.id,
@@ -299,10 +328,26 @@ export async function POST(req: Request) {
             addressId: dbAddress.id,
             totalMRP: newOrder.totalMRP,
             totalBachatPrice: newOrder.totalMRP - newOrder.shoppingSavings,
+            savingsEarned: newOrder.shoppingSavings,
+            deliveryFee: totalDeliveryFee,
+            creditsApplied: newOrder.creditDeduction,
             finalPayable: newOrder.totalPayable,
             paymentStatus: newOrder.paymentStatus === 'PAID' ? 'PAID' : 'PENDING',
             paymentMethod: newOrder.paymentMethod === 'COD' ? 'CASH_ON_DELIVERY' : 'UPI',
             orderStatus: 'PLACED',
+            deliveryOtp: newOrder.deliveryOtp,
+            items: {
+              create: newOrder.items.map((it) => {
+                const catProd = CATALOG_PRODUCTS.find((p) => p.id === it.productId);
+                return {
+                  productId: it.productId,
+                  quantity: it.quantity,
+                  unitMRP: catProd?.mrp || it.unitPrice,
+                  unitBachatPrice: it.unitPrice,
+                  cashbackEarned: (catProd?.cashbackAmount || 0) * it.quantity,
+                };
+              }),
+            },
           },
         });
 

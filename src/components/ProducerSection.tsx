@@ -2,15 +2,8 @@
 
 import React, { useState } from 'react';
 import { 
-  Users, 
-  Store, 
-  ChefHat, 
-  Sparkles, 
   CheckCircle2, 
-  ArrowRight, 
-  HeartHandshake, 
-  ShieldCheck,
-  Send
+  HeartHandshake
 } from 'lucide-react';
 
 export const ProducerSection: React.FC = () => {

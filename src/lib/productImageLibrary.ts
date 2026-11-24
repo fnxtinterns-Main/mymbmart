@@ -255,7 +255,12 @@ class ProductImageLibraryStore {
   }): string {
     const { productId = '', productName = '', category = 'Groceries', explicitUrl } = params;
 
-    // Check custom uploaded library first (by ID, then by Name)
+    // 1. Explicit image URL provided by merchant (CSV or upload preview) takes absolute priority
+    if (explicitUrl && explicitUrl.trim().length > 4 && !explicitUrl.includes('photo-1540420773420-3366772f4999')) {
+      return explicitUrl.trim();
+    }
+
+    // 2. Check custom uploaded library (by ID, then by Name)
     if (productId) {
       const customById = this.customImages.get(this.normalizeKey(productId));
       if (customById) return customById;
@@ -264,11 +269,6 @@ class ProductImageLibraryStore {
     if (productName) {
       const customByName = this.customImages.get(this.normalizeKey(productName));
       if (customByName) return customByName;
-    }
-
-    // If explicit URL provided and valid (not empty and not broken)
-    if (explicitUrl && explicitUrl.trim().length > 10 && !explicitUrl.includes('photo-1540420773420-3366772f4999')) {
-      return explicitUrl.trim();
     }
 
     // Master Image Bank keyword matching

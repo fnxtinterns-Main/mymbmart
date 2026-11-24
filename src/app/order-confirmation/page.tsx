@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { CheckCircle2, Clock, Truck, Sparkles, ShoppingBag } from 'lucide-react';
+import { CheckCircle2, Sparkles, ShoppingBag } from 'lucide-react';
 
 export default function OrderConfirmationPage() {
   const [orderId, setOrderId] = useState('MBM-2026-ORDER');

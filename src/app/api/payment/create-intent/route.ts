@@ -14,7 +14,6 @@ export async function POST(req: Request) {
     }
 
     const amountInRupees = order.totalPayable;
-    const amountInPaise = Math.round(amountInRupees * 100);
     const transactionRef = `TXN-${order.orderNumber}-${Date.now().toString().slice(-4)}`;
 
     // Authoritative Single Merchant VPA (configurable via env)

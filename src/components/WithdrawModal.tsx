@@ -4,9 +4,6 @@ import React, { useState } from 'react';
 import { 
   X, 
   Wallet, 
-  ArrowUpRight, 
-  CheckCircle2, 
-  ShieldCheck, 
   Building2, 
   QrCode,
   AlertCircle

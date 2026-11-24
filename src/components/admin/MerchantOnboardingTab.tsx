@@ -15,18 +15,16 @@ import {
   Check, 
   ExternalLink, 
   Store, 
-  Sparkles, 
   AlertCircle, 
   RefreshCw,
   Phone,
   Mail,
-  MapPin,
   Eye,
   X,
   CreditCard,
   MessageSquare
 } from 'lucide-react';
-import type { ShopApplication, ShopPartnerAccount } from '@/lib/shopPartnerStore';
+import type { ShopApplication } from '@/lib/shopPartnerStore';
 
 export const MerchantOnboardingTab: React.FC = () => {
   const [applications, setApplications] = useState<ShopApplication[]>([]);

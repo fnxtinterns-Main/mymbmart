@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { idToken, code, user: clientUser, authorization } = body;
+    const { idToken, user: clientUser, authorization } = body;
 
     let email = clientUser?.email || '';
     let name = '';
