@@ -8,12 +8,23 @@ export async function GET(req: Request) {
   try {
     const cookieHeader = req.headers.get('cookie') || '';
     const authHeader = req.headers.get('authorization') || '';
-    const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
+    const isProd = process.env.NODE_ENV === 'production';
+    const ADMIN_PIN = process.env.ADMIN_PIN;
+
+    if (isProd && !ADMIN_PIN && !cookieHeader.includes('mbm_admin_authenticated=true') && !cookieHeader.includes('mbm_admin_token=')) {
+      return NextResponse.json(
+        { error: 'Server authentication misconfigured: ADMIN_PIN environment variable is required.' },
+        { status: 500 }
+      );
+    }
+
     const isAdmin = 
       cookieHeader.includes('mbm_admin_authenticated=true') ||
-      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
+      cookieHeader.includes('mbm_admin_token=') ||
+      (Boolean(ADMIN_PIN) && authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN) ||
+      (!isProd && authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === 'MBM@Admin2026');
 
-    if (!isAdmin && process.env.NODE_ENV === 'production') {
+    if (!isAdmin && isProd) {
       return NextResponse.json(
         { error: 'Unauthorized. Admin credentials or active session required.' }, 
         { 
@@ -27,26 +38,25 @@ export async function GET(req: Request) {
       );
     }
 
-    let sourceOrders: any[] = await syncOrdersFromRedis();
+    // PostgreSQL is the primary authoritative source of truth across all Passenger workers
+    let sourceOrders: any[] = [];
+    let dbSuccess = false;
 
-    // Prisma-First: Attempt fetching live orders from PostgreSQL if available
     try {
       const { prisma } = await import('@/lib/prisma');
       const dbOrders = await prisma.order.findMany({
         take: 50,
         orderBy: { createdAt: 'desc' },
       });
-      if (dbOrders && dbOrders.length > 0) {
-        // Merge with ordersStore so both sets are represented
-        const combined: any[] = [...dbOrders];
-        for (const so of ordersStore) {
-          if (!combined.some((co: any) => co.id === so.id || co.orderNumber === so.orderNumber)) {
-            combined.push(so);
-          }
-        }
-        sourceOrders = combined;
-      }
-    } catch {}
+      sourceOrders = dbOrders;
+      dbSuccess = true;
+    } catch {
+      // DB unavailable fallback
+    }
+
+    if (!dbSuccess) {
+      sourceOrders = await syncOrdersFromRedis();
+    }
 
     const totalOrdersCount = sourceOrders.length;
     const totalGMV = sourceOrders.reduce((acc, o: any) => acc + (o.totalPayable || o.finalPayable || 0), 0);

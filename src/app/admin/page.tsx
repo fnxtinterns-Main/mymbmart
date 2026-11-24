@@ -140,9 +140,16 @@ export default function AdminDashboardPage() {
   const [verificationError, setVerificationError] = useState('');
 
   // Download All Partners Consolidated Audit Report
-  const handleDownloadMasterReport = () => {
-    const csv = generateMasterPlatformReportCsv();
-    triggerCsvDownload(`MBM_Master_Platform_Consolidated_Report_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  const handleDownloadMasterReport = async () => {
+    try {
+      const res = await fetch('/api/admin/reports/master');
+      if (!res.ok) throw new Error('Failed to generate report');
+      const csv = await res.text();
+      triggerCsvDownload(`MBM_Master_Platform_Consolidated_Report_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    } catch {
+      const csv = generateMasterPlatformReportCsv([]);
+      triggerCsvDownload(`MBM_Master_Platform_Consolidated_Report_${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    }
   };
 
   // Hybrid Dispatch Rider Assignment Modal State

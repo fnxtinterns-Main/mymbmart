@@ -33,15 +33,38 @@ export async function POST(req: Request) {
     let totalCashbackEarnable = 0;
     let totalReferralPool = 0;
 
-    for (const item of items) {
-      const product = CATALOG_PRODUCTS.find((p) => p.id === item.productId);
-      if (!product) continue;
+    // Canonical Server-Side Product Price Lookup - ignore client-sent prices
+    let dbProducts: any[] = [];
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      const itemIds = items.map((i: any) => i.productId).filter(Boolean);
+      dbProducts = await prisma.product.findMany({
+        where: { id: { in: itemIds } }
+      });
+    } catch {}
 
-      const itemMRP = product.mrp * item.quantity;
-      const itemBachat = product.bachatPrice * item.quantity;
+    for (const item of items) {
+      const qty = Math.max(1, Math.min(99, Math.floor(Number(item.quantity) || 1)));
+      const dbProduct = dbProducts.find((p) => p.id === item.productId);
+      const catalogProduct = CATALOG_PRODUCTS.find((p) => p.id === item.productId);
+
+      if (!dbProduct && !catalogProduct) continue;
+
+      const canonicalMRP = Number(dbProduct?.mrp ?? catalogProduct?.mrp ?? 0);
+      const canonicalBachat = Number(dbProduct?.bachatPrice ?? catalogProduct?.bachatPrice ?? canonicalMRP);
+      const cashbackAmount = Number(catalogProduct?.cashbackAmount ?? Math.round(canonicalBachat * 0.05));
+      const referralAmount = Number(catalogProduct?.referralRewardAmount ?? Math.round(canonicalBachat * 0.03));
+      const fulfilmentType = catalogProduct?.fulfilmentType || 'QUICK_COMMERCE';
+      const name = dbProduct?.name || catalogProduct?.name || 'Product';
+      const image = dbProduct?.imageUrl || catalogProduct?.image || '';
+      const unit = dbProduct?.unit || catalogProduct?.unit || '';
+      const category = catalogProduct?.category || 'General';
+
+      const itemMRP = canonicalMRP * qty;
+      const itemBachat = canonicalBachat * qty;
       const itemSavings = itemMRP - itemBachat;
-      const itemCashback = (product.cashbackAmount || 0) * item.quantity;
-      const itemReferral = (product.referralRewardAmount || 0) * item.quantity;
+      const itemCashback = cashbackAmount * qty;
+      const itemReferral = referralAmount * qty;
 
       totalMRP += itemMRP;
       totalBachatPrice += itemBachat;
@@ -49,22 +72,22 @@ export async function POST(req: Request) {
       totalReferralPool += itemReferral;
 
       const populatedItem = {
-        productId: product.id,
-        name: product.name,
-        category: product.category,
-        unit: product.unit,
-        image: product.image,
-        mrp: product.mrp,
-        bachatPrice: product.bachatPrice,
-        quantity: item.quantity,
+        productId: item.productId,
+        name,
+        category,
+        unit,
+        image,
+        mrp: canonicalMRP,
+        bachatPrice: canonicalBachat,
+        quantity: qty,
         subtotalMRP: itemMRP,
         subtotalBachat: itemBachat,
         itemSavings,
         cashbackEarnable: itemCashback,
-        fulfilmentType: product.fulfilmentType,
+        fulfilmentType,
       };
 
-      if (product.fulfilmentType === 'QUICK_COMMERCE') {
+      if (fulfilmentType === 'QUICK_COMMERCE') {
         quickCommerceItems.push(populatedItem);
       } else {
         standardMarketplaceItems.push(populatedItem);

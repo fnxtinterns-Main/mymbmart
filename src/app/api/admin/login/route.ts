@@ -2,18 +2,25 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
+const ADMIN_PIN = process.env.ADMIN_PIN;
 
 export async function POST(req: Request) {
   try {
+    const isProd = process.env.NODE_ENV === 'production';
+    if (isProd && !ADMIN_PIN) {
+      return NextResponse.json(
+        { success: false, error: 'Server authentication misconfigured: ADMIN_PIN environment variable is required.' },
+        { status: 500 }
+      );
+    }
+
     const { email, passcode } = await req.json();
     const cleanPass = (passcode || '').toString().trim();
 
-    // Verify passcode against server environment variable or production default
+    // In production, strictly enforce ADMIN_PIN from environment
     const isMasterPin = Boolean(
       (ADMIN_PIN && cleanPass === ADMIN_PIN) ||
-      cleanPass === 'MBM@Admin2026' ||
-      cleanPass === 'MBM#Test001@2026'
+      (!isProd && (cleanPass === 'MBM@Admin2026' || cleanPass === 'MBM#Test001@2026'))
     );
 
     if (!isMasterPin) {

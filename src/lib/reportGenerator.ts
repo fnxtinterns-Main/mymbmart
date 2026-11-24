@@ -91,81 +91,24 @@ export function generateMasterPlatformReportCsv(partners: any[] = []): string {
     'Status'
   ].join(',');
 
-  const defaultPartners = partners.length > 0 ? partners : [
-    {
-      shopId: 'MBM-SHP-834006-03',
-      shopName: 'Chotanagpur Tribal & Retail Hub',
-      ownerName: 'Sunita Soren',
-      phone: '9431109876',
-      pincode: '834006',
-      businessType: 'SHG_COOPERATIVE',
-      totalOrders: 14,
-      gmv: 34500,
-      refunds: 140,
-      creditLimit: 100000,
-      creditDrawn: 24500,
-      status: 'ACTIVE',
-    },
-    {
-      shopId: 'MBM-SHP-834001-01',
-      shopName: 'Ranchi Central Retail & General Store',
-      ownerName: 'Manoj Kumar Gupta',
-      phone: '9835012345',
-      pincode: '834001',
-      businessType: 'KIRANA_GENERAL',
-      totalOrders: 38,
-      gmv: 89400,
-      refunds: 220,
-      creditLimit: 250000,
-      creditDrawn: 65000,
-      status: 'ACTIVE',
-    },
-    {
-      shopId: 'MBM-SHP-834002-02',
-      shopName: 'Doranda Organic Staples Co-op',
-      ownerName: 'Poonam Devi',
-      phone: '9430156789',
-      pincode: '834002',
-      businessType: 'SHG_COOPERATIVE',
-      totalOrders: 21,
-      gmv: 48900,
-      refunds: 0,
-      creditLimit: 150000,
-      creditDrawn: 12000,
-      status: 'ACTIVE',
-    },
-    {
-      shopId: 'MBM-SHP-834005-04',
-      shopName: 'Bariatu Daily Essentials Mart',
-      ownerName: 'Sanjay Pandey',
-      phone: '9431789012',
-      pincode: '834005',
-      businessType: 'SUPERMARKET',
-      totalOrders: 45,
-      gmv: 112000,
-      refunds: 410,
-      creditLimit: 300000,
-      creditDrawn: 95000,
-      status: 'ACTIVE',
-    }
-  ];
+  const reportPartners = partners || [];
 
-  const rows = defaultPartners.map((p) => {
-    const availableCredit = (p.creditLimit || 100000) - (p.creditDrawn || 0);
+  const rows = reportPartners.map((p) => {
+    const availableCredit = (p.creditLimit || 0) - (p.creditDrawn || 0);
     const netDisbursed = (p.gmv || 0) - (p.refunds || 0);
-    return `"${p.shopId}","${p.shopName}","${p.ownerName}","${p.phone}","${p.pincode}","${p.businessType}","${p.totalOrders || 0}","${p.gmv?.toFixed(2) || '0.00'}","${p.refunds?.toFixed(2) || '0.00'}","${p.creditLimit?.toFixed(2) || '100000.00'}","${p.creditDrawn?.toFixed(2) || '0.00'}","${availableCredit.toFixed(2)}","0.00 (0% promo)","${netDisbursed.toFixed(2)}","${p.status || 'ACTIVE'}"`;
+    return `"${p.shopId}","${p.shopName}","${p.ownerName}","${p.phone}","${p.pincode}","${p.businessType}","${p.totalOrders || 0}","${(p.gmv || 0).toFixed(2)}","${(p.refunds || 0).toFixed(2)}","${(p.creditLimit || 0).toFixed(2)}","${(p.creditDrawn || 0).toFixed(2)}","${availableCredit.toFixed(2)}","0.00 (0% promo)","${netDisbursed.toFixed(2)}","${p.status || 'ACTIVE'}"`;
   });
 
-  const totalGmv = defaultPartners.reduce((acc, p) => acc + (p.gmv || 0), 0);
-  const totalRefunds = defaultPartners.reduce((acc, p) => acc + (p.refunds || 0), 0);
-  const totalCreditAllocated = defaultPartners.reduce((acc, p) => acc + (p.creditLimit || 0), 0);
-  const totalCreditInUse = defaultPartners.reduce((acc, p) => acc + (p.creditDrawn || 0), 0);
+  const totalGmv = reportPartners.reduce((acc, p) => acc + (p.gmv || 0), 0);
+  const totalRefunds = reportPartners.reduce((acc, p) => acc + (p.refunds || 0), 0);
+  const totalCreditAllocated = reportPartners.reduce((acc, p) => acc + (p.creditLimit || 0), 0);
+  const totalCreditInUse = reportPartners.reduce((acc, p) => acc + (p.creditDrawn || 0), 0);
 
   const summary = [
     '',
     `"=== MEGABACHATMART ALL-PARTNER MASTER CONSOLIDATED AUDIT ==="`,
     `"Generated At: ${timestamp}"`,
-    `"Total Registered Partners: ${defaultPartners.length}"`,
+    `"Total Registered Partners: ${reportPartners.length}"`,
     `"Total Platform GMV: INR ${totalGmv.toFixed(2)}"`,
     `"Total Platform Customer Refunds: INR ${totalRefunds.toFixed(2)}"`,
     `"Total Working Capital Credit Line Extended: INR ${totalCreditAllocated.toFixed(2)}"`,

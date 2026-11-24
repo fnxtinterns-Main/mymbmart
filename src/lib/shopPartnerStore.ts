@@ -6,8 +6,6 @@ import type { ProductItem } from './types';
 import { inventoryStore } from './inventoryStore';
 import { addCatalogProducts, getCatalogProducts } from './catalog';
 import { productImageLibrary } from './productImageLibrary';
-import fs from 'fs';
-import path from 'path';
 
 export type BusinessType = 
   | 'KIRANA_GENERAL' 
@@ -283,61 +281,14 @@ const INITIAL_ACCOUNTS: ShopPartnerAccount[] = [
 ];
 
 class ShopPartnerStore {
-  public applications: ShopApplication[] = [...INITIAL_APPLICATIONS];
-  public accounts: ShopPartnerAccount[] = [...INITIAL_ACCOUNTS];
-  private dataDir = path.join(process.cwd(), 'data');
-  private dataFile = path.join(process.cwd(), 'data', 'shop_partner_store.json');
+  // In production, start empty without mock seeds
+  public applications: ShopApplication[] = process.env.NODE_ENV === 'production' ? [] : [...INITIAL_APPLICATIONS];
+  public accounts: ShopPartnerAccount[] = process.env.NODE_ENV === 'production' ? [] : [...INITIAL_ACCOUNTS];
 
-  constructor() {
-    this.loadFromFile();
-  }
+  constructor() {}
 
-  private loadFromFile(): void {
-    try {
-      if (typeof window === 'undefined' && fs.existsSync(this.dataFile)) {
-        const raw = fs.readFileSync(this.dataFile, 'utf-8');
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.applications) && parsed.applications.length > 0) {
-          const existingIds = new Set(parsed.applications.map((a: ShopApplication) => a.id));
-          const missingInitials = INITIAL_APPLICATIONS.filter((a) => !existingIds.has(a.id));
-          this.applications = [...parsed.applications, ...missingInitials];
-        }
-        if (Array.isArray(parsed.accounts) && parsed.accounts.length > 0) {
-          const existingIds = new Set(parsed.accounts.map((a: ShopPartnerAccount) => a.shopId));
-          const missingInitials = INITIAL_ACCOUNTS.filter((a) => !existingIds.has(a.shopId));
-          this.accounts = [...parsed.accounts, ...missingInitials];
-        }
-      } else if (typeof window === 'undefined') {
-        this.saveToFile();
-      }
-    } catch (err) {
-      console.error('Failed to load shop partner data from disk:', err);
-    }
-  }
-
-  private saveToFile(): void {
-    try {
-      if (typeof window === 'undefined') {
-        if (!fs.existsSync(this.dataDir)) {
-          fs.mkdirSync(this.dataDir, { recursive: true });
-        }
-        fs.writeFileSync(
-          this.dataFile,
-          JSON.stringify(
-            {
-              applications: this.applications,
-              accounts: this.accounts,
-            },
-            null,
-            2
-          ),
-          'utf-8'
-        );
-      }
-    } catch (err) {
-      console.error('Failed to save shop partner data to disk:', err);
-    }
-  }
+  private loadFromFile(): void {}
+  private saveToFile(): void {}
 
   // Retrieve applications with optional status filter
   public getApplications(filter?: ApplicationStatus | 'ALL'): ShopApplication[] {

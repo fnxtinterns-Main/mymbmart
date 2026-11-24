@@ -7,10 +7,13 @@ export async function GET(req: Request) {
   try {
     const cookieHeader = req.headers.get('cookie') || '';
     const authHeader = req.headers.get('authorization') || '';
-    const ADMIN_PIN = process.env.ADMIN_PIN || 'MBM@Admin2026';
+    const isProd = process.env.NODE_ENV === 'production';
+    const ADMIN_PIN = process.env.ADMIN_PIN;
     const isAdmin = 
       cookieHeader.includes('mbm_admin_authenticated=true') ||
-      (authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN);
+      cookieHeader.includes('mbm_admin_token=') ||
+      (Boolean(ADMIN_PIN) && authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === ADMIN_PIN) ||
+      (!isProd && authHeader.startsWith('Bearer ') && authHeader.slice(7).trim() === 'MBM@Admin2026');
 
     // Extract customer session if present
     let sessionUserId: string | null = null;
@@ -51,50 +54,45 @@ export async function GET(req: Request) {
       );
     }
 
-    let orders: any[] = await syncOrdersFromRedis();
+    let orders: any[] = [];
+    let dbSuccess = false;
+
     try {
       const { prisma } = await import('@/lib/prisma');
       const dbOrders = await prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
         include: { deliveryAddress: true },
       });
-      if (dbOrders && dbOrders.length > 0) {
-        const orderMap = new Map<string, any>();
-        for (const dbo of dbOrders) {
-          const mapped: any = {
-            id: dbo.id,
-            orderNumber: dbo.orderNumber,
-            userId: dbo.userId,
-            deliveryAddress: dbo.deliveryAddress?.fullAddress || 'Ranchi Central',
-            pincode: dbo.deliveryAddress?.pincode || '834001',
-            fulfilmentType: 'HOME_DELIVERY',
-            status: dbo.orderStatus,
-            deliveryOtp: dbo.deliveryOtp || '1234',
-            paymentMethod: dbo.paymentMethod,
-            paymentStatus: dbo.paymentStatus,
-            totalMRP: dbo.totalMRP,
-            totalPayable: dbo.finalPayable,
-            shoppingSavings: (dbo.totalMRP - dbo.totalBachatPrice) || 0,
-            creditDeduction: dbo.creditsApplied || 0,
-            cashbackEarnable: 0,
-            cashbackCredited: false,
-            items: [],
-            splitShipments: [],
-            createdAt: dbo.createdAt.toISOString ? dbo.createdAt.toISOString() : dbo.createdAt,
-            timeline: [
-              { step: 'Order Placed', time: 'Just now', completed: true },
-            ],
-          };
-          orderMap.set(dbo.orderNumber || dbo.id, mapped);
-        }
-        for (const ro of orders) {
-          const key = ro.orderNumber || ro.id;
-          const existing = orderMap.get(key);
-          orderMap.set(key, { ...existing, ...ro });
-        }
-        orders = Array.from(orderMap.values());
-      }
+      orders = dbOrders.map((dbo) => ({
+        id: dbo.id,
+        orderNumber: dbo.orderNumber,
+        userId: dbo.userId,
+        deliveryAddress: dbo.deliveryAddress?.fullAddress || 'Ranchi Central',
+        pincode: dbo.deliveryAddress?.pincode || '834001',
+        fulfilmentType: 'HOME_DELIVERY',
+        status: dbo.orderStatus,
+        deliveryOtp: dbo.deliveryOtp || '1234',
+        paymentMethod: dbo.paymentMethod,
+        paymentStatus: dbo.paymentStatus,
+        totalMRP: dbo.totalMRP,
+        totalPayable: dbo.finalPayable,
+        shoppingSavings: (dbo.totalMRP - dbo.totalBachatPrice) || 0,
+        creditDeduction: dbo.creditsApplied || 0,
+        cashbackEarnable: 0,
+        cashbackCredited: false,
+        items: [],
+        splitShipments: [],
+        createdAt: dbo.createdAt instanceof Date ? dbo.createdAt.toISOString() : dbo.createdAt,
+        timeline: [
+          { step: 'Order Placed', time: 'Just now', completed: true },
+        ],
+      }));
+      dbSuccess = true;
     } catch {}
+
+    if (!dbSuccess) {
+      orders = await syncOrdersFromRedis();
+    }
 
     // Customers only see their own orders; admins see all
     if (!isAdmin && sessionUserId) {

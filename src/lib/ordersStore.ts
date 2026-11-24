@@ -1,6 +1,4 @@
 // Central store for Orders, Deliveries, and Rider Workflows
-import fs from 'fs';
-import path from 'path';
 import { redisSet, redisGet, isRedisConfigured } from './redis';
 
 export interface OrderRecord {
@@ -115,55 +113,16 @@ export interface OrderRecord {
 
 export const initialPilotOrders: OrderRecord[] = [];
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const ORDERS_FILE = path.join(process.cwd(), 'data', 'orders.json');
-
-function loadOrdersFromDisk(): OrderRecord[] {
-  if (typeof window !== 'undefined') return [];
-  try {
-    if (fs.existsSync(ORDERS_FILE)) {
-      const content = fs.readFileSync(ORDERS_FILE, 'utf-8');
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch (err) {
-    console.error('Failed to load orders from disk:', err);
-  }
-  return [];
-}
-
-function saveOrdersToDisk(orders: OrderRecord[]): void {
-  if (typeof window !== 'undefined') return;
-  if (process.env.DATABASE_URL || process.env.NODE_ENV === 'test' || process.env.npm_lifecycle_event?.includes('test')) return;
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Failed to save orders to disk:', err);
-  }
-}
-
-// In-memory persistent order state across Next.js API turns in runtime
+// In-memory fallback order cache across Next.js API turns
 const globalStore = global as unknown as { 
   activeOrders: OrderRecord[];
 };
 
-if (!globalStore.activeOrders || globalStore.activeOrders.length === 0) {
-  globalStore.activeOrders = loadOrdersFromDisk();
+if (!globalStore.activeOrders) {
+  globalStore.activeOrders = [];
 }
 
 export function syncOrdersFromDisk(): OrderRecord[] {
-  const diskOrders = loadOrdersFromDisk();
-  if (diskOrders.length > 0) {
-    const existingIds = new Set(globalStore.activeOrders.map((o) => o.id || o.orderNumber));
-    for (const d of diskOrders) {
-      if (!existingIds.has(d.id) && !existingIds.has(d.orderNumber)) {
-        globalStore.activeOrders.push(d);
-      }
-    }
-  }
   return globalStore.activeOrders;
 }
 
@@ -180,7 +139,6 @@ export async function syncOrdersFromRedis(): Promise<OrderRecord[]> {
           globalStore.activeOrders.push(r);
         }
       }
-      saveOrdersToDisk(globalStore.activeOrders);
     }
   } catch {}
   return syncOrdersFromDisk();
@@ -190,7 +148,6 @@ export const ordersStore = globalStore.activeOrders;
 
 export function addOrder(order: OrderRecord) {
   ordersStore.unshift(order);
-  saveOrdersToDisk(ordersStore);
   if (isRedisConfigured()) {
     redisSet('orders:latest', ordersStore).catch(() => {});
     redisSet(`order:${order.id}`, order).catch(() => {});
@@ -209,20 +166,7 @@ export function getOrderById(idOrNumber: string) {
 }
 
 export async function getOrderByIdAsync(idOrNumber: string): Promise<OrderRecord | undefined> {
-  const local = getOrderById(idOrNumber);
-  if (local) return local;
-  if (isRedisConfigured()) {
-    try {
-      const fromRedis = await redisGet<OrderRecord>(`order:${idOrNumber}`);
-      if (fromRedis) {
-        if (!ordersStore.some(o => o.id === fromRedis.id || o.orderNumber === fromRedis.orderNumber)) {
-          ordersStore.unshift(fromRedis);
-        }
-        return fromRedis;
-      }
-    } catch {}
-  }
-  // PostgreSQL Fallback
+  // PostgreSQL is primary source of truth across Passenger processes
   try {
     const { prisma } = await import('./prisma');
     const dbOrder = await prisma.order.findFirst({
@@ -267,13 +211,18 @@ export async function getOrderByIdAsync(idOrNumber: string): Promise<OrderRecord
           { step: 'Order Placed & Stock Locked', time: 'Just now', completed: true },
         ],
       };
-      if (!ordersStore.some(o => o.id === mapped.id || o.orderNumber === mapped.orderNumber)) {
-        ordersStore.unshift(mapped);
-      }
       return mapped;
     }
   } catch {}
-  return undefined;
+
+  // Fallback to Redis cache or in-memory
+  if (isRedisConfigured()) {
+    try {
+      const fromRedis = await redisGet<OrderRecord>(`order:${idOrNumber}`);
+      if (fromRedis) return fromRedis;
+    } catch {}
+  }
+  return getOrderById(idOrNumber);
 }
 
 // Allowed state machine transitions to prevent illegal step-skipping or post-delivery tampering
@@ -379,7 +328,6 @@ export function updateOrderStatus(orderId: string, status: OrderRecord['status']
       }).catch(() => {});
     }
   }
-  saveOrdersToDisk(ordersStore);
   if (isRedisConfigured()) {
     redisSet('orders:latest', ordersStore).catch(() => {});
     redisSet(`order:${order.id}`, order).catch(() => {});

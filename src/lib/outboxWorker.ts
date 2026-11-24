@@ -52,7 +52,12 @@ export class OutboxWorkerService {
     const lockExpiryDate = new Date(Date.now() - this.lockTimeoutMs);
 
     return prisma.$transaction(async (tx) => {
-      // 1. Select candidates using SKIP LOCKED
+      // 0. Acquire PostgreSQL transaction-level advisory lock to eliminate concurrent worker collisions
+      try {
+        await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(749281);`);
+      } catch {}
+
+      // 1. Select candidates using FOR UPDATE SKIP LOCKED
       const candidates = await tx.$queryRawUnsafe<Array<{ id: string }>>(
         `SELECT id FROM "OutboxEvent"
          WHERE ("status" = 'PENDING' OR ("status" = 'PROCESSING' AND "lockedAt" < $1))
