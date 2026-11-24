@@ -38,13 +38,15 @@ export async function GET(req: Request) {
       // If stores exist in DB, map them with real order metrics
       if (stores.length > 0 || sellers.length > 0) {
         for (const s of stores) {
-          const storeSubOrders = orders.flatMap((o) => (o.subOrders || []).filter((so) => so.storeId === s.id));
-          const totalOrders = storeSubOrders.length;
-          const storeGmv = storeSubOrders.reduce((acc, so) => {
-            const parent = orders.find((o) => o.id === so.parentOrderId);
-            return acc + (parent?.finalPayable || 0);
-          }, 0);
-          const refunds = orders
+          // Distinct orders fulfilled by this specific store
+          const storeOrders = orders.filter((o) =>
+            o.subOrders?.some((so) => so.storeId === s.id)
+          );
+          const totalOrders = storeOrders.length;
+          const storeGmv = storeOrders
+            .filter((o) => (o.orderStatus as string) !== 'CANCELLED' && (o.orderStatus as string) !== 'REFUNDED')
+            .reduce((acc, o) => acc + (o.finalPayable || 0), 0);
+          const storeRefunds = storeOrders
             .filter((o) => (o.orderStatus as string) === 'REFUNDED')
             .reduce((acc, o) => acc + (o.finalPayable || 0), 0);
 
@@ -57,7 +59,7 @@ export async function GET(req: Request) {
             businessType: 'DARK_STORE',
             totalOrders,
             gmv: storeGmv,
-            refunds,
+            refunds: storeRefunds,
             creditLimit: 0,
             creditDrawn: 0,
             status: s.status,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ordersStore, updateOrderStatus, getOrderById, getOrderByIdAsync, syncOrdersFromRedis } from '@/lib/ordersStore';
+import { updateOrderStatus, getOrderByIdAsync, syncOrdersFromRedis } from '@/lib/ordersStore';
 import { isAdminAuthorized, getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';

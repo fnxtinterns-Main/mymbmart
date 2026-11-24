@@ -122,26 +122,16 @@ if (!globalStore.activeOrders) {
   globalStore.activeOrders = [];
 }
 
-export function syncOrdersFromDisk(): OrderRecord[] {
-  return globalStore.activeOrders;
-}
-
 export async function syncOrdersFromRedis(): Promise<OrderRecord[]> {
-  if (!isRedisConfigured()) {
-    return syncOrdersFromDisk();
-  }
-  try {
-    const remote = await redisGet<OrderRecord[]>('orders:latest');
-    if (Array.isArray(remote) && remote.length > 0) {
-      const existingIds = new Set(globalStore.activeOrders.map((o) => o.id || o.orderNumber));
-      for (const r of remote) {
-        if (!existingIds.has(r.id) && !existingIds.has(r.orderNumber)) {
-          globalStore.activeOrders.push(r);
-        }
+  if (isRedisConfigured()) {
+    try {
+      const remote = await redisGet<OrderRecord[]>('orders:latest');
+      if (Array.isArray(remote) && remote.length > 0) {
+        return remote;
       }
-    }
-  } catch {}
-  return syncOrdersFromDisk();
+    } catch {}
+  }
+  return globalStore.activeOrders;
 }
 
 export const ordersStore = globalStore.activeOrders;
@@ -159,7 +149,6 @@ export function addOrder(order: OrderRecord) {
 }
 
 export function getOrderById(idOrNumber: string) {
-  syncOrdersFromDisk();
   return ordersStore.find(
     (o) => o.id === idOrNumber || o.orderNumber === idOrNumber
   );

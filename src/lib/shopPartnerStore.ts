@@ -287,12 +287,8 @@ class ShopPartnerStore {
 
   constructor() {}
 
-  private loadFromFile(): void {}
-  private saveToFile(): void {}
-
   // Retrieve applications with optional status filter
   public getApplications(filter?: ApplicationStatus | 'ALL'): ShopApplication[] {
-    this.loadFromFile();
     if (!filter || filter === 'ALL') {
       return [...this.applications].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
     }
@@ -302,7 +298,6 @@ class ShopPartnerStore {
   }
 
   public getApplicationById(id: string): ShopApplication | undefined {
-    this.loadFromFile();
     return this.applications.find((app) => app.id === id || app.applicationNumber === id);
   }
 
@@ -367,7 +362,6 @@ class ShopPartnerStore {
     };
 
     this.applications.unshift(newApp);
-    this.saveToFile();
     return newApp;
   }
 
@@ -487,8 +481,6 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       this.accounts.push(account);
     }
 
-    this.saveToFile();
-
     return {
       success: true,
       message: `Shop approved successfully! Credentials dispatched to WhatsApp (${app.phone}) and Email (${app.email}).`,
@@ -506,14 +498,11 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
     app.reviewedAt = new Date().toISOString();
     app.reviewNotes = reason;
 
-    this.saveToFile();
-
     return { success: true, message: `Application ${app.applicationNumber} has been rejected.` };
   }
 
   // Authenticate shop partner by Store ID or Phone
   public authenticateShop(identifier: string, password: string): ShopPartnerAccount | null {
-    this.loadFromFile();
     const cleanId = identifier.trim().toLowerCase();
     const cleanPhone = identifier.replace(/\D/g, '');
     const cleanPassword = password.trim();
@@ -537,7 +526,6 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
   }
 
   public getAccount(shopId: string): ShopPartnerAccount | undefined {
-    this.loadFromFile();
     return this.accounts.find((a) => a.shopId.toLowerCase() === shopId.trim().toLowerCase());
   }
 
@@ -863,8 +851,6 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       const totalUnits = rows.reduce((acc, r) => acc + (r.stockQuantity || 0), 0);
       shop.totalStockUnits += totalUnits;
     }
-
-    this.saveToFile();
 
     return {
       success: importedCount > 0,

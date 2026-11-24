@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ordersStore, syncOrdersFromDisk, syncOrdersFromRedis } from '@/lib/ordersStore';
+import { syncOrdersFromRedis } from '@/lib/ordersStore';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
 import { isAdminAuthorized } from '@/lib/securityUtils';
 

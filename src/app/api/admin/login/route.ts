@@ -3,10 +3,13 @@ import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
+let isDotenvAttempted = false;
+
 export async function POST(req: Request) {
   try {
-    // Ensure environment variables are loaded dynamically if not yet attached to process.env
-    if (!process.env.ADMIN_PIN || !process.env.ADMIN_EMAIL || !process.env.JWT_SECRET) {
+    // Attempt to load .env at most once per process if missing from environment
+    if (!isDotenvAttempted && (!process.env.ADMIN_PIN || !process.env.ADMIN_EMAIL || !process.env.JWT_SECRET)) {
+      isDotenvAttempted = true;
       try {
         const dotenv = await import('dotenv');
         dotenv.config();

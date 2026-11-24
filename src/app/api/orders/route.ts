@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { ordersStore, syncOrdersFromDisk, syncOrdersFromRedis } from '@/lib/ordersStore';
-import { isAdminAuthorized } from '@/lib/securityUtils';
+import { syncOrdersFromRedis } from '@/lib/ordersStore';
+import { isAdminAuthorized, getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +16,9 @@ export async function GET(req: Request) {
     if (sessionMatch) {
       try {
         const { default: jwt } = await import('jsonwebtoken');
-        const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'dev-jwt-secret-key' : '');
-        if (JWT_SECRET) {
-          const decoded: any = jwt.verify(sessionMatch[1], JWT_SECRET, { algorithms: ['HS256'] });
-          if (decoded?.userId) sessionUserId = decoded.userId;
-          if (decoded?.phone) sessionPhone = decoded.phone;
-        }
+        const decoded: any = jwt.verify(sessionMatch[1], getJwtSecret(), { algorithms: ['HS256'] });
+        if (decoded?.userId) sessionUserId = decoded.userId;
+        if (decoded?.phone) sessionPhone = decoded.phone;
       } catch {}
     }
 
@@ -45,6 +42,8 @@ export async function GET(req: Request) {
     try {
       const { prisma } = await import('@/lib/prisma');
       const dbOrders = await prisma.order.findMany({
+        where: isAdmin ? {} : { userId: sessionUserId! },
+        take: 50,
         orderBy: { createdAt: 'desc' },
         include: { deliveryAddress: true },
       });
@@ -77,13 +76,11 @@ export async function GET(req: Request) {
 
     if (!dbSuccess) {
       orders = await syncOrdersFromRedis();
-    }
-
-    // Customers only see their own orders; admins see all
-    if (!isAdmin && sessionUserId) {
-      orders = orders.filter(
-        (o) => o.userId === sessionUserId || (sessionPhone && o.userPhone === sessionPhone)
-      );
+      if (!isAdmin && sessionUserId) {
+        orders = orders.filter(
+          (o) => o.userId === sessionUserId || (sessionPhone && o.userPhone === sessionPhone)
+        );
+      }
     }
 
     return NextResponse.json({
