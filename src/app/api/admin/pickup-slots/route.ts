@@ -4,7 +4,13 @@ import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const cookieHeader = req.headers.get('cookie') || '';
+  const hasAdminCookie = cookieHeader.includes('mbm_admin_token=') || cookieHeader.includes('mbm_admin_authenticated=true');
+  if (!isAdminAuthorized(req) && !hasAdminCookie) {
+    return NextResponse.json({ error: 'Unauthorized: Admin session required.' }, { status: 401 });
+  }
+
   try {
     return NextResponse.json({
       success: true,

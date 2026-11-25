@@ -1,3 +1,4 @@
+import '@/lib/envConfig';
 import { NextResponse } from 'next/server';
 import { shopPartnerStore } from '@/lib/shopPartnerStore';
 
@@ -113,6 +114,9 @@ export async function POST(req: Request) {
       ifscCode: effectiveIfsc,
       documents: documents || {},
     });
+
+    // Authoritative Redis persistence across all subdomains and Passenger worker processes
+    await shopPartnerStore.saveToRedis().catch(() => {});
 
     // Authoritative PostgreSQL persistence across all Node worker processes
     if (process.env.DATABASE_URL) {

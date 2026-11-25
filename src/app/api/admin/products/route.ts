@@ -31,6 +31,30 @@ export async function POST(req: Request) {
     if (mrp !== undefined) product.mrp = Number(mrp);
     if (inStock !== undefined) product.inStock = Boolean(inStock);
 
+    // Persist to PostgreSQL and Redis
+    if (process.env.DATABASE_URL) {
+      try {
+        const { prisma } = await import('@/lib/prisma');
+        await prisma.product.updateMany({
+          where: { OR: [{ id }, { sku: product.sku }] },
+          data: {
+            ...(bachatPrice !== undefined ? { bachatPrice: Number(bachatPrice) } : {}),
+            ...(mrp !== undefined ? { mrp: Number(mrp) } : {}),
+            ...(inStock !== undefined ? { inStock: Boolean(inStock) } : {}),
+          },
+        });
+      } catch (dbErr) {
+        console.warn('Prisma product update notice:', dbErr);
+      }
+    }
+
+    try {
+      const { redisSet, isRedisConfigured } = await import('@/lib/redis');
+      if (isRedisConfigured()) {
+        await redisSet(`product:${product.id}`, product).catch(() => {});
+      }
+    } catch {}
+
     return NextResponse.json({
       success: true,
       message: `Product ${product.name} updated successfully in Ranchi Dark Store.`,

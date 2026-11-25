@@ -90,8 +90,16 @@ export async function POST(req: Request) {
         },
       });
 
-      await prisma.sellerProfile.create({
-        data: {
+      await prisma.sellerProfile.upsert({
+        where: { userId: user.id },
+        update: {
+          businessName,
+          isSHG: category === 'SHG',
+          shgGroupName: category === 'SHG' ? businessName : null,
+          city: city || 'Ranchi',
+          state: body.state || 'Jharkhand',
+        },
+        create: {
           userId: user.id,
           businessName,
           isSHG: category === 'SHG',

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrderById } from '@/lib/ordersStore';
+import { getOrderByIdAsync } from '@/lib/ordersStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { orderId, paymentMethod = 'UPI' } = body;
 
-    const order = getOrderById(orderId);
+    const order = await getOrderByIdAsync(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }

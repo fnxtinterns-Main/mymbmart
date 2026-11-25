@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "tsc --noEmit && npm run test:1000",
     "test:1000": "node scripts/run-1000-tests.mjs",
     "test:1500": "node scripts/run-all-1500-tests.mjs",
     "test:5000": "node scripts/run-5000-simulation.mjs",

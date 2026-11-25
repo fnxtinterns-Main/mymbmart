@@ -2,6 +2,7 @@
 // Handles Partner Registration, KYC verification, Admin Approvals, Credential Dispatch,
 // and Bulk CSV Inventory Ingestion with instant Live Storefront synchronization.
 
+import '@/lib/envConfig';
 import crypto from 'crypto';
 import type { ProductItem } from './types';
 import { inventoryStore } from './inventoryStore';
@@ -335,6 +336,14 @@ class ShopPartnerStore {
     const appNumber = `APP-RCH-2026-${String(nextSeq).padStart(3, '0')}`;
     const id = `app-rch-${String(nextSeq).padStart(3, '0')}`;
 
+    const sanitizeDoc = (url?: string, fallback = '') => {
+      if (!url) return fallback;
+      if (url.startsWith('data:') && url.length > 50000) {
+        return fallback || 'https://images.unsplash.com/photo-1607344645866-009c320c5ab8?w=800&auto=format&fit=crop&q=80';
+      }
+      return url;
+    };
+
     const newApp: ShopApplication = {
       id,
       applicationNumber: appNumber,
@@ -356,10 +365,10 @@ class ShopPartnerStore {
       bankAccountNumber: input.bankAccountNumber.trim(),
       ifscCode: input.ifscCode.trim().toUpperCase(),
       documents: {
-        tradeLicenseUrl: input.documents?.tradeLicenseUrl || 'https://images.unsplash.com/photo-1607344645866-009c320c5ab8?w=800&auto=format&fit=crop&q=80',
-        fssaiCertUrl: input.documents?.fssaiCertUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=80',
-        panCardUrl: input.documents?.panCardUrl || 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=800&auto=format&fit=crop&q=80',
-        storePhotoUrl: input.documents?.storePhotoUrl || 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80',
+        tradeLicenseUrl: sanitizeDoc(input.documents?.tradeLicenseUrl, 'https://images.unsplash.com/photo-1607344645866-009c320c5ab8?w=800&auto=format&fit=crop&q=80'),
+        fssaiCertUrl: sanitizeDoc(input.documents?.fssaiCertUrl, 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop&q=80'),
+        panCardUrl: sanitizeDoc(input.documents?.panCardUrl, 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=800&auto=format&fit=crop&q=80'),
+        storePhotoUrl: sanitizeDoc(input.documents?.storePhotoUrl, 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80'),
       },
       status: 'PENDING_REVIEW',
       submittedAt: new Date().toISOString(),
@@ -369,12 +378,38 @@ class ShopPartnerStore {
 
     // Asynchronously synchronize with Upstash Redis across all worker processes
     if (isRedisConfigured()) {
-      redisSet('mbm:shop_applications', this.applications).catch((err) => {
+      this.saveToRedis().catch((err) => {
         console.warn('Redis applications backup notice:', err);
       });
     }
 
     return newApp;
+  }
+
+  // Cross-process async persistence to Upstash Redis
+  public async saveToRedis(): Promise<boolean> {
+    if (isRedisConfigured()) {
+      try {
+        const stored = await redisGet<ShopApplication[]>('mbm:shop_applications');
+        const map = new Map<string, ShopApplication>();
+        if (Array.isArray(stored)) {
+          for (const item of stored) {
+            map.set(item.id, item);
+          }
+        }
+        for (const item of this.applications) {
+          map.set(item.id, item);
+        }
+        const merged = Array.from(map.values()).sort(
+          (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+        );
+        this.applications = merged;
+        return await redisSet('mbm:shop_applications', merged);
+      } catch (err) {
+        console.warn('saveToRedis failed:', err);
+      }
+    }
+    return false;
   }
 
   // Cross-process async synchronization from Upstash Redis
@@ -383,13 +418,16 @@ class ShopPartnerStore {
       try {
         const stored = await redisGet<ShopApplication[]>('mbm:shop_applications');
         if (Array.isArray(stored) && stored.length > 0) {
-          const existingIds = new Set(this.applications.map((a) => a.id));
+          const map = new Map<string, ShopApplication>();
           for (const item of stored) {
-            if (!existingIds.has(item.id)) {
-              this.applications.push(item);
-              existingIds.add(item.id);
-            }
+            map.set(item.id, item);
           }
+          for (const item of this.applications) {
+            map.set(item.id, item);
+          }
+          this.applications = Array.from(map.values()).sort(
+            (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+          );
         }
       } catch (err) {
         console.warn('Redis applications read notice:', err);

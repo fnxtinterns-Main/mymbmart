@@ -1,3 +1,4 @@
+import '@/lib/envConfig';
 import { NextResponse } from 'next/server';
 import { shopPartnerStore, ApplicationStatus } from '@/lib/shopPartnerStore';
 import { sendPartnerApprovalEmail } from '@/lib/emailService';
@@ -146,6 +147,9 @@ export async function POST(req: Request) {
         }
       }
 
+      // Synchronize updated state to Redis
+      await shopPartnerStore.saveToRedis().catch(() => {});
+
       return NextResponse.json({
         success: true,
         message: result.message,
@@ -159,6 +163,9 @@ export async function POST(req: Request) {
       if (!result.success) {
         return NextResponse.json({ success: false, message: result.message }, { status: 400 });
       }
+
+      // Synchronize updated state to Redis
+      await shopPartnerStore.saveToRedis().catch(() => {});
 
       return NextResponse.json({
         success: true,

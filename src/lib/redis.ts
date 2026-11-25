@@ -1,3 +1,5 @@
+import '@/lib/envConfig';
+
 /**
  * MegaBachatMart — High-Performance Zero-Dependency Redis Client
  * Native fetch-based client for Upstash Redis (AWS ap-south-1).
@@ -28,12 +30,13 @@ export async function redisCommand(command: string, ...args: (string | number)[]
   }
 
   try {
-    const url = `${REDIS_URL}/${[command, ...args].map((a) => encodeURIComponent(String(a))).join('/')}`;
-    const res = await fetch(url, {
-      method: 'GET',
+    const res = await fetch(REDIS_URL, {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${REDIS_TOKEN}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify([command, ...args]),
       cache: 'no-store',
     });
 

@@ -1,3 +1,4 @@
+import '@/lib/envConfig';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
