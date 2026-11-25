@@ -41,6 +41,12 @@ export async function POST(req: Request) {
           }
         } else {
           const payload = completeToken.payload;
+          const header = completeToken.header;
+
+          // Invariant: Algorithm must be RS256 from Apple
+          if (header?.alg !== 'RS256' && process.env.NODE_ENV === 'production') {
+            return NextResponse.json({ error: 'Invalid Apple ID token algorithm' }, { status: 401 });
+          }
           // Invariant: Issuer must be Apple
           if (payload.iss && payload.iss !== 'https://appleid.apple.com' && process.env.NODE_ENV === 'production') {
             return NextResponse.json({ error: 'Invalid Apple ID token issuer' }, { status: 401 });
@@ -48,6 +54,11 @@ export async function POST(req: Request) {
           // Invariant: Token expiry check
           if (payload.exp && payload.exp * 1000 < Date.now() && process.env.NODE_ENV === 'production') {
             return NextResponse.json({ error: 'Expired Apple ID token' }, { status: 401 });
+          }
+          // Invariant: Audience check
+          const appleClientId = process.env.NEXT_PUBLIC_APPLE_SERVICES_ID;
+          if (appleClientId && payload.aud && payload.aud !== appleClientId && process.env.NODE_ENV === 'production') {
+            return NextResponse.json({ error: 'Invalid Apple ID token audience' }, { status: 401 });
           }
 
           email = payload.email || email;

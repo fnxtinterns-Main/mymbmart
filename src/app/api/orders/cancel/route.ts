@@ -57,16 +57,6 @@ export async function POST(req: Request) {
       } catch {}
     }
 
-    if (!callerUserId) {
-      const userMatch = cookieHeader.match(/mbm_user_data=([^;]+)/);
-      if (userMatch) {
-        try {
-          const parsed = JSON.parse(decodeURIComponent(userMatch[1]));
-          if (parsed?.id) callerUserId = parsed.id;
-        } catch {}
-      }
-    }
-
     const cleanPhone = (phone || '').replace(/\D/g, '');
     const orderPhone = (order.userPhone || (order as any).customerPhone || '').replace(/\D/g, '');
     const isGuestVerified = Boolean(

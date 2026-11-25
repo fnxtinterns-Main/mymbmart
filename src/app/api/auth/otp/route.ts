@@ -35,6 +35,17 @@ export async function POST(req: Request) {
 
     // 1. VERIFY ACTION
     if (action === 'VERIFY') {
+      const verifyRateLimitKey = `rate-limit:otp-verify:${cleanId}`;
+      try {
+        const failAttempts = await redisCommand('get', verifyRateLimitKey);
+        if (failAttempts && Number(failAttempts) >= 5) {
+          return NextResponse.json(
+            { success: false, error: 'Too many incorrect attempts. Please wait 10 minutes or request a new code.' },
+            { status: 429 }
+          );
+        }
+      } catch {}
+
       const submittedOtp = otp?.toString().trim();
       // Universal test OTP is strictly forbidden in production
       const isTestOtp = !isProd && submittedOtp === '123456';
@@ -65,11 +76,19 @@ export async function POST(req: Request) {
       }
 
       if (!isVerified) {
+        try {
+          const count = await redisCommand('incr', verifyRateLimitKey);
+          if (count === 1) await redisCommand('expire', verifyRateLimitKey, 600);
+        } catch {}
+
         return NextResponse.json(
           { success: false, error: 'Invalid verification code. Please enter the code sent to your mobile or email.' },
           { status: 400 }
         );
       }
+
+      // Clear failed verification counter on successful authentication
+      await redisDel(verifyRateLimitKey).catch(() => {});
 
       const isEmail = cleanId.includes('@');
       const cleanPhone = isEmail ? '' : cleanId;

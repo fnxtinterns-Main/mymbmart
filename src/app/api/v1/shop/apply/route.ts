@@ -91,6 +91,51 @@ export async function POST(req: Request) {
       documents: documents || {},
     });
 
+    // Authoritative PostgreSQL persistence across all Node worker processes
+    if (process.env.DATABASE_URL) {
+      try {
+        const { prisma } = await import('@/lib/prisma');
+        let user = await prisma.user.findFirst({
+          where: { OR: [{ phone: cleanPhone }, { email: effectiveEmail }] },
+        });
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              name: String(ownerName).trim(),
+              phone: cleanPhone,
+              email: effectiveEmail,
+              memberId: 'MBM-SEL-' + Math.floor(100000 + Math.random() * 900000),
+              referralCode: 'REF-' + Math.floor(10000 + Math.random() * 90000),
+              role: 'SELLER',
+            },
+          });
+        }
+        await prisma.sellerProfile.upsert({
+          where: { userId: user.id },
+          create: {
+            userId: user.id,
+            businessName: String(shopName).trim(),
+            isSHG: businessType === 'SHG_COOPERATIVE',
+            shgGroupName: businessType === 'SHG_COOPERATIVE' ? String(shopName).trim() : null,
+            gstin: gstin || null,
+            fssaiNumber: effectiveFssai,
+            city: city || 'Ranchi',
+            state: state || 'Jharkhand',
+            isVerified: false,
+          },
+          update: {
+            businessName: String(shopName).trim(),
+            gstin: gstin || null,
+            fssaiNumber: effectiveFssai,
+            city: city || 'Ranchi',
+            state: state || 'Jharkhand',
+          },
+        });
+      } catch (dbErr) {
+        console.warn('Postgres merchant application persistence notice:', dbErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: `Your application (${application.applicationNumber}) has been submitted successfully to MegaBachatMart!`,

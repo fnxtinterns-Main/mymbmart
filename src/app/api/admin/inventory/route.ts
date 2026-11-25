@@ -4,11 +4,14 @@ import {
   inventoryStore,
   adjustStock,
   postGoodsReceipt,
-  createStockReservation,
   SKUItem
 } from '@/lib/inventoryStore';
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   const skus = inventoryStore.skus;
   const buckets = inventoryStore.stockBuckets;
   const batches = inventoryStore.batches;

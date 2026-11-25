@@ -73,16 +73,6 @@ export async function GET(
           if (decoded?.role === 'ADMIN' || decoded?.role === 'SUPER_ADMIN') isStaffOrAdmin = true;
         } catch {}
       }
-
-      if (!callerUserId) {
-        const userMatch = cookieHeader.match(/mbm_user_data=([^;]+)/);
-        if (userMatch) {
-          try {
-            const parsed = JSON.parse(decodeURIComponent(userMatch[1]));
-            if (parsed?.id) callerUserId = parsed.id;
-          } catch {}
-        }
-      }
     }
 
     // Dev/E2E test fallback

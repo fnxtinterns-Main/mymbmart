@@ -374,6 +374,21 @@ export async function POST(req: Request) {
           }
         }
 
+        // 2b. Deduct applied wallet credits atomically from PostgreSQL RewardAccount
+        if (newOrder.creditDeduction > 0) {
+          const userReward = await tx.rewardAccount.findUnique({
+            where: { userId: dbUser.id },
+          });
+          if (userReward) {
+            await tx.rewardAccount.update({
+              where: { userId: dbUser.id },
+              data: {
+                balance: { decrement: newOrder.creditDeduction },
+              },
+            });
+          }
+        }
+
         // 3. Double-Entry Financial Ledger Posting (Only for 100% wallet prepaid orders at checkout)
         // Online UPI orders settle when gateway webhook confirms status === 'SUCCESS'
         if (isInstantPaid) {

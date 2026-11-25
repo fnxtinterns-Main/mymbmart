@@ -147,6 +147,9 @@ export async function POST(req: Request) {
           const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
           if (verifyRes.ok) {
             const tokenInfo = await verifyRes.json();
+            if (GOOGLE_CLIENT_ID && tokenInfo.aud !== GOOGLE_CLIENT_ID) {
+              return NextResponse.json({ success: false, error: 'Invalid Google ID Token: Audience mismatch.' }, { status: 401 });
+            }
             email = tokenInfo.email || '';
             name = tokenInfo.name || (email ? email.split('@')[0] : 'Google Member');
             avatarUrl = tokenInfo.picture || '';

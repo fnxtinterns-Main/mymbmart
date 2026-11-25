@@ -8,6 +8,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
   }
 
+  try {
+    const { redisGet, isRedisConfigured } = await import('@/lib/redis');
+    if (isRedisConfigured()) {
+      const savedConfig = await redisGet<any>('routing:config');
+      if (savedConfig) {
+        routingEngine.updateConfig(savedConfig, 'System Redis');
+      }
+    }
+  } catch {}
+
   const config = routingEngine.getConfig();
   const history = routingEngine.getConfigHistory();
 
@@ -34,6 +44,13 @@ export async function PUT(req: Request) {
       },
       'Super Admin'
     );
+
+    try {
+      const { redisSet, isRedisConfigured } = await import('@/lib/redis');
+      if (isRedisConfigured()) {
+        await redisSet('routing:config', updated);
+      }
+    } catch {}
 
     return NextResponse.json({
       success: true,

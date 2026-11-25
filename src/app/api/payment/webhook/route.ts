@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getOrderByIdAsync, ordersStore } from '@/lib/ordersStore';
+import { getOrderByIdAsync } from '@/lib/ordersStore';
 import { verifyWebhookSignature } from '@/lib/securityUtils';
 import { redisSet } from '@/lib/redis';
 import { prisma } from '@/lib/prisma';
@@ -32,10 +32,9 @@ export async function POST(req: Request) {
       order.paymentStatus = 'PAID';
       order.upiTransactionId = transactionRef || `UPI-${Date.now()}`;
 
-      // Synchronize across Redis & PostgreSQL
+      // Synchronize order state in Redis
       await redisSet(`order:${order.id}`, order).catch(() => {});
       await redisSet(`order:${order.orderNumber}`, order).catch(() => {});
-      await redisSet('orders:latest', ordersStore).catch(() => {});
 
       if (process.env.DATABASE_URL) {
         await prisma.$transaction(async (tx) => {

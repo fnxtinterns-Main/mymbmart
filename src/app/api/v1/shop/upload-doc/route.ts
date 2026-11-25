@@ -7,6 +7,20 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anon-client';
+    const rateLimitKey = `rate-limit:kyc-upload:${ip}`;
+    try {
+      const { redisCommand } = await import('@/lib/redis');
+      const attempts = await redisCommand('incr', rateLimitKey);
+      if (attempts === 1) await redisCommand('expire', rateLimitKey, 600);
+      if (attempts && Number(attempts) > 10) {
+        return NextResponse.json(
+          { success: false, message: 'Upload rate limit reached. Please wait 10 minutes before uploading more documents.' },
+          { status: 429 }
+        );
+      }
+    } catch {}
+
     const contentType = req.headers.get('content-type') || '';
 
     // Handle multipart/form-data
@@ -25,6 +39,16 @@ export async function POST(req: Request) {
 
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
+
+      // Verify authentic file headers (magic bytes) to prevent malicious executable uploads
+      const isPdf = buffer.length > 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
+      const isJpg = buffer.length > 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+      const isPng = buffer.length > 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+      const isWebp = buffer.length > 12 && buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP';
+
+      if (!isPdf && !isJpg && !isPng && !isWebp) {
+        return NextResponse.json({ success: false, message: 'Invalid file contents. Only authentic PDF, JPG, PNG, and WebP files are allowed.' }, { status: 400 });
+      }
 
       const rawExt = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];

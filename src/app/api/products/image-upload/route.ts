@@ -1,22 +1,37 @@
 import { NextResponse } from 'next/server';
 import { productImageLibrary } from '@/lib/productImageLibrary';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
-import { isAdminAuthorized } from '@/lib/securityUtils';
+import { isAdminAuthorized, getJwtSecret } from '@/lib/securityUtils';
+import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  // Enforce authentication: requires Admin, Partner session, or authenticated user
+  // Enforce authentication: requires Admin or cryptographically verified Partner/User session
   const cookieHeader = req.headers.get('cookie') || '';
-  const referer = req.headers.get('referer') || '';
-  const isPartnerPage = referer.includes('/partners') || referer.includes('/shop/portal') || referer.includes('/shop/register');
-  const isPartner = cookieHeader.includes('mbm_partner_session=') || cookieHeader.includes('mbm_session=') || cookieHeader.includes('mbm_user_data=') || isPartnerPage;
-  const isAuthorized = isAdminAuthorized(req) || isPartner;
+  const authHeader = req.headers.get('authorization') || '';
+  let isAuthorized = isAdminAuthorized(req);
+
+  if (!isAuthorized) {
+    const partnerMatch = cookieHeader.match(/mbm_partner_session=([^;]+)/);
+    const sessionMatch = cookieHeader.match(/mbm_session=([^;]+)/);
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    const tokenToVerify = partnerMatch?.[1] || sessionMatch?.[1] || bearerToken;
+
+    if (tokenToVerify) {
+      try {
+        const decoded: any = jwt.verify(tokenToVerify, getJwtSecret(), { algorithms: ['HS256'] });
+        if (decoded?.role || decoded?.shopId || decoded?.userId) {
+          isAuthorized = true;
+        }
+      } catch {}
+    }
+  }
 
   if (!isAuthorized && process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ success: false, message: 'Unauthorized. Partner or Admin session required.' }, { status: 401 });
+    return NextResponse.json({ success: false, message: 'Unauthorized. Valid Partner or Admin session required.' }, { status: 401 });
   }
 
   try {
