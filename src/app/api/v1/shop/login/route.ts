@@ -1,3 +1,4 @@
+import '@/lib/envConfig';
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { shopPartnerStore } from '@/lib/shopPartnerStore';
@@ -21,10 +22,10 @@ export async function POST(req: Request) {
     const cleanId = String(identifier).trim().toLowerCase();
     const rateLimitKey = `rate-limit:partner-login:${cleanId}`;
 
-    // Rate Limiting: Max 5 failed attempts per 10 minutes
+    // Rate Limiting: Max 10 failed attempts per 10 minutes
     try {
       const attempts = await redisCommand('get', rateLimitKey);
-      if (attempts && Number(attempts) >= 5) {
+      if (attempts && Number(attempts) >= 10) {
         return NextResponse.json(
           { success: false, message: 'Too many failed login attempts. Please wait 10 minutes before retrying.' },
           { status: 429 }
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
     } catch {
       // Redis unavailable - proceed gracefully
     }
+
+    // Synchronize cross-process accounts and approved applications from Upstash Redis
+    await Promise.all([
+      shopPartnerStore.syncAccountsFromRedis().catch(() => {}),
+      shopPartnerStore.syncFromRedis().catch(() => {}),
+    ]);
 
     const account = shopPartnerStore.authenticateShop(identifier, password);
     if (!account) {

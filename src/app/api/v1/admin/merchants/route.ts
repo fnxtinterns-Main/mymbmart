@@ -17,8 +17,11 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') as ApplicationStatus | 'ALL' | null;
 
-    // 1. Sync any cross-process applications from Upstash Redis
-    await shopPartnerStore.syncFromRedis().catch(() => {});
+    // 1. Sync any cross-process applications and accounts from Upstash Redis
+    await Promise.all([
+      shopPartnerStore.syncFromRedis().catch(() => {}),
+      shopPartnerStore.syncAccountsFromRedis().catch(() => {}),
+    ]);
 
     let applications = shopPartnerStore.getApplications(status || 'ALL');
     let accounts = shopPartnerStore.accounts.map(({ passwordHash, ...safe }) => safe);
@@ -147,8 +150,11 @@ export async function POST(req: Request) {
         }
       }
 
-      // Synchronize updated state to Redis
-      await shopPartnerStore.saveToRedis().catch(() => {});
+      // Synchronize updated state and accounts to Redis
+      await Promise.all([
+        shopPartnerStore.saveToRedis().catch(() => {}),
+        shopPartnerStore.saveAccountsToRedis().catch(() => {}),
+      ]);
 
       return NextResponse.json({
         success: true,
@@ -164,8 +170,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: result.message }, { status: 400 });
       }
 
-      // Synchronize updated state to Redis
-      await shopPartnerStore.saveToRedis().catch(() => {});
+      // Synchronize updated state and accounts to Redis
+      await Promise.all([
+        shopPartnerStore.saveToRedis().catch(() => {}),
+        shopPartnerStore.saveAccountsToRedis().catch(() => {}),
+      ]);
 
       return NextResponse.json({
         success: true,

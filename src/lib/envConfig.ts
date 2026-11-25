@@ -40,6 +40,26 @@ export function ensureEnvironmentBootstrapped() {
   if (!process.env.JWT_SECRET) {
     process.env.JWT_SECRET = 'megabachatmart-smartchain-secret-key-2026';
   }
+
+  if (!process.env.SMTP_HOST) {
+    process.env.SMTP_HOST = 'smtp.hostinger.com';
+  }
+
+  if (!process.env.SMTP_PORT) {
+    process.env.SMTP_PORT = '465';
+  }
+
+  if (!process.env.SMTP_USER) {
+    process.env.SMTP_USER = 'support@mymbmart.com';
+  }
+
+  if (!process.env.SMTP_PASS) {
+    process.env.SMTP_PASS = 'Mymbmart@99';
+  }
+
+  if (!process.env.SMTP_FROM) {
+    process.env.SMTP_FROM = 'MegaBachatMart Support <support@mymbmart.com>';
+  }
 }
 
 // Auto-run bootstrap on module load

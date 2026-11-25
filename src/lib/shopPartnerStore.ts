@@ -436,6 +436,51 @@ class ShopPartnerStore {
     return this.applications;
   }
 
+  // Cross-process persistence for approved partner accounts
+  public async saveAccountsToRedis(): Promise<boolean> {
+    if (isRedisConfigured()) {
+      try {
+        const stored = await redisGet<ShopPartnerAccount[]>('mbm:shop_accounts');
+        const map = new Map<string, ShopPartnerAccount>();
+        if (Array.isArray(stored)) {
+          for (const item of stored) {
+            map.set(item.shopId, item);
+          }
+        }
+        for (const item of this.accounts) {
+          map.set(item.shopId, item);
+        }
+        this.accounts = Array.from(map.values());
+        return await redisSet('mbm:shop_accounts', this.accounts);
+      } catch (err) {
+        console.warn('saveAccountsToRedis failed:', err);
+      }
+    }
+    return false;
+  }
+
+  // Cross-process synchronization for partner accounts
+  public async syncAccountsFromRedis(): Promise<ShopPartnerAccount[]> {
+    if (isRedisConfigured()) {
+      try {
+        const stored = await redisGet<ShopPartnerAccount[]>('mbm:shop_accounts');
+        if (Array.isArray(stored) && stored.length > 0) {
+          const map = new Map<string, ShopPartnerAccount>();
+          for (const item of stored) {
+            map.set(item.shopId, item);
+          }
+          for (const item of this.accounts) {
+            map.set(item.shopId, item);
+          }
+          this.accounts = Array.from(map.values());
+        }
+      } catch (err) {
+        console.warn('Redis accounts read notice:', err);
+      }
+    }
+    return this.accounts;
+  }
+
   // Admin Review & Approval: Generates Shop ID + Password & Dispatches via WhatsApp and Email
   public approveApplication(params: {
     applicationId: string;
@@ -552,6 +597,11 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       this.accounts.push(account);
     }
 
+    if (isRedisConfigured()) {
+      this.saveToRedis().catch(() => {});
+      this.saveAccountsToRedis().catch(() => {});
+    }
+
     return {
       success: true,
       message: `Shop approved successfully! Credentials dispatched to WhatsApp (${app.phone}) and Email (${app.email}).`,
@@ -569,16 +619,20 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
     app.reviewedAt = new Date().toISOString();
     app.reviewNotes = reason;
 
+    if (isRedisConfigured()) {
+      this.saveToRedis().catch(() => {});
+    }
+
     return { success: true, message: `Application ${app.applicationNumber} has been rejected.` };
   }
 
-  // Authenticate shop partner by Store ID or Phone
+  // Authenticate shop partner by Store ID, Phone, or Email
   public authenticateShop(identifier: string, password: string): ShopPartnerAccount | null {
     const cleanId = identifier.trim().toLowerCase();
     const cleanPhone = identifier.replace(/\D/g, '');
     const cleanPassword = password.trim();
 
-    const account = this.accounts.find((a) => {
+    let account = this.accounts.find((a) => {
       const matchesId = a.shopId.toLowerCase() === cleanId;
       const matchesEmail = a.email.toLowerCase() === cleanId;
       const matchesPhone = cleanPhone.length >= 10 && a.phone.replace(/\D/g, '').slice(-10) === cleanPhone.slice(-10);
@@ -594,6 +648,47 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       }
       return (matchesId || matchesEmail || matchesPhone) && matchesPassword;
     });
+
+    // Fallback: Authenticate against approved applications in Redis/RAM
+    if (!account) {
+      const app = this.applications.find((a) => {
+        if (a.status !== 'APPROVED') return false;
+        const matchesShopId = Boolean(a.generatedShopId && a.generatedShopId.toLowerCase() === cleanId);
+        const matchesEmail = Boolean(a.email && a.email.toLowerCase() === cleanId);
+        const matchesPhone = Boolean(cleanPhone.length >= 10 && a.phone.replace(/\D/g, '').slice(-10) === cleanPhone.slice(-10));
+        const matchesPass = Boolean(a.generatedPassword && a.generatedPassword.trim() === cleanPassword);
+        return (matchesShopId || matchesEmail || matchesPhone) && matchesPass;
+      });
+
+      if (app && app.generatedShopId) {
+        account = {
+          shopId: app.generatedShopId,
+          applicationId: app.id,
+          shopName: app.shopName,
+          ownerName: app.ownerName,
+          email: app.email,
+          phone: app.phone,
+          passwordHash: app.generatedPassword || cleanPassword,
+          pincode: app.pincode,
+          address: `${app.address}, ${app.city}, ${app.state}`,
+          businessType: app.businessType,
+          fssaiNumber: app.fssaiNumber,
+          status: 'ACTIVE',
+          joinedAt: app.reviewedAt || app.submittedAt,
+          totalProductsListed: 0,
+          totalStockUnits: 0,
+          totalOrdersFulfilled: 0,
+          rating: 5.0,
+        };
+        const idx = this.accounts.findIndex((acc) => acc.shopId === app.generatedShopId);
+        if (idx >= 0) {
+          this.accounts[idx] = account;
+        } else {
+          this.accounts.push(account);
+        }
+      }
+    }
+
     return account || null;
   }
 
