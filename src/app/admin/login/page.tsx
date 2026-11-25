@@ -90,9 +90,9 @@ export default function AdminLoginPage() {
       <div className="flex-1 flex items-center justify-center p-4 relative z-10">
         <div className="w-full max-w-md glass-panel-glow border border-emerald-900/10 rounded-3xl p-8 shadow-xl space-y-6 backdrop-blur-2xl">
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-white p-1 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm overflow-hidden">
+            <div className="w-20 h-20 rounded-full bg-white p-1 border-2 border-emerald-300 flex items-center justify-center mx-auto shadow-md overflow-hidden">
               <img 
-                src="/images/mymbmart-logo.jpg" 
+                src="/images/mymbmart-badge-logo.jpg" 
                 alt="MegaBachatMart Logo" 
                 className="w-full h-full object-contain"
               />

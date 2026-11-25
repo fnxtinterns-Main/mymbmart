@@ -54,12 +54,41 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { latitude, longitude, pincode } = body;
 
+    let storesList: any[] = PILOT_DARK_STORES;
+
+    if (process.env.DATABASE_URL) {
+      try {
+        const { prisma } = await import('@/lib/prisma');
+        const dbStores = await prisma.store.findMany({
+          where: { status: 'OPEN' },
+        });
+        if (dbStores.length > 0) {
+          storesList = dbStores.map((s) => ({
+            id: s.id,
+            storeCode: s.storeCode,
+            name: s.name,
+            city: s.city,
+            state: s.state,
+            latitude: s.latitude,
+            longitude: s.longitude,
+            radiusKm: s.deliveryRadiusKm || 5.0,
+            serviceablePincodes: ['834001', '834002', '834003', '834004', '834005'],
+            deliveryEtaMins: 25,
+            minOrderFreeDelivery: 199,
+            status: s.status,
+          }));
+        }
+      } catch (dbErr) {
+        console.warn('Prisma store serviceability lookup notice:', dbErr);
+      }
+    }
+
     let matchedStore = null;
     let distance = 0;
 
     // 1. If GPS coordinates provided, find nearest store within radius
     if (latitude && longitude) {
-      for (const store of PILOT_DARK_STORES) {
+      for (const store of storesList) {
         if (store.status !== 'OPEN') continue;
         const d = calculateDistanceKm(latitude, longitude, store.latitude, store.longitude);
         if (d <= store.radiusKm) {
@@ -73,11 +102,26 @@ export async function POST(req: Request) {
 
     // 2. If no coordinate match but PIN code provided, match by serviceable PIN codes
     if (!matchedStore && pincode) {
-      matchedStore = PILOT_DARK_STORES.find(
-        (store) => store.status === 'OPEN' && store.serviceablePincodes.includes(pincode.trim())
-      );
-      if (matchedStore) {
-        distance = 3.2; // default estimated distance
+      if (process.env.DATABASE_URL) {
+        try {
+          const { prisma } = await import('@/lib/prisma');
+          const pincodeRecord = await prisma.serviceablePincode.findFirst({
+            where: { pincode: pincode.trim(), deliveryActive: true },
+          });
+          if (pincodeRecord && storesList.length > 0) {
+            matchedStore = storesList[0];
+            distance = 3.0;
+          }
+        } catch {}
+      }
+
+      if (!matchedStore) {
+        matchedStore = storesList.find(
+          (store) => store.status === 'OPEN' && store.serviceablePincodes?.includes(pincode.trim())
+        );
+        if (matchedStore) {
+          distance = 3.2; // default estimated distance
+        }
       }
     }
 

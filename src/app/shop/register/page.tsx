@@ -62,6 +62,19 @@ export default function ShopRegistrationPage() {
     };
   }>({});
 
+  // Field validation helpers
+  const cleanPhone = formData.phone.replace(/\D/g, '');
+  const cleanFssai = formData.fssaiNumber.replace(/\D/g, '');
+  const cleanPan = formData.panNumber.trim().toUpperCase();
+  const cleanPincode = formData.pincode.replace(/\D/g, '');
+  const cleanIfsc = formData.ifscCode.trim().toUpperCase();
+
+  const isPhoneValid = cleanPhone.length === 10;
+  const isFssaiValid = cleanFssai.length === 14;
+  const isPanValid = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan);
+  const isPincodeValid = cleanPincode.length === 6;
+  const isIfscValid = /^[A-Z]{4}0[A-Z0-9]{6}$/.test(cleanIfsc);
+
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     docKey: 'fssaiCertUrl' | 'tradeLicenseUrl' | 'panCardUrl' | 'storePhotoUrl'
@@ -191,8 +204,12 @@ export default function ShopRegistrationPage() {
         setErrorMsg('Please complete all basic store and contact information.');
         return;
       }
-      if (!/^\d{10}$/.test(formData.phone.replace(/[^0-9]/g, ''))) {
-        setErrorMsg('Please enter a valid 10-digit mobile number.');
+      if (!isPhoneValid) {
+        setErrorMsg('Primary Mobile must be a valid 10-digit number (e.g. 9845612300).');
+        return;
+      }
+      if (!isPincodeValid) {
+        setErrorMsg('Please enter a valid 6-digit postal PIN code.');
         return;
       }
       setCurrentStep(2);
@@ -201,10 +218,22 @@ export default function ShopRegistrationPage() {
         setErrorMsg('FSSAI Registration, Trade License, and PAN Number are mandatory for onboarding.');
         return;
       }
+      if (!isFssaiValid) {
+        setErrorMsg(`FSSAI License Number must be a valid 14-digit number (currently ${cleanFssai.length} digits).`);
+        return;
+      }
+      if (!isPanValid) {
+        setErrorMsg('PAN Number must be a valid 10-character code (e.g. ABCDE1234F).');
+        return;
+      }
       setCurrentStep(3);
     } else if (currentStep === 3) {
       if (!formData.bankAccountNumber || !formData.ifscCode || !formData.bankName) {
         setErrorMsg('Bank Name, Account Number, and IFSC are required for automated daily payouts.');
+        return;
+      }
+      if (!isIfscValid) {
+        setErrorMsg('Please enter a valid 11-character IFSC code (e.g. SBIN0000167).');
         return;
       }
       setCurrentStep(4);
@@ -352,7 +381,20 @@ export default function ShopRegistrationPage() {
                   { step: 3, label: 'Bank Payouts' },
                   { step: 4, label: 'Review & Submit' }
                 ].map((s) => (
-                  <div key={s.step} className="flex items-center space-x-2">
+                  <button
+                    key={s.step}
+                    type="button"
+                    onClick={() => {
+                      if (s.step < currentStep) {
+                        setErrorMsg('');
+                        setCurrentStep(s.step);
+                      }
+                    }}
+                    disabled={s.step > currentStep}
+                    className={`flex items-center space-x-2 text-left transition ${
+                      s.step < currentStep ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
+                    }`}
+                  >
                     <div 
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition ${
                         currentStep === s.step
@@ -365,7 +407,7 @@ export default function ShopRegistrationPage() {
                       {currentStep > s.step ? '✓' : s.step}
                     </div>
                     <span className="hidden sm:inline text-slate-800">{s.label}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
 
@@ -412,17 +454,38 @@ export default function ShopRegistrationPage() {
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Primary Mobile / WhatsApp *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-slate-700">Primary Mobile / WhatsApp *</label>
+                        {formData.phone && (
+                          <span className={`text-[10px] font-extrabold ${isPhoneValid ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {cleanPhone.length}/10 digits
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="tel"
                         name="phone"
                         required
+                        maxLength={10}
                         placeholder="10-digit mobile number"
                         value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setFormData(prev => ({ ...prev, phone: val }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 rounded-xl border outline-none font-mono ${
+                          formData.phone
+                            ? isPhoneValid
+                              ? 'border-emerald-500 bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500'
+                              : 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                            : 'border-slate-200 focus:ring-2 focus:ring-emerald-500'
+                        }`}
                       />
-                      <span className="text-[10px] text-slate-400">Credentials will be sent to this WhatsApp number.</span>
+                      {formData.phone && !isPhoneValid ? (
+                        <p className="text-[11px] text-rose-600 font-bold mt-1">Must be exactly 10 digits.</p>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 block mt-1">Credentials will be sent to this WhatsApp number.</span>
+                      )}
                     </div>
 
                     <div>
@@ -463,16 +526,36 @@ export default function ShopRegistrationPage() {
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">PIN Code *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-slate-700">PIN Code *</label>
+                        {formData.pincode && (
+                          <span className={`text-[10px] font-extrabold ${isPincodeValid ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {cleanPincode.length}/6 digits
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         name="pincode"
                         required
+                        maxLength={6}
                         placeholder="834001"
                         value={formData.pincode}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setFormData(prev => ({ ...prev, pincode: val }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 rounded-xl border outline-none font-mono ${
+                          formData.pincode
+                            ? isPincodeValid
+                              ? 'border-emerald-500 bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500'
+                              : 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                            : 'border-slate-200 focus:ring-2 focus:ring-emerald-500'
+                        }`}
                       />
+                      {formData.pincode && !isPincodeValid && (
+                        <p className="text-[11px] text-rose-600 font-bold mt-1">Must be a 6-digit PIN code.</p>
+                      )}
                     </div>
 
                     <div>
@@ -526,17 +609,41 @@ export default function ShopRegistrationPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">FSSAI License / Registration No *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-slate-700">FSSAI License / Registration No *</label>
+                        {formData.fssaiNumber && (
+                          <span className={`text-[10px] font-extrabold ${isFssaiValid ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {cleanFssai.length}/14 digits
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         name="fssaiNumber"
                         required
+                        maxLength={14}
                         placeholder="14-digit FSSAI Number"
                         value={formData.fssaiNumber}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 14);
+                          setFormData(prev => ({ ...prev, fssaiNumber: val }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 rounded-xl border outline-none font-mono ${
+                          formData.fssaiNumber
+                            ? isFssaiValid
+                              ? 'border-emerald-500 bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500'
+                              : 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                            : 'border-slate-200 focus:ring-2 focus:ring-emerald-500'
+                        }`}
                       />
-                      <span className="text-[10px] text-slate-400">Required for food and grocery delivery.</span>
+                      {formData.fssaiNumber && !isFssaiValid ? (
+                        <p className="text-[11px] text-rose-600 font-bold mt-1 flex items-center space-x-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>FSSAI License Number must be a valid 14-digit number (needs {14 - cleanFssai.length} more digit{14 - cleanFssai.length === 1 ? '' : 's'}).</span>
+                        </p>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 block mt-1">Required 14-digit number for food and grocery delivery.</span>
+                      )}
                     </div>
 
                     <div>
@@ -553,16 +660,41 @@ export default function ShopRegistrationPage() {
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Proprietor / Firm PAN *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-slate-700">Proprietor / Firm PAN *</label>
+                        {formData.panNumber && (
+                          <span className={`text-[10px] font-extrabold ${isPanValid ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {cleanPan.length}/10 chars
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         name="panNumber"
                         required
+                        maxLength={10}
                         placeholder="ABCDE1234F"
                         value={formData.panNumber}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none uppercase font-mono"
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase().slice(0, 10);
+                          setFormData(prev => ({ ...prev, panNumber: val }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 rounded-xl border outline-none uppercase font-mono ${
+                          formData.panNumber
+                            ? isPanValid
+                              ? 'border-emerald-500 bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500'
+                              : 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                            : 'border-slate-200 focus:ring-2 focus:ring-emerald-500'
+                        }`}
                       />
+                      {formData.panNumber && !isPanValid ? (
+                        <p className="text-[11px] text-rose-600 font-bold mt-1 flex items-center space-x-1">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>Format must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).</span>
+                        </p>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 block mt-1">10-character alphanumeric PAN.</span>
+                      )}
                     </div>
 
                     <div>
@@ -913,16 +1045,38 @@ export default function ShopRegistrationPage() {
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">IFSC Code *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-slate-700">IFSC Code *</label>
+                        {formData.ifscCode && (
+                          <span className={`text-[10px] font-extrabold ${isIfscValid ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {cleanIfsc.length}/11 chars
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         name="ifscCode"
                         required
+                        maxLength={11}
                         placeholder="e.g. SBIN0000167"
                         value={formData.ifscCode}
-                        onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-mono uppercase"
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase().slice(0, 11);
+                          setFormData(prev => ({ ...prev, ifscCode: val }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 rounded-xl border outline-none font-mono uppercase ${
+                          formData.ifscCode
+                            ? isIfscValid
+                              ? 'border-emerald-500 bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500'
+                              : 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                            : 'border-slate-200 focus:ring-2 focus:ring-emerald-500'
+                        }`}
                       />
+                      {formData.ifscCode && !isIfscValid ? (
+                        <p className="text-[11px] text-rose-600 font-bold mt-1">IFSC must be 11 characters (e.g. SBIN0000167).</p>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 block mt-1">11-character bank branch code.</span>
+                      )}
                     </div>
                   </div>
 
