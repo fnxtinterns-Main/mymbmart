@@ -7,13 +7,15 @@ import type { ProductItem } from './types';
 import { inventoryStore } from './inventoryStore';
 import { addCatalogProducts, getCatalogProducts } from './catalog';
 import { productImageLibrary } from './productImageLibrary';
+import { redisGet, redisSet, isRedisConfigured } from './redis';
 
 export type BusinessType = 
   | 'KIRANA_GENERAL' 
   | 'ORGANIC_PRODUCE' 
   | 'DAIRY_SWEETS' 
   | 'SUPERMARKET' 
-  | 'SHG_COOPERATIVE';
+  | 'SHG_COOPERATIVE'
+  | 'HOME_KITCHEN';
 
 export type ApplicationStatus = 'PENDING_REVIEW' | 'VERIFIED' | 'APPROVED' | 'REJECTED';
 
@@ -364,7 +366,36 @@ class ShopPartnerStore {
     };
 
     this.applications.unshift(newApp);
+
+    // Asynchronously synchronize with Upstash Redis across all worker processes
+    if (isRedisConfigured()) {
+      redisSet('mbm:shop_applications', this.applications).catch((err) => {
+        console.warn('Redis applications backup notice:', err);
+      });
+    }
+
     return newApp;
+  }
+
+  // Cross-process async synchronization from Upstash Redis
+  public async syncFromRedis(): Promise<ShopApplication[]> {
+    if (isRedisConfigured()) {
+      try {
+        const stored = await redisGet<ShopApplication[]>('mbm:shop_applications');
+        if (Array.isArray(stored) && stored.length > 0) {
+          const existingIds = new Set(this.applications.map((a) => a.id));
+          for (const item of stored) {
+            if (!existingIds.has(item.id)) {
+              this.applications.push(item);
+              existingIds.add(item.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Redis applications read notice:', err);
+      }
+    }
+    return this.applications;
   }
 
   // Admin Review & Approval: Generates Shop ID + Password & Dispatches via WhatsApp and Email

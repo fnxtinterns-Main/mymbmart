@@ -4,14 +4,25 @@
  * Works seamlessly in Next.js Server Actions, Route Handlers, Edge, and multi-process environments.
  */
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+function getRedisConfig() {
+  if (!process.env.UPSTASH_REDIS_REST_URL) {
+    try {
+      require('dotenv').config();
+    } catch {}
+  }
+  return {
+    url: process.env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, ''),
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  };
+}
 
 export const isRedisConfigured = (): boolean => {
-  return Boolean(REDIS_URL && REDIS_TOKEN);
+  const { url, token } = getRedisConfig();
+  return Boolean(url && token);
 };
 
 export async function redisCommand(command: string, ...args: (string | number)[]): Promise<any> {
+  const { url: REDIS_URL, token: REDIS_TOKEN } = getRedisConfig();
   if (!REDIS_URL || !REDIS_TOKEN) {
     return null;
   }
@@ -40,6 +51,7 @@ export async function redisCommand(command: string, ...args: (string | number)[]
 }
 
 export async function redisPostCommand(commands: (string | number)[][]): Promise<any> {
+  const { url: REDIS_URL, token: REDIS_TOKEN } = getRedisConfig();
   if (!REDIS_URL || !REDIS_TOKEN) {
     return null;
   }

@@ -26,12 +26,21 @@ export async function POST(req: Request) {
       bankAccountNumber,
       ifscCode,
       documents,
+      isCommunityExempt,
     } = body;
+
+    // Check if the applicant qualifies for community fast-track (SHG, Farmer, Home/Ghost Kitchen)
+    const isExempt = Boolean(
+      isCommunityExempt ||
+      businessType === 'SHG_COOPERATIVE' ||
+      businessType === 'ORGANIC_PRODUCE' ||
+      businessType === 'HOME_KITCHEN'
+    );
 
     // Validation for essential fields
     if (!shopName || !ownerName || !phone) {
       return NextResponse.json(
-        { success: false, message: 'Shop name, owner name, and contact phone number are required.' },
+        { success: false, message: 'Shop/Farm name, owner name, and contact phone number are required.' },
         { status: 400 }
       );
     }
@@ -44,18 +53,30 @@ export async function POST(req: Request) {
       );
     }
 
-    if (fssaiNumber && !/^\d{14}$/.test(String(fssaiNumber).trim())) {
+    // FSSAI validation: Mandatory only for commercial retailers. Optional for SHGs/farmers/home kitchens.
+    if (!isExempt && fssaiNumber && !/^\d{14}$/.test(String(fssaiNumber).trim())) {
       return NextResponse.json(
         { success: false, message: 'FSSAI License Number must be a valid 14-digit number.' },
         { status: 400 }
       );
     }
 
-    if (panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(String(panNumber).trim())) {
-      return NextResponse.json(
-        { success: false, message: 'PAN Number must be a valid 10-character code (e.g. ABCDE1234F).' },
-        { status: 400 }
-      );
+    // PAN / Identity validation: Commercial shops require 10-char PAN; Exempt entities accept PAN or 12-digit Aadhaar.
+    const cleanPan = panNumber ? String(panNumber).trim().toUpperCase() : '';
+    if (cleanPan) {
+      const isValidPan = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan);
+      const isValidAadhaar = /^\d{12}$/.test(cleanPan.replace(/\s+/g, ''));
+      if (!isExempt && !isValidPan) {
+        return NextResponse.json(
+          { success: false, message: 'PAN Number must be a valid 10-character code (e.g. ABCDE1234F).' },
+          { status: 400 }
+        );
+      } else if (isExempt && !isValidPan && !isValidAadhaar && cleanPan !== 'COMMUNITY_ID') {
+        return NextResponse.json(
+          { success: false, message: 'Please provide either a 10-character PAN or 12-digit Aadhaar Card number.' },
+          { status: 400 }
+        );
+      }
     }
 
     const effectivePincode = pincode || '834001';
@@ -65,10 +86,12 @@ export async function POST(req: Request) {
     const effectiveAddress = address && String(address).trim() !== '' 
       ? String(address).trim() 
       : `Main Market Area, Pincode ${effectivePincode}`;
-    const effectiveTradeLicense = tradeLicenseNumber || 'PENDING_VERIF';
+    const effectiveTradeLicense = tradeLicenseNumber || (isExempt ? 'COMMUNITY_EXEMPT' : 'PENDING_VERIF');
     const effectiveBankAcc = bankAccountNumber || 'PENDING_ONBOARDING';
     const effectiveIfsc = ifscCode || 'SBIN000000';
-    const effectiveFssai = fssaiNumber || 'PENDING_VERIF';
+    const effectiveFssai = (fssaiNumber && /^\d{14}$/.test(String(fssaiNumber).trim()))
+      ? String(fssaiNumber).trim()
+      : (isExempt ? 'COMMUNITY_EXEMPT' : 'PENDING_VERIF');
 
     const application = shopPartnerStore.submitApplication({
       shopName: String(shopName).trim(),

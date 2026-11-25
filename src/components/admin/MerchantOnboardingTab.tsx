@@ -54,12 +54,56 @@ export const MerchantOnboardingTab: React.FC = () => {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/v1/admin/merchants');
-      const data = await res.json();
-      if (data.success) {
-        setApplications(data.applications || []);
-        setMetrics(data.metrics || {});
+      let loadedApps: ShopApplication[] = [];
+      let loadedMetrics: any = null;
+
+      try {
+        const res = await fetch('/api/v1/admin/merchants', {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const data = await res.json();
+        if (data.success && Array.isArray(data.applications) && data.applications.length > 0) {
+          loadedApps = data.applications;
+          loadedMetrics = data.metrics;
+        }
+      } catch (err) {
+        console.warn('Direct admin merchants fetch notice:', err);
       }
+
+      // Cross-subdomain fallback if running under admin. subdomain
+      if (loadedApps.length === 0 && typeof window !== 'undefined' && window.location.hostname.includes('admin.')) {
+        try {
+          const crossRes = await fetch('https://mymbmart.com/api/v1/admin/merchants', {
+            credentials: 'include',
+            cache: 'no-store',
+          });
+          const crossData = await crossRes.json();
+          if (crossData.success && Array.isArray(crossData.applications) && crossData.applications.length > 0) {
+            loadedApps = crossData.applications;
+            loadedMetrics = crossData.metrics;
+          }
+        } catch {}
+      }
+
+      // Client-side synchronization fallback
+      if (loadedApps.length === 0 && typeof window !== 'undefined') {
+        try {
+          const clientStored = JSON.parse(localStorage.getItem('mymbmart_pending_merchant_apps') || '[]');
+          if (Array.isArray(clientStored) && clientStored.length > 0) {
+            loadedApps = clientStored;
+          }
+        } catch {}
+      }
+
+      setApplications(loadedApps);
+      setMetrics(loadedMetrics || {
+        totalApplications: loadedApps.length,
+        pendingReview: loadedApps.filter((a) => a.status === 'PENDING_REVIEW').length,
+        approvedPartners: loadedApps.filter((a) => a.status === 'APPROVED').length,
+        rejectedApplications: loadedApps.filter((a) => a.status === 'REJECTED').length,
+        activeStores: 0,
+      });
     } catch (e) {
       console.error('Failed to load merchant applications:', e);
     } finally {
