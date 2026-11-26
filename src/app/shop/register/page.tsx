@@ -301,11 +301,11 @@ export default function ShopRegistrationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between text-[#0F172A]">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between text-[#0F172A] w-[100vw] max-w-[100vw] overflow-x-hidden">
       {/* Top Header with Only Website Logo */}
-      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex items-center justify-between">
+      <header className="w-[100vw] max-w-[100vw] bg-white border-b-[1px] border-slate-200 px-[4%] py-[0.75rem] sm:py-[1.25rem] flex items-center justify-between">
         <Link href="/" className="flex items-center">
-          <div className="relative w-56 sm:w-72 md:w-84 lg:w-96 xl:w-[420px] h-16 sm:h-20 md:h-22 lg:h-24">
+          <div className="relative w-[10.5rem] sm:w-[14.5rem] md:w-[18rem] lg:w-[22rem] h-[3rem] sm:h-[4rem]">
             <Image
               src="/images/LOgo.jpeg"
               alt="MegaBachatMart"
@@ -316,70 +316,70 @@ export default function ShopRegistrationPage() {
           </div>
         </Link>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-[0.75rem] sm:space-x-[1rem]">
           <Link
             href="/shop/login"
-            className="text-xs font-bold text-emerald-800 hover:text-emerald-950 transition"
+            className="text-[0.75rem] font-bold text-emerald-800 hover:text-emerald-950 transition"
           >
             Already a Partner? Sign In →
           </Link>
           <Link
             href="/"
-            className="text-xs font-semibold text-slate-500 hover:text-[#064E3B] transition hidden sm:inline-block"
+            className="text-[0.75rem] font-semibold text-slate-500 hover:text-[#064E3B] transition hidden sm:inline-block"
           >
             ← Back to Store
           </Link>
         </div>
       </header>
 
-      <main className="flex-1 py-10 sm:py-14 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto space-y-8">
+      <main className="w-[100vw] max-w-[100vw] flex-1 py-[2rem] sm:py-[3.5rem] px-[4%] sm:px-[5%]">
+        <div className="w-[100%] max-w-[48rem] mx-auto space-y-[1.5rem] sm:space-y-[2rem]">
           
           {/* Header Banner */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center space-x-2 bg-emerald-100 text-[#064E3B] px-3.5 py-1.5 rounded-full text-xs font-black">
-              <Store className="w-4 h-4 text-emerald-700" />
+          <div className="text-center space-y-[0.75rem]">
+            <div className="inline-flex items-center space-x-[0.5rem] bg-emerald-100 text-[#064E3B] px-[0.875rem] py-[0.375rem] rounded-full text-[0.75rem] font-black border-[1px] border-emerald-300">
+              <Store className="w-[1rem] h-[1rem] text-emerald-700" />
               <span>MegaBachatMart Merchant & Shop Partner Program</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight">
+            <h1 className="text-[1.75rem] sm:text-[2.25rem] font-black text-[#0F172A] tracking-tight leading-tight">
               Grow Your Shop with Hyperlocal Orders
             </h1>
-            <p className="text-sm text-slate-600 max-w-xl mx-auto">
+            <p className="text-[0.875rem] text-slate-600 max-w-[36rem] mx-auto leading-relaxed">
               Join Ranchi’s leading zero-commission hyperlocal grocery network. Complete your digital KYC below to receive your Store ID and start listing products.
             </p>
           </div>
 
           {/* Success Screen after submission */}
           {submittedApp ? (
-            <div className="bg-white rounded-3xl p-8 sm:p-10 border border-emerald-200 shadow-xl text-center space-y-6 animate-in fade-in zoom-in duration-200">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-10 h-10" />
+            <div className="w-[100%] bg-white rounded-[1.5rem] p-[1.5rem] sm:p-[2.5rem] border-[1px] border-emerald-200 shadow-xl text-center space-y-[1.5rem] animate-in fade-in zoom-in duration-200">
+              <div className="w-[4rem] h-[4rem] rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-[2.5rem] h-[2.5rem]" />
               </div>
 
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black text-[#0F172A]">Application Submitted Successfully!</h2>
-                <p className="text-sm text-slate-600">
+              <div className="space-y-[0.5rem]">
+                <h2 className="text-[1.5rem] font-black text-[#0F172A]">Application Submitted Successfully!</h2>
+                <p className="text-[0.875rem] text-slate-600">
                   Your store registration has been received at the Ranchi Central Onboarding Desk.
                 </p>
               </div>
 
               {/* Reference Badge */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 max-w-md mx-auto text-left space-y-2">
-                <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Application Reference</div>
-                <div className="font-mono text-xl font-black text-[#064E3B]">{submittedApp.applicationNumber}</div>
-                <div className="text-xs text-slate-700">
+              <div className="w-[100%] max-w-[28rem] bg-slate-50 border-[1px] border-slate-200 rounded-[1rem] p-[1rem] mx-auto text-left space-y-[0.5rem]">
+                <div className="text-[0.75rem] text-slate-500 font-bold uppercase tracking-wider">Application Reference</div>
+                <div className="font-mono text-[1.25rem] font-black text-[#064E3B]">{submittedApp.applicationNumber}</div>
+                <div className="text-[0.75rem] text-slate-700">
                   <strong>Store:</strong> {submittedApp.shopName} ({submittedApp.pincode})<br />
                   <strong>Proprietor:</strong> {submittedApp.ownerName}
                 </div>
               </div>
 
               {/* Workflow Next Steps Box */}
-              <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-5 max-w-lg mx-auto text-left space-y-3">
-                <h4 className="font-extrabold text-xs text-[#064E3B] uppercase tracking-wider flex items-center space-x-1.5">
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
+              <div className="w-[100%] max-w-[32rem] bg-emerald-50/70 border-[1px] border-emerald-200 rounded-[1rem] p-[1.25rem] mx-auto text-left space-y-[0.75rem]">
+                <h4 className="font-extrabold text-[0.75rem] text-[#064E3B] uppercase tracking-wider flex items-center space-x-[0.375rem]">
+                  <Sparkles className="w-[1rem] h-[1rem] text-emerald-600" />
                   <span>What Happens Next?</span>
                 </h4>
-                <ol className="text-xs text-slate-700 space-y-2 list-decimal list-inside">
+                <ol className="text-[0.75rem] text-slate-700 space-y-[0.5rem] list-decimal list-inside leading-relaxed">
                   <li>Our verification desk reviews your FSSAI license and premises within 2-4 hours.</li>
                   <li>Upon approval, a unique <strong>Store ID & Secure Password</strong> is generated.</li>
                   <li>Your credentials will be dispatched directly to your <strong>WhatsApp (+91 {submittedApp.phone})</strong> and <strong>Email ({submittedApp.email})</strong>.</li>
@@ -387,16 +387,16 @@ export default function ShopRegistrationPage() {
                 </ol>
               </div>
 
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="pt-[0.5rem] flex flex-col sm:flex-row items-center justify-center gap-[0.75rem] w-[100%]">
                 <Link
                   href="/shop/login"
-                  className="w-full sm:w-auto bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold px-6 py-3 rounded-2xl text-xs shadow-md transition"
+                  className="w-[100%] sm:w-auto bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold px-[1.5rem] py-[0.75rem] rounded-[1rem] text-[0.75rem] shadow-md transition text-center"
                 >
                   Go to Merchant Portal Login
                 </Link>
                 <Link
                   href="/shop"
-                  className="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 rounded-2xl text-xs transition"
+                  className="w-[100%] sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-[1.5rem] py-[0.75rem] rounded-[1rem] text-[0.75rem] transition text-center"
                 >
                   Explore Customer Storefront
                 </Link>
@@ -405,10 +405,10 @@ export default function ShopRegistrationPage() {
           ) : (
             
             /* Multi-step Application Form Card */
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+            <div className="w-[100%] bg-white rounded-[1.5rem] border-[1px] border-slate-200 shadow-xl overflow-hidden">
               
               {/* Stepper Progress Bar */}
-              <div className="bg-slate-50 border-b border-slate-200 p-4 sm:p-5 flex items-center justify-between text-xs font-bold">
+              <div className="w-[100%] bg-slate-50 border-b-[1px] border-slate-200 p-[0.75rem] sm:p-[1.25rem] flex items-center justify-between text-[0.75rem] font-bold">
                 {[
                   { step: 1, label: 'Store Info' },
                   { step: 2, label: 'Licenses & KYC' },
@@ -425,14 +425,14 @@ export default function ShopRegistrationPage() {
                       }
                     }}
                     disabled={s.step > currentStep}
-                    className={`flex items-center space-x-2 text-left transition ${
+                    className={`flex items-center space-x-[0.375rem] sm:space-x-[0.5rem] text-left transition ${
                       s.step < currentStep ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
                     }`}
                   >
                     <div 
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition ${
+                      className={`w-[1.75rem] h-[1.75rem] sm:w-[2rem] sm:h-[2rem] rounded-full flex items-center justify-center text-[0.75rem] font-black transition shrink-0 ${
                         currentStep === s.step
-                          ? 'bg-[#064E3B] text-white'
+                          ? 'bg-[#064E3B] text-white ring-2 ring-emerald-300'
                           : currentStep > s.step
                           ? 'bg-emerald-500 text-white'
                           : 'bg-slate-200 text-slate-600'
@@ -440,7 +440,7 @@ export default function ShopRegistrationPage() {
                     >
                       {currentStep > s.step ? '✓' : s.step}
                     </div>
-                    <span className="hidden sm:inline text-slate-800">{s.label}</span>
+                    <span className={`text-[0.6875rem] sm:text-[0.75rem] ${currentStep === s.step ? 'inline font-black text-slate-900' : 'hidden md:inline text-slate-600'}`}>{s.label}</span>
                   </button>
                 ))}
               </div>

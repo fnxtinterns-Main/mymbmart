@@ -28,18 +28,18 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   };
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 py-1.5 px-3 z-40 lg:hidden shadow-lg ios-safe-bottom">
-      <div className="flex items-center justify-around">
+    <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t-[1px] border-slate-200 py-[0.375rem] px-[0.75rem] z-40 lg:hidden shadow-lg ios-safe-bottom w-[100vw] max-w-[100vw]">
+      <div className="flex items-center justify-around w-[100%]">
         
         {/* Home */}
         <Link
           href="/"
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+          className={`flex flex-col items-center justify-center py-[0.25rem] px-[0.5rem] rounded-[0.75rem] transition ${
             isActive('/') ? 'text-brand-forest font-bold' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <Home className={`w-5 h-5 ${isActive('/') ? 'text-brand-forest' : 'text-slate-400'}`} />
-          <span className="text-[10px] mt-0.5">Home</span>
+          <Home className={`w-[1.25rem] h-[1.25rem] ${isActive('/') ? 'text-brand-forest' : 'text-slate-400'}`} />
+          <span className="text-[0.625rem] mt-[0.125rem]">Home</span>
         </Link>
 
         {/* Shop */}

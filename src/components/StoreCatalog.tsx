@@ -198,62 +198,62 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
   };
 
   return (
-    <section className="py-6 sm:py-10 bg-slate-50 relative" id="store">
+    <section className="py-[1.5rem] sm:py-[2.5rem] bg-slate-50 relative w-[100vw] max-w-[100vw] overflow-x-hidden" id="store">
       
       {/* Location Modal */}
       {isLocationModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-[1rem] w-[100vw] max-w-[100vw]">
+          <div className="bg-white rounded-[1.5rem] p-[1.5rem] sm:p-[2rem] max-w-[28rem] w-[94%] sm:w-[100%] shadow-2xl space-y-[1.25rem] relative animate-in fade-in zoom-in duration-200 border-[1px] border-slate-200">
             <button
               onClick={() => setIsLocationModalOpen(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition"
+              className="absolute top-[1rem] right-[1rem] p-[0.5rem] text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-[1.25rem] h-[1.25rem]" />
             </button>
 
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-2xl bg-brand-mint text-brand-green flex items-center justify-center shrink-0">
-                <MapPin className="w-6 h-6" />
+            <div className="flex items-center space-x-[0.75rem]">
+              <div className="w-[3rem] h-[3rem] rounded-[1rem] bg-brand-mint text-brand-green flex items-center justify-center shrink-0">
+                <MapPin className="w-[1.5rem] h-[1.5rem]" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900">Change Delivery Location</h3>
-                <p className="text-xs text-slate-500">Connected to nearest Dark Store for 10–30 min delivery</p>
+                <h3 className="text-[1.125rem] font-black text-slate-900">Change Delivery Location</h3>
+                <p className="text-[0.75rem] text-slate-500">Connected to nearest Dark Store for 10–30 min delivery</p>
               </div>
             </div>
 
             <button
               onClick={handleDetectLocation}
               disabled={isDetecting}
-              className="w-full bg-brand-green hover:bg-brand-green-hover text-white font-bold py-3.5 px-4 rounded-2xl shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-2 transition disabled:opacity-60"
+              className="w-[100%] bg-brand-green hover:bg-brand-green-hover text-white font-bold py-[0.875rem] px-[1rem] rounded-[1rem] shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-[0.5rem] transition disabled:opacity-60 cursor-pointer text-[0.875rem]"
             >
-              <Compass className={`w-5 h-5 ${isDetecting ? 'animate-spin' : ''}`} />
+              <Compass className={`w-[1.25rem] h-[1.25rem] ${isDetecting ? 'animate-spin' : ''}`} />
               <span>{isDetecting ? 'Detecting Location...' : 'Detect My Current Location'}</span>
             </button>
 
-            <div className="flex items-center my-3">
-              <div className="flex-1 border-t border-slate-200"></div>
-              <span className="px-3 text-xs font-bold text-slate-400 uppercase">OR PINCODE</span>
-              <div className="flex-1 border-t border-slate-200"></div>
+            <div className="flex items-center my-[0.75rem]">
+              <div className="flex-1 border-t-[1px] border-slate-200"></div>
+              <span className="px-[0.75rem] text-[0.75rem] font-bold text-slate-400 uppercase">OR PINCODE</span>
+              <div className="flex-1 border-t-[1px] border-slate-200"></div>
             </div>
 
-            <form onSubmit={handleSaveLocation} className="space-y-3">
+            <form onSubmit={handleSaveLocation} className="space-y-[0.75rem]">
               <input
                 type="text"
                 placeholder="Enter area, street name or pincode (e.g. 834001)"
                 value={tempLocation}
                 onChange={(e) => setTempLocation(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-emerald-200 text-sm outline-hidden"
+                className="w-[100%] px-[1rem] py-[0.75rem] rounded-[1rem] border-[1px] border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-emerald-200 text-[0.875rem] outline-hidden"
               />
               <button
                 type="submit"
-                className="w-full bg-slate-900 hover:bg-black text-white font-bold py-3 rounded-2xl text-sm transition"
+                className="w-[100%] bg-slate-900 hover:bg-black text-white font-bold py-[0.75rem] rounded-[1rem] text-[0.875rem] transition cursor-pointer"
               >
                 Confirm Location & View Stores
               </button>
             </form>
 
-            <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-100 flex items-start space-x-2 text-xs text-emerald-800">
-              <Building2 className="w-4 h-4 shrink-0 text-emerald-600 mt-0.5" />
+            <div className="bg-emerald-50 rounded-[1rem] p-[0.75rem] border-[1px] border-emerald-100 flex items-start space-x-[0.5rem] text-[0.75rem] text-emerald-800">
+              <Building2 className="w-[1rem] h-[1rem] shrink-0 text-emerald-600 mt-[0.125rem]" />
               <div>
                 <span className="font-bold">Pilot Hub Live:</span> Ranchi Central (834001–834010) & Harmu (834002) with 10–30 min express delivery.
               </div>
@@ -262,10 +262,10 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
+      <div className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto space-y-[1.5rem] sm:space-y-[2rem]">
         
         {/* Blinkit Delivery Bar (Location + Speed + Dark Store Hub) */}
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-emerald-100 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="w-[100%] bg-white rounded-[1.5rem] p-[1rem] sm:p-[1.25rem] border-[1px] border-emerald-100 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-[1rem]">
           <div className="flex items-center space-x-3.5">
             <div className="w-12 h-12 rounded-2xl bg-brand-mint text-brand-green flex items-center justify-center shrink-0 shadow-inner">
               <Zap className="w-6 h-6 fill-brand-green text-brand-green" />

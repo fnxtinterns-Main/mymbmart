@@ -56,11 +56,11 @@ export default function ShopPartnerLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between text-[#0F172A]">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between text-[#0F172A] w-[100vw] max-w-[100vw] overflow-x-hidden">
       {/* Top Header with Only Website Logo */}
-      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex items-center justify-between">
+      <header className="w-[100vw] max-w-[100vw] bg-white border-b-[1px] border-slate-200 px-[4%] py-[0.75rem] sm:py-[1.25rem] flex items-center justify-between">
         <Link href="/" className="flex items-center">
-          <div className="relative w-56 sm:w-72 md:w-84 lg:w-96 xl:w-[420px] h-16 sm:h-20 md:h-22 lg:h-24">
+          <div className="relative w-[10.5rem] sm:w-[14.5rem] md:w-[18rem] lg:w-[22rem] h-[3rem] sm:h-[4rem]">
             <Image
               src="/images/LOgo.jpeg"
               alt="MegaBachatMart"
@@ -73,97 +73,97 @@ export default function ShopPartnerLoginPage() {
 
         <Link
           href="/"
-          className="text-xs font-semibold text-slate-500 hover:text-[#064E3B] transition flex items-center space-x-1"
+          className="text-[0.75rem] font-semibold text-slate-500 hover:text-[#064E3B] transition flex items-center space-x-[0.25rem]"
         >
           <span>← Back to Customer Website</span>
         </Link>
       </header>
 
       {/* Main Login Area */}
-      <main className="flex-1 py-12 px-4 sm:px-6 flex items-center justify-center">
-        <div className="max-w-md w-full space-y-6">
+      <main className="w-[100vw] max-w-[100vw] flex-1 py-[2rem] sm:py-[3.5rem] px-[4%] sm:px-[5%] flex items-center justify-center">
+        <div className="w-[100%] max-w-[28rem] space-y-[1.5rem]">
           
           {/* Header */}
-          <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-[#064E3B] text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-950/20">
-              <Store className="w-7 h-7 text-emerald-300" />
+          <div className="text-center space-y-[0.5rem]">
+            <div className="w-[3.5rem] h-[3.5rem] rounded-[1rem] bg-[#064E3B] text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-950/20">
+              <Store className="w-[1.75rem] h-[1.75rem] text-emerald-300" />
             </div>
-            <h1 className="text-2xl font-black text-[#0F172A] tracking-tight">
+            <h1 className="text-[1.5rem] sm:text-[1.75rem] font-black text-[#0F172A] tracking-tight">
               Merchant Partner Login
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-[0.75rem] text-slate-500">
               Sign in to manage store inventory, bulk upload CSVs, and fulfill orders.
             </p>
           </div>
 
           {/* Login Card */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-5">
+          <div className="w-[100%] bg-white rounded-[1.5rem] p-[1.5rem] sm:p-[2rem] border-[1px] border-slate-200 shadow-xl space-y-[1.25rem]">
             {errorMsg && (
-              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <div className="p-[0.875rem] rounded-[1rem] bg-rose-50 border-[1px] border-rose-200 text-rose-800 text-[0.75rem] font-bold flex items-center space-x-[0.5rem]">
+                <AlertCircle className="w-[1rem] h-[1rem] text-rose-600 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-4 text-xs">
+            <form onSubmit={handleLogin} className="space-y-[1rem] text-[0.875rem]">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Store ID / Mobile / Email</label>
+                <label className="block font-bold text-slate-700 mb-[0.25rem]">Store ID / Mobile / Email</label>
                 <div className="relative">
-                  <Store className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Store className="w-[1rem] h-[1rem] text-slate-400 absolute left-[0.875rem] top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. MBM-SHP-834006-03 or 9431109876"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium bg-slate-50/50 focus:bg-white"
+                    className="w-[100%] pl-[2.5rem] pr-[1rem] py-[0.75rem] rounded-[0.75rem] border-[1px] border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium bg-slate-50/50 focus:bg-white text-[0.875rem]"
                   />
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-[0.25rem]">
                   <label className="font-bold text-slate-700">Secure Password</label>
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center space-x-1 cursor-pointer"
+                    className="text-[0.6875rem] font-bold text-emerald-700 hover:text-emerald-900 flex items-center space-x-[0.25rem] cursor-pointer"
                   >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showPassword ? <EyeOff className="w-[0.875rem] h-[0.875rem]" /> : <Eye className="w-[0.875rem] h-[0.875rem]" />}
                     <span>{showPassword ? 'Hide Password' : 'Show Password'}</span>
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-[1rem] h-[1rem] text-slate-400 absolute left-[0.875rem] top-1/2 -translate-y-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-mono bg-slate-50/50 focus:bg-white"
+                    className="w-[100%] pl-[2.5rem] pr-[2.5rem] py-[0.75rem] rounded-[0.75rem] border-[1px] border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-mono bg-slate-50/50 focus:bg-white text-[0.875rem]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    className="absolute right-[0.875rem] top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                     title={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="w-[1rem] h-[1rem]" /> : <Eye className="w-[1rem] h-[1rem]" />}
                   </button>
                 </div>
-                <div className="text-right mt-1">
-                  <span className="text-[10px] text-slate-400">Password dispatched to your WhatsApp upon approval</span>
+                <div className="text-right mt-[0.25rem]">
+                  <span className="text-[0.625rem] text-slate-400">Password dispatched to your WhatsApp upon approval</span>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-950/20 transition flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+                className="w-[100%] bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold py-[0.75rem] rounded-[0.75rem] text-[0.875rem] shadow-lg shadow-emerald-950/20 transition flex items-center justify-center space-x-[0.5rem] cursor-pointer disabled:opacity-50"
               >
                 <span>{loading ? 'Authenticating...' : 'Sign In to Merchant Portal'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-[1rem] h-[1rem]" />
               </button>
             </form>
 

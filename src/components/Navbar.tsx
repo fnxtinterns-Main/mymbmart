@@ -211,13 +211,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100/80 shadow-xs w-full max-w-full">
-      <div className="w-full max-w-full px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24 lg:h-26 gap-2 sm:gap-4 lg:gap-6 min-w-0">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-[1px] border-emerald-100/80 shadow-xs w-[100vw] max-w-[100vw] overflow-x-hidden">
+      <div className="w-[100%] max-w-[100%] px-[3%] sm:px-[5%]">
+        <div className="flex items-center justify-between h-[4rem] sm:h-[5rem] lg:h-[5.5rem] gap-[0.5rem] sm:gap-[1rem] lg:gap-[1.5rem] min-w-0">
           
           {/* Logo & Brand Identity in Left Corner */}
-          <Link href="/" className="flex items-center space-x-2 shrink-0 group" aria-label="MegaBachatMart Home">
-            <div className="relative w-48 sm:w-60 md:w-68 lg:w-76 xl:w-84 h-14 sm:h-18 md:h-20 lg:h-22">
+          <Link href="/" className="flex items-center space-x-[0.5rem] shrink-0 group" aria-label="MegaBachatMart Home">
+            <div className="relative w-[9.5rem] sm:w-[13.5rem] md:w-[16rem] lg:w-[19rem] h-[2.5rem] sm:h-[3.25rem] md:h-[3.75rem]">
               <Image
                 src="/images/LOgo.jpeg"
                 alt="MegaBachatMart"

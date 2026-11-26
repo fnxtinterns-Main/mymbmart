@@ -98,7 +98,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between selection:bg-brand-orange selection:text-white overflow-x-hidden w-full max-w-full">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-between selection:bg-brand-orange selection:text-white overflow-x-hidden w-[100vw] max-w-[100vw]">
       
       {/* Toast Alert */}
       {orderToast && (
@@ -131,7 +131,7 @@ export default function Home() {
         />
 
         {/* 2. Visual Categories & Plus Benefits Row (Matching Picture 5 Exactly) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
             {/* Left 8 Cols: Shop By Category & Big Savings Card */}
@@ -251,8 +251,8 @@ export default function Home() {
         </section>
 
         {/* 3. Section 3: What is MegaBachatMart? */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-brand-mint via-white to-emerald-50/60 rounded-3xl p-8 sm:p-12 border border-emerald-200/90 shadow-sm relative overflow-hidden">
+        <section className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto">
+          <div className="bg-gradient-to-br from-brand-mint via-white to-emerald-50/60 rounded-3xl p-8 sm:p-12 border-[1px] border-emerald-200/90 shadow-sm relative overflow-hidden">
             <div className="max-w-3xl space-y-4">
               <span className="text-xs font-black uppercase tracking-widest text-brand-forest bg-white/90 border border-emerald-200 px-3.5 py-1 rounded-full shadow-2xs">
                 Community E-Commerce Movement
@@ -287,7 +287,7 @@ export default function Home() {
         </section>
 
         {/* 3. Section 3: The PROSUMER REVOLUTION (3 Pillars) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <section className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto space-y-8">
           <div className="text-center max-w-3xl mx-auto space-y-2">
             <span className="text-xs font-bold text-brand-orange uppercase tracking-wider">
               Producer + Consumer = Prosumer
@@ -366,8 +366,8 @@ export default function Home() {
         </section>
 
         {/* 4. Popular Daily Essentials (Blinkit Style Quick-Commerce Clean Layout) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 gap-2">
+        <section className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-[1px] border-slate-200 gap-2">
             <div>
               <div className="flex items-center space-x-2 text-xs font-bold text-brand-green uppercase tracking-wider">
                 <Clock className="w-4 h-4" />
@@ -390,7 +390,7 @@ export default function Home() {
             {CATALOG_PRODUCTS.slice(0, 4).map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-4 hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group"
+                className="bg-white rounded-2xl border-[1px] border-slate-200/90 p-3.5 sm:p-4 hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group"
               >
                 <div>
                   <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-100 mb-3">
@@ -417,7 +417,7 @@ export default function Home() {
                   <p className="text-[11px] text-slate-500">{product.unit}</p>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between mt-3">
+                <div className="pt-3 border-t-[1px] border-slate-100 flex items-center justify-between mt-3">
                   <div>
                     <div className="flex items-baseline space-x-1.5">
                       <span className="text-sm sm:text-base font-black text-slate-900">
@@ -435,7 +435,7 @@ export default function Home() {
                   {/* Blinkit style ADD button */}
                   <button
                     onClick={() => handleAddToCart(product)}
-                    className={`px-3 py-1.5 rounded-xl border text-xs font-black transition-all ${
+                    className={`px-3 py-1.5 rounded-xl border-[1px] text-xs font-black transition-all ${
                       addedId === product.id
                         ? 'bg-brand-green text-white border-brand-green'
                         : 'bg-emerald-50 hover:bg-brand-green hover:text-white text-brand-forest border-emerald-300 shadow-2xs active:scale-95'
@@ -450,8 +450,8 @@ export default function Home() {
         </section>
 
         {/* 5. Section 4: How It Works — 4 Simple Steps */}
-        <section className="bg-brand-mint/30 py-12 sm:py-16 border-y border-emerald-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        <section className="bg-brand-mint/30 py-12 sm:py-16 border-y-[1px] border-emerald-100 w-[100vw] max-w-[100vw]">
+          <div className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto space-y-10">
             <div className="text-center max-w-2xl mx-auto space-y-2">
               <span className="text-xs font-bold text-brand-forest uppercase tracking-wider">
                 Transparent & Rewarding
@@ -463,7 +463,7 @@ export default function Home() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               
-              <div className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-xs space-y-2 hover:border-emerald-300 transition">
+              <div className="bg-white rounded-2xl p-6 border-[1px] border-emerald-100 shadow-xs space-y-2 hover:border-emerald-300 transition">
                 <span className="text-2xl font-black text-brand-orange">01</span>
                 <h4 className="text-base font-bold text-slate-900">Join Free</h4>
                 <p className="text-xs text-slate-600">
@@ -471,7 +471,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-xs space-y-2 hover:border-emerald-300 transition">
+              <div className="bg-white rounded-2xl p-6 border-[1px] border-emerald-100 shadow-xs space-y-2 hover:border-emerald-300 transition">
                 <span className="text-2xl font-black text-brand-green">02</span>
                 <h4 className="text-base font-bold text-slate-900">Shop & Save</h4>
                 <p className="text-xs text-slate-600">
@@ -479,7 +479,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-xs space-y-2 hover:border-emerald-300 transition">
+              <div className="bg-white rounded-2xl p-6 border-[1px] border-emerald-100 shadow-xs space-y-2 hover:border-emerald-300 transition">
                 <span className="text-2xl font-black text-brand-blue">03</span>
                 <h4 className="text-base font-bold text-slate-900">Refer & Earn</h4>
                 <p className="text-xs text-slate-600">
@@ -487,7 +487,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-xs space-y-2 hover:border-emerald-300 transition">
+              <div className="bg-white rounded-2xl p-6 border-[1px] border-emerald-100 shadow-xs space-y-2 hover:border-emerald-300 transition">
                 <span className="text-2xl font-black text-purple-600">04</span>
                 <h4 className="text-base font-bold text-slate-900">Grow & Redeem</h4>
                 <p className="text-xs text-slate-600">
@@ -500,7 +500,7 @@ export default function Home() {
         </section>
 
         {/* 6. Section 5: Who is MegaBachatMart For? */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <section className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="text-xs font-bold text-brand-forest uppercase tracking-wider">
               Empowerment For Every Community Segment
@@ -511,7 +511,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-xs space-y-3 hover:border-emerald-300 transition">
+            <div className="bg-white rounded-3xl p-6 border-[1px] border-emerald-100 shadow-xs space-y-3 hover:border-emerald-300 transition">
               <div className="w-10 h-10 rounded-xl bg-brand-mint text-brand-green flex items-center justify-center font-bold">
                 ₹
               </div>
@@ -521,7 +521,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 border border-orange-100 shadow-xs space-y-3 hover:border-orange-300 transition">
+            <div className="bg-white rounded-3xl p-6 border-[1px] border-orange-100 shadow-xs space-y-3 hover:border-orange-300 transition">
               <div className="w-10 h-10 rounded-xl bg-orange-100 text-brand-orange flex items-center justify-center font-bold">
                 ♀
               </div>
@@ -531,7 +531,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 border border-sky-100 shadow-xs space-y-3 hover:border-sky-300 transition">
+            <div className="bg-white rounded-3xl p-6 border-[1px] border-sky-100 shadow-xs space-y-3 hover:border-sky-300 transition">
               <div className="w-10 h-10 rounded-xl bg-brand-blue-light text-brand-blue flex items-center justify-center font-bold">
                 ⚡
               </div>
@@ -544,7 +544,7 @@ export default function Home() {
         </section>
 
         {/* 7. Final Call to Action */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto">
           <div className="bg-gradient-to-r from-brand-forest to-emerald-900 rounded-3xl p-8 sm:p-14 text-center text-white shadow-xl space-y-6">
             <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
               Your Spending. Your Earnings. Your Community.
@@ -555,13 +555,13 @@ export default function Home() {
             <div className="flex flex-wrap justify-center gap-4 pt-2">
               <button
                 onClick={() => setIsAuthOpen(true)}
-                className="bg-brand-orange hover:bg-brand-orange-hover text-white font-extrabold px-8 py-4 rounded-full shadow-lg shadow-orange-500/30 text-sm sm:text-base transition"
+                className="bg-brand-orange hover:bg-brand-orange-hover text-white font-extrabold px-8 py-4 rounded-full shadow-lg shadow-orange-500/30 text-sm sm:text-base transition cursor-pointer"
               >
                 Join Now — It's Free
               </button>
               <Link
                 href="/producer"
-                className="bg-white/10 hover:bg-white/20 text-white font-bold px-8 py-4 rounded-full border border-white/30 text-sm sm:text-base transition"
+                className="bg-white/10 hover:bg-white/20 text-white font-bold px-8 py-4 rounded-full border-[1px] border-white/30 text-sm sm:text-base transition"
               >
                 Become a Producer (SHG / Women Entrepreneur)
               </Link>

@@ -26,11 +26,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onSavingsClick,
 }) => {
   return (
-    <section className="relative overflow-hidden w-full max-w-full bg-gradient-to-b from-brand-mint/40 via-white to-slate-50 pt-4 pb-10 sm:pt-6 sm:pb-14 border-b border-emerald-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
+    <section className="relative overflow-hidden w-[100vw] max-w-[100vw] bg-gradient-to-b from-brand-mint/40 via-white to-slate-50 pt-[1rem] pb-[2.5rem] sm:pt-[1.5rem] sm:pb-[3.5rem] border-b-[1px] border-emerald-100">
+      <div className="w-[94%] sm:w-[92%] md:w-[90%] max-w-[80rem] mx-auto space-y-[1.5rem] sm:space-y-[2rem]">
         
         {/* 1. Top Hero Graphic Banner (High-Resolution 3072x1017 for Smart Boards & 4K Displays) */}
-        <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-emerald-950/5 border border-emerald-200/90 bg-white group cursor-pointer">
+        <div className="relative rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-xl shadow-emerald-950/5 border-[1px] border-emerald-200/90 bg-white group cursor-pointer w-[100%]">
           <div className="relative w-full aspect-[3072/1017]">
             <Image
               src="/images/hero_banner.jpg"
@@ -50,37 +50,37 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         {/* 2. Interactive Mission & Feature Pitch Card (From Before, Just Below) */}
-        <div className="bg-gradient-to-br from-brand-mint via-white to-orange-50/50 rounded-3xl p-6 sm:p-10 lg:p-12 border border-emerald-200/80 shadow-xl shadow-emerald-900/5 relative overflow-hidden">
+        <div className="w-[100%] bg-gradient-to-br from-brand-mint via-white to-orange-50/50 rounded-[1.5rem] sm:rounded-[2rem] p-[1.25rem] sm:p-[2rem] lg:p-[2.5rem] border-[1px] border-emerald-200/80 shadow-xl shadow-emerald-900/5 relative overflow-hidden">
           
           {/* Subtle Glows */}
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-green/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-brand-orange/10 rounded-full blur-3xl pointer-events-none"></div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-[1.5rem] lg:gap-[2.5rem] items-center">
             
             {/* Left Column: Headlines, Pitch & CTAs */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 space-y-[1.25rem]">
               
               {/* Top Tag Pill */}
-              <div className="inline-flex items-center space-x-2 bg-white/90 border border-emerald-300 px-3.5 py-1.5 rounded-full text-xs font-bold text-brand-forest shadow-2xs">
-                <Sparkles className="w-4 h-4 text-brand-orange animate-pulse" />
+              <div className="inline-flex items-center space-x-[0.5rem] bg-white/90 border-[1px] border-emerald-300 px-[0.875rem] py-[0.375rem] rounded-full text-[0.75rem] font-bold text-brand-forest shadow-2xs">
+                <Sparkles className="w-[1rem] h-[1rem] text-brand-orange animate-pulse" />
                 <span>The PROSUMER Movement: Producer + Consumer</span>
               </div>
 
               {/* Headline */}
-              <div className="space-y-2">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-none text-slate-900">
+              <div className="space-y-[0.5rem]">
+                <h1 className="text-[1.75rem] sm:text-[2.5rem] lg:text-[3.25rem] font-black tracking-tight leading-none text-slate-900">
                   <span className="text-brand-forest">Bachat Bhi. </span>
                   <span className="text-brand-orange drop-shadow-2xs">Kamai Bhi!</span>
                   <span className="sr-only"> — MegaBachatMart Hyperlocal Quick Commerce & Community SHG Marketplace</span>
                 </h1>
-                <p className="text-lg sm:text-xl font-bold text-brand-charcoal">
+                <p className="text-[1rem] sm:text-[1.25rem] font-bold text-brand-charcoal">
                   Shop Smart. Save More. Together.
                 </p>
               </div>
 
               {/* Supporting Copy in English */}
-              <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-xl font-normal">
+              <p className="text-slate-600 text-[0.875rem] leading-relaxed max-w-[36rem] font-normal">
                 <strong>MegaBachatMart</strong> is India's community e-commerce movement where households save on everyday groceries, 
                 Self Help Groups (SHGs) and women entrepreneurs sell direct, and every member earns referral micro-credit.
               </p>

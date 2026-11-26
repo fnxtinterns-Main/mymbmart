@@ -921,18 +921,18 @@ export default function ShopPartnerPortalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col justify-between relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col justify-between relative overflow-x-hidden w-[100vw] max-w-[100vw]">
       
       {/* ============================================================== */}
       {/* DEDICATED B2B PARTNER PORTAL HEADER (REPLACES CONSUMER NAVBAR) */}
       {/* ============================================================== */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-[1px] border-slate-200/90 shadow-xs w-[100vw] max-w-[100vw]">
+        <div className="w-[100%] max-w-[80rem] mx-auto px-[4%] sm:px-[5%]">
+          <div className="flex items-center justify-between h-[4rem] sm:h-[5rem] gap-[1rem]">
             
             {/* Logo & Hub Badge */}
-            <div className="flex items-center space-x-3">
-              <Link href="/" className="relative w-40 sm:w-52 h-10 sm:h-12 block group" aria-label="MegaBachatMart Home">
+            <div className="flex items-center space-x-[0.75rem]">
+              <Link href="/" className="relative w-[8.5rem] sm:w-[12rem] h-[2.25rem] sm:h-[3rem] block group shrink-0" aria-label="MegaBachatMart Home">
                 <Image
                   src="/images/LOgo.jpeg"
                   alt="MegaBachatMart"
@@ -941,29 +941,30 @@ export default function ShopPartnerPortalPage() {
                   className="object-contain object-left group-hover:scale-102 transition-transform"
                 />
               </Link>
-              <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Partner Portal</span>
+              <span className="inline-flex items-center space-x-[0.375rem] px-[0.625rem] py-[0.25rem] rounded-full text-[0.6875rem] font-extrabold bg-emerald-50 text-emerald-800 border-[1px] border-emerald-200">
+                <span className="w-[0.5rem] h-[0.5rem] rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="hidden sm:inline">Partner Portal</span>
+                <span className="sm:hidden">Partner</span>
               </span>
             </div>
 
             {/* Quick Portal Controls */}
-            <div className="flex items-center space-x-2.5 sm:space-x-3">
+            <div className="flex items-center space-x-[0.5rem] sm:space-x-[0.75rem]">
               <Link
                 href="/shop"
                 target="_blank"
-                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs transition flex items-center space-x-1.5"
+                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-[1px] border-emerald-200 font-bold px-[0.75rem] sm:px-[1rem] py-[0.5rem] rounded-[0.75rem] text-[0.75rem] transition flex items-center space-x-[0.375rem]"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-emerald-700" />
+                <ExternalLink className="w-[0.875rem] h-[0.875rem] text-emerald-700" />
                 <span className="hidden sm:inline">View Live Storefront</span>
                 <span className="sm:hidden">Storefront</span>
               </Link>
 
               <button
                 onClick={handleLogout}
-                className="bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 font-bold px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-xs transition flex items-center space-x-1.5 cursor-pointer"
+                className="bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border-[1px] border-slate-200 hover:border-rose-200 font-bold px-[0.75rem] sm:px-[0.875rem] py-[0.5rem] rounded-[0.75rem] text-[0.75rem] transition flex items-center space-x-[0.375rem] cursor-pointer"
               >
-                <LogOut className="w-3.5 h-3.5 text-slate-500" />
+                <LogOut className="w-[0.875rem] h-[0.875rem] text-slate-500" />
                 <span>Sign Out</span>
               </button>
             </div>
@@ -972,8 +973,8 @@ export default function ShopPartnerPortalPage() {
         </div>
       </header>
 
-      <main className="flex-1 py-8 px-4 sm:px-6 relative z-10">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <main className="w-[100vw] max-w-[100vw] flex-1 py-[1.5rem] sm:py-[2.5rem] px-[4%] sm:px-[5%] relative z-10">
+        <div className="w-[100%] max-w-[72rem] mx-auto space-y-[1.5rem]">
           
           {/* Store Partner Top Banner (Clean White Card with High-Contrast Typography) */}
           {partner && (

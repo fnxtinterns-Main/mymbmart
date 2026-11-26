@@ -150,6 +150,7 @@ export const MerchantOnboardingTab: React.FC = () => {
     try {
       const res = await fetch('/api/v1/admin/merchants', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'APPROVE',
@@ -190,6 +191,7 @@ export const MerchantOnboardingTab: React.FC = () => {
     try {
       const res = await fetch('/api/v1/admin/merchants', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'REJECT',
