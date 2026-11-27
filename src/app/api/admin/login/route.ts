@@ -69,10 +69,11 @@ export async function POST(req: Request) {
     });
 
     // Set signed cryptographic admin token in HTTP-only cookie
+    const isSecureCookie = process.env.NODE_ENV === 'production' && process.env.E2E_TEST_MODE !== 'true';
     response.cookies.set('mbm_admin_token', adminToken, {
       path: '/',
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureCookie,
       sameSite: 'lax',
       maxAge: 86400,
     });
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
     response.cookies.set('mbm_admin_authenticated', 'true', {
       path: '/',
       httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureCookie,
       sameSite: 'lax',
       maxAge: 86400,
     });

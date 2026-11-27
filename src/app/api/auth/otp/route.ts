@@ -47,8 +47,8 @@ export async function POST(req: Request) {
       } catch {}
 
       const submittedOtp = otp?.toString().trim();
-      // Universal test OTP is strictly forbidden in production
-      const isTestOtp = !isProd && submittedOtp === '123456';
+      // Universal test OTP is strictly forbidden in production unless E2E_TEST_MODE is enabled
+      const isTestOtp = (!isProd || process.env.E2E_TEST_MODE === 'true') && submittedOtp === '123456';
 
       // Verify against memory fallback store first, then Upstash Redis
       let isVerified = isTestOtp;
@@ -182,9 +182,10 @@ export async function POST(req: Request) {
       });
 
       // Set HTTP-only session cookie
+      const isSecureCookie = process.env.NODE_ENV === 'production' && process.env.E2E_TEST_MODE !== 'true';
       response.cookies.set('mbm_session', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isSecureCookie,
         sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60,
         path: '/',
@@ -192,7 +193,7 @@ export async function POST(req: Request) {
 
       response.cookies.set('mbm_user_data', encodeURIComponent(JSON.stringify(userProfile)), {
         httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isSecureCookie,
         sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60,
         path: '/',

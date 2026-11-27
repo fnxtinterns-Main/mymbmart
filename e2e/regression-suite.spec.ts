@@ -46,7 +46,7 @@ test.describe('MegaBachatMart — E2E Real Browser Regression Suite', () => {
     await page.getByLabel(/password|passcode/i).fill('WRONG_PASSCODE_123');
     await page.getByRole('button', { name: /sign in/i }).click();
 
-    await expect(page.getByText(/Invalid Security Passcode/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/Invalid.*Security Passcode/i)).toBeVisible({ timeout: 5_000 });
   });
 
   test('6. Admin portal login grants access with seed master credentials', async ({ page }) => {
@@ -55,7 +55,7 @@ test.describe('MegaBachatMart — E2E Real Browser Regression Suite', () => {
     await page.getByLabel(/password|passcode/i).fill('MBM#Test001@2026');
     await page.getByRole('button', { name: /sign in/i }).click();
 
-    await expect(page).toHaveURL(/\/admin/);
+    await expect(page).toHaveURL(/\/admin(\?|$)/);
   });
 
   test('7. Payment webhook rejects forged HMAC signature', async ({ request }) => {

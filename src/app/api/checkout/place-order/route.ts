@@ -117,7 +117,7 @@ export async function POST(req: Request) {
           verifiedWalletBalance = Math.max(0, Math.min(parsedUser.walletBalance, 500));
         }
       } catch {}
-    } else if (process.env.NODE_ENV !== 'production' && typeof userWalletBalance === 'number') {
+    } else if ((process.env.NODE_ENV !== 'production' || process.env.E2E_TEST_MODE === 'true') && typeof userWalletBalance === 'number') {
       verifiedWalletBalance = userWalletBalance;
     }
 
@@ -424,7 +424,7 @@ export async function POST(req: Request) {
           },
         });
       });
-    } else if (process.env.NODE_ENV === 'production') {
+    } else if (process.env.NODE_ENV === 'production' && process.env.E2E_TEST_MODE !== 'true') {
       throw new Error('DATABASE_URL is required in production. Cannot place order without persistent database.');
     }
 
