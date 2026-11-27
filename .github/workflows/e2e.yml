@@ -44,14 +44,6 @@ jobs:
       - name: Build Next.js Production Bundle
         run: npm run build
 
-      - name: Start Next.js Server (Port 3001)
-        run: npm run start -- -p 3001 &
-        env:
-          PORT: 3001
-
-      - name: Wait for Server Readiness
-        run: npx wait-on http://127.0.0.1:3001/api/products --timeout 60000
-
       - name: Run Playwright E2E Golden Path & Regression Suite
         run: npx playwright test
 
