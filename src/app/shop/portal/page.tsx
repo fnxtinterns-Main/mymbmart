@@ -1537,27 +1537,7 @@ export default function ShopPartnerPortalPage() {
                 </button>
               </div>
 
-              {uploadMethod === 'bulk' ? (
-                <div className="flex items-center space-x-2">
-                  <a
-                    href="/api/v1/shop/template-csv"
-                    download="megabachatmart_inventory_template.csv"
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 border border-slate-200"
-                  >
-                    <Download className="w-4 h-4 text-slate-600" />
-                    <span>Download CSV Template</span>
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={handleLoadSampleCsv}
-                    className="bg-emerald-50 hover:bg-emerald-100 text-[#064E3B] px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 border border-emerald-200 cursor-pointer"
-                  >
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    <span>Load 6 Demo FMCG Items</span>
-                  </button>
-                </div>
-              ) : (
+              {uploadMethod === 'single' && (
                 <button
                   type="button"
                   onClick={() => setUploadMethod('bulk')}

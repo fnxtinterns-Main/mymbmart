@@ -52,8 +52,6 @@ export default function ShopRegistrationPage() {
     }
   });
 
-  const [isCommunityExempt, setIsCommunityExempt] = useState(false);
-
   // Track file metadata & preview for uploaded documents
   const [docUploads, setDocUploads] = useState<{
     [key: string]: {
@@ -71,18 +69,9 @@ export default function ShopRegistrationPage() {
   const cleanPincode = formData.pincode.replace(/\D/g, '');
   const cleanIfsc = formData.ifscCode.trim().toUpperCase();
 
-  const isExempt = Boolean(
-    isCommunityExempt ||
-    formData.businessType === 'SHG_COOPERATIVE' ||
-    formData.businessType === 'ORGANIC_PRODUCE' ||
-    formData.businessType === 'HOME_KITCHEN'
-  );
-
   const isPhoneValid = cleanPhone.length === 10;
   const isFssaiValid = cleanFssai.length === 14;
-  const isStandardPanValid = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan);
-  const isAadhaarValid = /^\d{12}$/.test(cleanPan.replace(/\s+/g, ''));
-  const isPanValid = isExempt ? (isStandardPanValid || isAadhaarValid) : isStandardPanValid;
+  const isPanValid = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan);
   const isPincodeValid = cleanPincode.length === 6;
   const isIfscValid = /^[A-Z]{4}0[A-Z0-9]{6}$/.test(cleanIfsc);
 
@@ -225,18 +214,8 @@ export default function ShopRegistrationPage() {
       }
       setCurrentStep(2);
     } else if (currentStep === 2) {
-      if (isExempt) {
-        // Community exemption: FSSAI and Trade License are optional
-        if (formData.panNumber && !isPanValid) {
-          setErrorMsg('Please enter a valid 10-character PAN or 12-digit Aadhaar Card number.');
-          return;
-        }
-        setCurrentStep(3);
-        return;
-      }
-
       if (!formData.fssaiNumber || !formData.tradeLicenseNumber || !formData.panNumber) {
-        setErrorMsg('FSSAI Registration, Trade License, and PAN Number are mandatory for commercial retail stores.');
+        setErrorMsg('FSSAI Registration, Trade License, and PAN Number are mandatory.');
         return;
       }
       if (!isFssaiValid) {
@@ -245,6 +224,24 @@ export default function ShopRegistrationPage() {
       }
       if (!isPanValid) {
         setErrorMsg('PAN Number must be a valid 10-character code (e.g. ABCDE1234F).');
+        return;
+      }
+      if (
+        docUploads.fssaiCertUrl?.uploading ||
+        docUploads.tradeLicenseUrl?.uploading ||
+        docUploads.panCardUrl?.uploading ||
+        docUploads.storePhotoUrl?.uploading
+      ) {
+        setErrorMsg('Please wait for all verification documents and photos to finish uploading.');
+        return;
+      }
+      if (
+        !formData.documents.fssaiCertUrl ||
+        !formData.documents.tradeLicenseUrl ||
+        !formData.documents.panCardUrl ||
+        !formData.documents.storePhotoUrl
+      ) {
+        setErrorMsg('Please upload all 4 required images/copies: FSSAI License, Trade License, PAN Card, and Storefront Photo.');
         return;
       }
       setCurrentStep(3);
@@ -267,15 +264,10 @@ export default function ShopRegistrationPage() {
     setErrorMsg('');
 
     try {
-      const payload = {
-        ...formData,
-        isCommunityExempt: isExempt,
-      };
-
       const res = await fetch('/api/v1/shop/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
@@ -639,35 +631,14 @@ export default function ShopRegistrationPage() {
                 <form onSubmit={handleNextStep} className="p-6 sm:p-8 space-y-5">
                   <div className="border-b border-slate-100 pb-3">
                     <h3 className="text-base font-black text-slate-900">Step 2: Statutory Licenses & KYC Verification</h3>
-                    <p className="text-xs text-slate-500">Provide legal identification numbers or select community fast-track for rural producers.</p>
-                  </div>
-
-                  {/* Community Exemption Toggle for Farmers, SHGs, Home Kitchens */}
-                  <div className={`p-4 rounded-2xl border transition ${isExempt ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-50 border-slate-200'}`}>
-                    <label className="flex items-start space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isCommunityExempt || isExempt}
-                        onChange={(e) => setIsCommunityExempt(e.target.checked)}
-                        className="mt-1 w-4 h-4 text-emerald-600 rounded-sm focus:ring-emerald-500 cursor-pointer"
-                      />
-                      <div className="text-xs">
-                        <span className="font-extrabold text-emerald-950 flex flex-wrap items-center gap-1.5">
-                          <span>🌱 SHG / Farmer / Home Kitchen / Cottage Producer Fast-Track</span>
-                          <span className="bg-emerald-200 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">No Trade License Required</span>
-                        </span>
-                        <p className="text-slate-600 text-[11px] mt-1">
-                          Under RBI & NRLM micro-enterprise guidelines, smallholder farmers, women SHGs, and home kitchens do not require commercial trade licenses or formal firm PAN. MegaBachatMart provides community fast-track onboarding and free assisted basic FSSAI registration.
-                        </p>
-                      </div>
-                    </label>
+                    <p className="text-xs text-slate-500">Provide legal identification numbers and upload all required verification documents.</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="block font-bold text-slate-700">
-                          {isExempt ? 'FSSAI License / Registration No (Optional)' : 'FSSAI License / Registration No *'}
+                          FSSAI License / Registration No *
                         </label>
                         {formData.fssaiNumber && (
                           <span className={`text-[10px] font-extrabold ${isFssaiValid ? 'text-emerald-700' : 'text-amber-700'}`}>
@@ -678,9 +649,9 @@ export default function ShopRegistrationPage() {
                       <input
                         type="text"
                         name="fssaiNumber"
-                        required={!isExempt}
+                        required
                         maxLength={14}
-                        placeholder={isExempt ? "Optional — MBM provides free assisted FSSAI" : "14-digit FSSAI Number"}
+                        placeholder="14-digit FSSAI Number"
                         value={formData.fssaiNumber}
                         onChange={(e) => {
                           const val = e.target.value.replace(/\D/g, '').slice(0, 14);
@@ -694,46 +665,41 @@ export default function ShopRegistrationPage() {
                             : 'border-slate-200 focus:ring-2 focus:ring-emerald-500'
                         }`}
                       />
-                      {formData.fssaiNumber && !isFssaiValid && !isExempt ? (
+                      {formData.fssaiNumber && !isFssaiValid ? (
                         <p className="text-[11px] text-rose-600 font-bold mt-1 flex items-center space-x-1">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           <span>FSSAI License Number must be a valid 14-digit number (needs {14 - cleanFssai.length} more digit{14 - cleanFssai.length === 1 ? '' : 's'}).</span>
                         </p>
                       ) : (
                         <span className="text-[10px] text-slate-400 block mt-1">
-                          {isExempt 
-                            ? 'Leave blank if you do not have one yet. Our onboarding desk will assist you.' 
-                            : 'Required 14-digit number for food and grocery delivery.'}
+                          Required 14-digit number for food and grocery delivery.
                         </span>
                       )}
                     </div>
 
                     <div>
                       <label className="block font-bold text-slate-700 mb-1">
-                        {isExempt ? 'Trade License / Gram Panchayat NOC (Optional)' : 'Municipal Trade License No *'}
+                        Municipal Trade License No *
                       </label>
                       <input
                         type="text"
                         name="tradeLicenseNumber"
-                        required={!isExempt}
-                        placeholder={isExempt ? "Optional for rural producers & home kitchens" : "e.g. RMC/TL/2025/1042"}
+                        required
+                        placeholder="e.g. RMC/TL/2025/1042"
                         value={formData.tradeLicenseNumber}
                         onChange={handleChange}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
                       />
-                      {isExempt && (
-                        <span className="text-[10px] text-slate-400 block mt-1">Not required for farmers, SHGs, and home kitchens.</span>
-                      )}
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="block font-bold text-slate-700">
-                          {isExempt ? 'Proprietor PAN or 12-Digit Aadhaar Card *' : 'Proprietor / Firm PAN *'}
+                          Proprietor / Firm PAN *
                         </label>
                         {formData.panNumber && (
                           <span className={`text-[10px] font-extrabold ${isPanValid ? 'text-emerald-700' : 'text-amber-700'}`}>
-                            {cleanPan.length} {cleanPan.length === 12 ? 'digits (Aadhaar)' : 'chars (PAN)'}
+                            {cleanPan.length} chars (PAN)
                           </span>
                         )}
                       </div>
@@ -741,11 +707,11 @@ export default function ShopRegistrationPage() {
                         type="text"
                         name="panNumber"
                         required
-                        maxLength={12}
-                        placeholder={isExempt ? "10-char PAN or 12-digit Aadhaar" : "ABCDE1234F"}
+                        maxLength={10}
+                        placeholder="ABCDE1234F"
                         value={formData.panNumber}
                         onChange={(e) => {
-                          const val = e.target.value.toUpperCase().slice(0, 12);
+                          const val = e.target.value.toUpperCase().slice(0, 10);
                           setFormData(prev => ({ ...prev, panNumber: val }));
                         }}
                         className={`w-full px-3.5 py-2.5 rounded-xl border outline-none uppercase font-mono ${
@@ -759,15 +725,11 @@ export default function ShopRegistrationPage() {
                       {formData.panNumber && !isPanValid ? (
                         <p className="text-[11px] text-rose-600 font-bold mt-1 flex items-center space-x-1">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                          <span>
-                            {isExempt 
-                              ? 'Enter either a valid 10-character PAN (ABCDE1234F) or 12-digit Aadhaar number.' 
-                              : 'Format must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).'}
-                          </span>
+                          <span>Format must be 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).</span>
                         </p>
                       ) : (
                         <span className="text-[10px] text-slate-400 block mt-1">
-                          {isExempt ? 'Personal PAN card or Aadhaar card for ID verification.' : '10-character alphanumeric PAN.'}
+                          10-character alphanumeric PAN.
                         </span>
                       )}
                     </div>
@@ -810,7 +772,10 @@ export default function ShopRegistrationPage() {
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
                             <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>FSSAI License / Certificate</span>
+                            <span>
+                              FSSAI License / Certificate
+                              <span className="text-rose-500 ml-0.5">*</span>
+                            </span>
                           </span>
                           {docUploads['fssaiCertUrl'] ? (
                             <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
@@ -818,8 +783,8 @@ export default function ShopRegistrationPage() {
                               <span>Attached</span>
                             </span>
                           ) : (
-                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                              Optional / Fast-Track
+                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                              Required *
                             </span>
                           )}
                         </div>
@@ -876,7 +841,10 @@ export default function ShopRegistrationPage() {
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
                             <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Trade License Copy</span>
+                            <span>
+                              Trade License Copy
+                              <span className="text-rose-500 ml-0.5">*</span>
+                            </span>
                           </span>
                           {docUploads['tradeLicenseUrl'] ? (
                             <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
@@ -884,8 +852,8 @@ export default function ShopRegistrationPage() {
                               <span>Attached</span>
                             </span>
                           ) : (
-                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                              Optional / Fast-Track
+                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                              Required *
                             </span>
                           )}
                         </div>
@@ -942,7 +910,10 @@ export default function ShopRegistrationPage() {
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
                             <CreditCard className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Proprietor / Firm PAN Card</span>
+                            <span>
+                              Proprietor / Firm PAN Card
+                              <span className="text-rose-500 ml-0.5">*</span>
+                            </span>
                           </span>
                           {docUploads['panCardUrl'] ? (
                             <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
@@ -950,8 +921,8 @@ export default function ShopRegistrationPage() {
                               <span>Attached</span>
                             </span>
                           ) : (
-                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                              Optional / Fast-Track
+                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                              Required *
                             </span>
                           )}
                         </div>
@@ -1008,7 +979,10 @@ export default function ShopRegistrationPage() {
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-xs text-slate-800 flex items-center space-x-1.5">
                             <Store className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Storefront / Premises Photo</span>
+                            <span>
+                              Storefront / Premises Photo
+                              <span className="text-rose-500 ml-0.5">*</span>
+                            </span>
                           </span>
                           {docUploads['storePhotoUrl'] ? (
                             <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center space-x-1">
@@ -1016,8 +990,8 @@ export default function ShopRegistrationPage() {
                               <span>Attached</span>
                             </span>
                           ) : (
-                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                              Optional / Fast-Track
+                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                              Required *
                             </span>
                           )}
                         </div>
@@ -1195,19 +1169,18 @@ export default function ShopRegistrationPage() {
                          formData.businessType === 'ORGANIC_PRODUCE' ? 'Farm Fresh / Smallholder Farmer' :
                          formData.businessType === 'HOME_KITCHEN' ? 'Home / Ghost Kitchen' :
                          formData.businessType === 'SUPERMARKET' ? 'Supermarket' : 'Daily Grocery Store'}
-                        {isExempt && <span className="ml-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-md">Fast-Track</span>}
                       </div>
                       <div>
                         <strong className="text-slate-900">FSSAI Status:</strong>{' '}
-                        {formData.fssaiNumber || (isExempt ? 'Assisted Registration (Provided by MBM)' : 'Pending Verification')}
+                        {formData.fssaiNumber || 'Pending Verification'}
                       </div>
                       <div>
                         <strong className="text-slate-900">Trade License:</strong>{' '}
-                        {formData.tradeLicenseNumber || (isExempt ? 'Community Exempt (NRLM/Farmer)' : 'Pending Verification')}
+                        {formData.tradeLicenseNumber || 'Pending Verification'}
                       </div>
                       <div>
-                        <strong className="text-slate-900">{isExempt ? 'ID Proof (PAN/Aadhaar):' : 'PAN Number:'}</strong>{' '}
-                        {formData.panNumber || (isExempt ? 'Community ID' : 'Pending')}
+                        <strong className="text-slate-900">PAN Number:</strong>{' '}
+                        {formData.panNumber || 'Pending'}
                       </div>
                       <div><strong className="text-slate-900">Bank:</strong> {formData.bankName} ({formData.ifscCode})</div>
                       <div className="sm:col-span-2 pt-2 border-t border-slate-200/60">

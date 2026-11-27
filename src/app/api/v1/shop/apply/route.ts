@@ -27,16 +27,7 @@ export async function POST(req: Request) {
       bankAccountNumber,
       ifscCode,
       documents,
-      isCommunityExempt,
     } = body;
-
-    // Check if the applicant qualifies for community fast-track (SHG, Farmer, Home/Ghost Kitchen)
-    const isExempt = Boolean(
-      isCommunityExempt ||
-      businessType === 'SHG_COOPERATIVE' ||
-      businessType === 'ORGANIC_PRODUCE' ||
-      businessType === 'HOME_KITCHEN'
-    );
 
     // Validation for essential fields
     if (!shopName || !ownerName || !phone) {
@@ -54,30 +45,41 @@ export async function POST(req: Request) {
       );
     }
 
-    // FSSAI validation: Mandatory only for commercial retailers. Optional for SHGs/farmers/home kitchens.
-    if (!isExempt && fssaiNumber && !/^\d{14}$/.test(String(fssaiNumber).trim())) {
+    // Statutory license & PAN validation
+    const cleanFssai = fssaiNumber ? String(fssaiNumber).trim() : '';
+    if (!/^\d{14}$/.test(cleanFssai)) {
       return NextResponse.json(
         { success: false, message: 'FSSAI License Number must be a valid 14-digit number.' },
         { status: 400 }
       );
     }
 
-    // PAN / Identity validation: Commercial shops require 10-char PAN; Exempt entities accept PAN or 12-digit Aadhaar.
+    const cleanTradeLicense = tradeLicenseNumber ? String(tradeLicenseNumber).trim() : '';
+    if (!cleanTradeLicense) {
+      return NextResponse.json(
+        { success: false, message: 'Municipal Trade License Number is required.' },
+        { status: 400 }
+      );
+    }
+
     const cleanPan = panNumber ? String(panNumber).trim().toUpperCase() : '';
-    if (cleanPan) {
-      const isValidPan = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan);
-      const isValidAadhaar = /^\d{12}$/.test(cleanPan.replace(/\s+/g, ''));
-      if (!isExempt && !isValidPan) {
-        return NextResponse.json(
-          { success: false, message: 'PAN Number must be a valid 10-character code (e.g. ABCDE1234F).' },
-          { status: 400 }
-        );
-      } else if (isExempt && !isValidPan && !isValidAadhaar && cleanPan !== 'COMMUNITY_ID') {
-        return NextResponse.json(
-          { success: false, message: 'Please provide either a 10-character PAN or 12-digit Aadhaar Card number.' },
-          { status: 400 }
-        );
-      }
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan)) {
+      return NextResponse.json(
+        { success: false, message: 'PAN Number must be a valid 10-character code (e.g. ABCDE1234F).' },
+        { status: 400 }
+      );
+    }
+
+    // All 4 verification document images/copies are mandatory
+    const hasFssaiDoc = Boolean(documents?.fssaiCertUrl && String(documents.fssaiCertUrl).trim());
+    const hasTradeDoc = Boolean(documents?.tradeLicenseUrl && String(documents.tradeLicenseUrl).trim());
+    const hasPanDoc = Boolean(documents?.panCardUrl && String(documents.panCardUrl).trim());
+    const hasStoreDoc = Boolean(documents?.storePhotoUrl && String(documents.storePhotoUrl).trim());
+    if (!hasFssaiDoc || !hasTradeDoc || !hasPanDoc || !hasStoreDoc) {
+      return NextResponse.json(
+        { success: false, message: 'All 4 verification uploads (FSSAI License, Trade License, PAN Card, and Storefront Photo) are mandatory.' },
+        { status: 400 }
+      );
     }
 
     const effectivePincode = pincode || '834001';
@@ -87,12 +89,10 @@ export async function POST(req: Request) {
     const effectiveAddress = address && String(address).trim() !== '' 
       ? String(address).trim() 
       : `Main Market Area, Pincode ${effectivePincode}`;
-    const effectiveTradeLicense = tradeLicenseNumber || (isExempt ? 'COMMUNITY_EXEMPT' : 'PENDING_VERIF');
+    const effectiveTradeLicense = cleanTradeLicense;
     const effectiveBankAcc = bankAccountNumber || 'PENDING_ONBOARDING';
     const effectiveIfsc = ifscCode || 'SBIN000000';
-    const effectiveFssai = (fssaiNumber && /^\d{14}$/.test(String(fssaiNumber).trim()))
-      ? String(fssaiNumber).trim()
-      : (isExempt ? 'COMMUNITY_EXEMPT' : 'PENDING_VERIF');
+    const effectiveFssai = cleanFssai;
 
     const application = shopPartnerStore.submitApplication({
       shopName: String(shopName).trim(),
