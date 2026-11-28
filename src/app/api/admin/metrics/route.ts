@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { syncOrdersFromRedis } from '@/lib/ordersStore';
-import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { getCatalogProducts } from '@/lib/catalog';
 import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
@@ -49,6 +49,7 @@ export async function GET(req: Request) {
     const inTransitOrders = sourceOrders.filter((o: any) => (o.status || o.orderStatus) === 'OUT_FOR_DELIVERY').length;
 
     // Dark Store metrics for Ranchi Central
+    const catalog = getCatalogProducts();
     const darkStoreKPIs = {
       storeCode: 'MBM-RCH-01',
       name: 'MegaBachatMart Ranchi Central Dark Store',
@@ -56,8 +57,8 @@ export async function GET(req: Request) {
       activeRiders: 4,
       busyRiders: inTransitOrders,
       averageDeliveryMinutes: 22,
-      inventorySKUs: CATALOG_PRODUCTS.length,
-      lowStockSKUs: CATALOG_PRODUCTS.filter((p) => p.stockQuantity < 40).map((p) => ({
+      inventorySKUs: catalog.length,
+      lowStockSKUs: catalog.filter((p) => p.stockQuantity < 40).map((p) => ({
         sku: p.sku,
         name: p.name,
         stock: p.stockQuantity,

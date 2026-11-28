@@ -31,7 +31,8 @@ import {
   User,
   Printer,
   Volume2,
-  VolumeX
+  VolumeX,
+  X
 } from 'lucide-react';
 import { Footer } from '@/components/Footer';
 import type { CsvProductRow } from '@/lib/shopPartnerStore';
@@ -113,12 +114,105 @@ export default function ShopPartnerPortalPage() {
 
   // Storefront products uploaded by this partner
   const [myProducts, setMyProducts] = useState<any[]>([]);
+  const [metricModal, setMetricModal] = useState<'catalog' | 'stock' | null>(null);
+  const [stockDrafts, setStockDrafts] = useState<Record<string, number>>({});
+  const [savingStockId, setSavingStockId] = useState<string | null>(null);
+  const [savedStockId, setSavedStockId] = useState<string | null>(null);
+
+  // Multi-Branch Shops & Overall Partner Rating
+  const [branches, setBranches] = useState<any[]>([]);
+  const [overallRating, setOverallRating] = useState<number>(0);
+  const [overallReviewCount, setOverallReviewCount] = useState<number>(0);
+
+  const fetchBranches = async (activeShopId: string) => {
+    try {
+      const res = await fetch(`/api/v1/shop/branches?shopId=${encodeURIComponent(activeShopId)}`, {
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.branches)) {
+        setBranches(data.branches);
+        setOverallRating(Number(data.overallRating) || 0);
+        setOverallReviewCount(Number(data.overallReviewCount) || 0);
+      }
+    } catch {}
+  };
+
+  const handleSwitchBranch = (branch: any) => {
+    if (!branch || branch.shopId === partner?.shopId) return;
+    localStorage.setItem('mbm_shop_partner', JSON.stringify(branch));
+    setPartner(branch);
+    setMyProducts([]);
+    setMetricModal(null);
+  };
+
+  const handleOpenNewShopRegistration = () => {
+    if (!partner) return;
+    try {
+      sessionStorage.setItem(
+        'mbm_add_branch_prefill',
+        JSON.stringify({
+          shopName: partner.shopName,
+          ownerName: partner.ownerName || '',
+          phone: partner.phone || '',
+          email: partner.email || '',
+        })
+      );
+    } catch {}
+    try {
+      window.dispatchEvent(new Event('mbm_nav_start'));
+    } catch {}
+    router.push('/shop/register?mode=new-branch');
+  };
+
+  const openMetricModal = (mode: 'catalog' | 'stock') => {
+    const drafts: Record<string, number> = {};
+    for (const p of myProducts) {
+      drafts[p.id] = Number(p.stockQuantity) || 0;
+    }
+    setStockDrafts(drafts);
+    setSavedStockId(null);
+    setMetricModal(mode);
+  };
+
+  const handleUpdateProductStock = async (productId: string) => {
+    const newQty = Math.max(0, Math.round(Number(stockDrafts[productId] ?? 0)));
+    setSavingStockId(productId);
+    try {
+      const res = await fetch('/api/v1/shop/update-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, stockQuantity: newQty }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMyProducts((prev) =>
+          prev.map((p) =>
+            p.id === productId ? { ...p, stockQuantity: newQty, inStock: newQty > 0 } : p
+          )
+        );
+        setSavedStockId(productId);
+        setTimeout(() => {
+          setSavedStockId((curr) => (curr === productId ? null : curr));
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Failed to update stock:', err);
+    } finally {
+      setSavingStockId(null);
+    }
+  };
 
   // Real Computed Store Metrics (Zero Fake Data - Defaults to 0 until updated)
   const liveStockUnits = myProducts.reduce((sum, p) => sum + (Number(p.stockQuantity) || 0), 0);
   const displayStockUnits = liveStockUnits > 0 ? liveStockUnits : (Number(partner?.totalStockUnits) || 0);
   const displayOrdersFulfilled = realDeliveredCount > 0 ? realDeliveredCount : (Number(partner?.totalOrdersFulfilled) || 0);
-  const displayRating = partner?.rating && Number(partner.rating) > 0 ? `★ ${Number(partner.rating).toFixed(1)}` : '0';
+  const displayRating =
+    overallRating > 0
+      ? `★ ${overallRating.toFixed(1)}`
+      : partner?.rating && Number(partner.rating) > 0
+      ? `★ ${Number(partner.rating).toFixed(1)}`
+      : '0';
 
   const knownOrderIdsRef = React.useRef<Set<string>>(new Set());
   const initialOrdersLoadedRef = React.useRef(false);
@@ -405,15 +499,21 @@ export default function ShopPartnerPortalPage() {
     }
   }, [router]);
 
-  // Fetch current store products from API
+  // Fetch current store products from API (isolated per branch shopId/pincode)
   const refreshStoreProducts = async () => {
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch('/api/products', { cache: 'no-store' });
       const data = await res.json();
       if (data.success && partner) {
-        const matching = data.products.filter(
-          (p: any) => p.producerName && p.producerName.includes(partner.shopName)
-        );
+        const matching = data.products.filter((p: any) => {
+          const prod = p.producerName || '';
+          if (prod.includes(`[${partner.shopId}]`)) return true;
+          if (prod.includes('[MBM-SHP-')) return false;
+          return (
+            prod.includes(partner.shopName) &&
+            (!partner.pincode || prod.includes(partner.pincode))
+          );
+        });
         setMyProducts(matching);
       }
     } catch (e) {
@@ -424,6 +524,7 @@ export default function ShopPartnerPortalPage() {
   useEffect(() => {
     if (partner) {
       refreshStoreProducts();
+      fetchBranches(partner.shopId);
     }
   }, [partner]);
 
@@ -498,15 +599,13 @@ export default function ShopPartnerPortalPage() {
       const expiry = getColVal('expiryDate') || 'Not Available';
       const batch = getColVal('batchNumber') || `BATCH-${Date.now()}`;
       const explicitImg = getColVal('imagefile') || getColVal('image') || getColVal('imageurl') || getColVal('photo');
-      const isWebUrl = explicitImg.startsWith('http://') || explicitImg.startsWith('https://') || explicitImg.startsWith('/uploads/') || explicitImg.startsWith('data:image/');
-      const img = isWebUrl
-        ? explicitImg
-        : productImageLibrary.resolveImage({
-            productId: pid,
-            productName: name,
-            category: cat,
-            explicitUrl: explicitImg || undefined,
-          });
+      const isWebUrl =
+        explicitImg.startsWith('http://') ||
+        explicitImg.startsWith('https://') ||
+        explicitImg.startsWith('/uploads/') ||
+        explicitImg.startsWith('/api/products/image-upload') ||
+        explicitImg.startsWith('data:image/');
+      const img = isWebUrl ? explicitImg : '';
       const ret = getColVal('isReturnable').toLowerCase() !== 'false';
 
       if (!name) {
@@ -743,8 +842,28 @@ export default function ShopPartnerPortalPage() {
   // Publish products to live storefront catalog
   const handlePublishProducts = async () => {
     if (!partner || parsedRows.length === 0) return;
+
+    const hasRealImage = (url?: string) =>
+      Boolean(
+        url &&
+          (url.startsWith('http://') ||
+            url.startsWith('https://') ||
+            url.startsWith('/uploads/') ||
+            url.startsWith('/api/products/image-upload') ||
+            url.startsWith('data:image/'))
+      );
+
+    const missingImages = parsedRows.filter((r) => !hasRealImage(r.imageUrl));
+    if (missingImages.length > 0) {
+      setParseErrors([
+        `Every product must have a picture before publishing. Please add images for: ${missingImages.map((r) => r.productName).join(', ')}`,
+      ]);
+      return;
+    }
+
     setIsUploading(true);
     setUploadSuccess(null);
+    setParseErrors([]);
 
     try {
       const res = await fetch('/api/v1/shop/upload-csv', {
@@ -803,6 +922,10 @@ export default function ShopPartnerPortalPage() {
       setSingleProductError('Product name is required.');
       return;
     }
+    if (!singleImageFile && !singleImagePreview) {
+      setSingleProductError('Product photo is mandatory. Please upload a picture for this product.');
+      return;
+    }
 
     const mrp = parseFloat(singleProduct.mrp);
     const bachatPrice = parseFloat(singleProduct.bachatPrice);
@@ -834,26 +957,31 @@ export default function ShopPartnerPortalPage() {
 
       let finalImageUrl = singleImagePreview;
 
-      // If user uploaded a custom image file, upload to server storage
-      if (singleImageFile && singleImagePreview && singleImagePreview.startsWith('data:image/')) {
-        try {
-          const imgRes = await fetch('/api/products/image-upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              productId: generatedId,
-              productName: name,
-              category: singleProduct.category,
-              imageData: singleImagePreview,
-            }),
-          });
-          const imgData = await imgRes.json();
-          if (imgData.success && imgData.imageUrl) {
-            finalImageUrl = imgData.imageUrl;
-          }
-        } catch (imgErr) {
-          console.warn('Image upload fallback notice:', imgErr);
+      // Upload product photo to server storage
+      if (singleImagePreview && singleImagePreview.startsWith('data:image/')) {
+        const imgRes = await fetch('/api/products/image-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: generatedId,
+            productName: name,
+            category: singleProduct.category,
+            imageData: singleImagePreview,
+          }),
+        });
+        const imgData = await imgRes.json();
+        if (!imgRes.ok || !imgData.success || !imgData.imageUrl) {
+          setIsPublishingSingle(false);
+          setSingleProductError(imgData.message || 'Failed to upload product photo. Please try again.');
+          return;
         }
+        finalImageUrl = imgData.imageUrl;
+      }
+
+      if (!finalImageUrl) {
+        setIsPublishingSingle(false);
+        setSingleProductError('Product photo is mandatory. Please upload a picture for this product.');
+        return;
       }
 
       const row: CsvProductRow = {
@@ -949,7 +1077,34 @@ export default function ShopPartnerPortalPage() {
             </div>
 
             {/* Quick Portal Controls */}
-            <div className="flex items-center space-x-[0.5rem] sm:space-x-[0.75rem]">
+            <div className="flex items-center flex-wrap gap-2">
+              {branches.length > 0 && (
+                <select
+                  aria-label="Switch Shop Branch"
+                  value={partner.shopId}
+                  onChange={(e) => {
+                    const found = branches.find((b) => b.shopId === e.target.value);
+                    if (found) handleSwitchBranch(found);
+                  }}
+                  className="bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs px-3 py-2 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer max-w-[13rem]"
+                >
+                  {branches.map((b) => (
+                    <option key={b.shopId} value={b.shopId}>
+                      {b.shopName} ({b.pincode})
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <button
+                type="button"
+                onClick={handleOpenNewShopRegistration}
+                className="bg-[#064E3B] hover:bg-emerald-950 text-white font-bold px-3 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Add New Shop</span>
+              </button>
+
               <Link
                 href="/shop"
                 target="_blank"
@@ -1052,17 +1207,31 @@ export default function ShopPartnerPortalPage() {
 
           {/* Quick Metrics Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Catalog Items</span>
+            <button
+              type="button"
+              onClick={() => openMetricModal('catalog')}
+              className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs text-left cursor-pointer hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.96] transition-all duration-150 group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-[#064E3B] transition-colors">Catalog Items</span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">View</span>
+              </div>
               <div className="text-2xl font-black text-slate-900 mt-1">{myProducts.length} Listed</div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Live on MegaBachatMart</p>
-            </div>
+              <p className="text-[10px] text-slate-400 mt-0.5">Click to view listed items</p>
+            </button>
 
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">In-Stock Units</span>
-              <div className="text-2xl font-black text-[#16A34A] mt-1">{displayStockUnits}</div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Ready for 20-min dispatch</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => openMetricModal('stock')}
+              className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs text-left cursor-pointer hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.96] transition-all duration-150 group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-[#064E3B] transition-colors">Update Your Stock Unit</span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Update</span>
+              </div>
+              <div className="text-2xl font-black text-[#16A34A] mt-1">{displayStockUnits} Units</div>
+              <p className="text-[10px] text-slate-400 mt-0.5">Click to update item stock</p>
+            </button>
 
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Orders Fulfilled</span>
@@ -1071,9 +1240,11 @@ export default function ShopPartnerPortalPage() {
             </div>
 
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Store Rating</span>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Overall Partner Rating</span>
               <div className="text-2xl font-black text-amber-500 mt-1">{displayRating}</div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Verified Ranchi customers</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                {overallReviewCount > 0 ? `Across ${overallReviewCount} customer review(s)` : 'No customer reviews yet'}
+              </p>
             </div>
           </div>
 
@@ -1660,8 +1831,8 @@ export default function ShopPartnerPortalPage() {
                         </label>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-tight">
-                      Tip: If left empty, our Smart Auto-Image Bank will automatically match an official verified photo for known FMCG brands.
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      Required: Upload a clear product photo (JPG, PNG, or WebP, up to 5MB).
                     </p>
                   </div>
 
@@ -2031,18 +2202,25 @@ export default function ShopPartnerPortalPage() {
                               {/* Dedicated Image Column */}
                               <td className="py-3 px-4 text-center bg-emerald-50/20">
                                 <div className="flex flex-col items-center justify-center space-y-1.5">
-                                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-white shrink-0 border-2 border-emerald-200 group shadow-xs">
-                                    <img 
-                                      src={row.imageUrl} 
-                                      alt={row.productName} 
-                                      className="w-full h-full object-cover" 
-                                    />
+                                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-white shrink-0 border-2 border-emerald-200 group shadow-xs flex items-center justify-center">
+                                    {row.imageUrl ? (
+                                      <img 
+                                        src={row.imageUrl} 
+                                        alt={row.productName} 
+                                        className="w-full h-full object-cover" 
+                                      />
+                                    ) : (
+                                      <div className="flex flex-col items-center justify-center text-rose-500 p-1">
+                                        <Camera className="w-5 h-5" />
+                                        <span className="text-[8px] font-bold mt-0.5">Required *</span>
+                                      </div>
+                                    )}
                                     <label 
                                       className="absolute inset-0 bg-black/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
-                                      title="Click to change photo"
+                                      title="Click to upload photo"
                                     >
                                       <Camera className="w-4 h-4 text-emerald-300" />
-                                      <span className="text-[8px] font-bold mt-0.5">Change</span>
+                                      <span className="text-[8px] font-bold mt-0.5">{row.imageUrl ? 'Change' : 'Add'}</span>
                                       <input
                                         type="file"
                                         accept="image/*"
@@ -2058,9 +2236,9 @@ export default function ShopPartnerPortalPage() {
 
                                   <label 
                                     className={`inline-flex items-center space-x-1 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border transition cursor-pointer shadow-2xs ${
-                                      row.imageUrl?.includes('/uploads/') || row.imageUrl?.startsWith('data:')
+                                      row.imageUrl
                                         ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
-                                        : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
+                                        : 'bg-rose-50 text-rose-700 border-rose-300 hover:bg-rose-100'
                                     }`}
                                     title="Add or change image for this product"
                                   >
@@ -2068,9 +2246,9 @@ export default function ShopPartnerPortalPage() {
                                     <span>
                                       {uploadingPreviewRowIdx === idx 
                                         ? 'Uploading...' 
-                                        : row.imageUrl?.includes('/uploads/') || row.imageUrl?.startsWith('data:')
+                                        : row.imageUrl
                                         ? '✓ Image Added' 
-                                        : '+ Add Image'}
+                                        : '+ Add Image *'}
                                     </span>
                                     <input
                                       type="file"
@@ -2253,6 +2431,187 @@ export default function ShopPartnerPortalPage() {
               </div>
             )}
             </div>
+            </div>
+          )}
+
+          {/* CATALOG ITEMS & IN-STOCK UNITS TOP-CENTER DRAWER MODAL */}
+          {metricModal && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={metricModal === 'catalog' ? 'Listed Catalog Items' : 'In-Stock Units Breakdown'}
+              onClick={() => setMetricModal(null)}
+              className="fixed inset-0 bg-slate-900/55 backdrop-blur-xs z-[90] flex items-start justify-center pt-8 sm:pt-14 px-4 pb-6"
+            >
+              <style>{`
+                @keyframes portalRiseToTopCenter {
+                  0% {
+                    opacity: 0;
+                    transform: translateY(44px) scale(0.94);
+                  }
+                  100% {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                  }
+                }
+              `}</style>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ animation: 'portalRiseToTopCenter 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+                className="bg-white rounded-3xl w-full max-w-2xl max-h-[82vh] flex flex-col shadow-2xl border border-emerald-200 overflow-hidden"
+              >
+                <div className="bg-gradient-to-r from-[#064E3B] to-[#15803D] text-white px-6 py-4 flex items-center justify-between shrink-0">
+                  <div>
+                    <h3 className="text-base font-black">
+                      {metricModal === 'catalog'
+                        ? `Catalog Items (${myProducts.length} Listed)`
+                        : `Update Your Stock Unit (${displayStockUnits} Total)`}
+                    </h3>
+                    <p className="text-[11px] text-emerald-100 mt-0.5">
+                      {metricModal === 'catalog'
+                        ? 'All products currently listed by your store on MegaBachatMart.'
+                        : 'Adjust stock quantity for any item and click Save to update your live catalog.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMetricModal(null)}
+                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                    aria-label="Close items view"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3">
+                  {myProducts.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 text-xs">
+                      No products listed yet. Upload products in the Inventory tab to see them here.
+                    </div>
+                  ) : (
+                    myProducts.map((p) => {
+                      const units = Number(p.stockQuantity) || 0;
+                      const draftQty = stockDrafts[p.id] ?? units;
+                      const hasChanged = draftQty !== units;
+                      const isSaving = savingStockId === p.id;
+                      const isSaved = savedStockId === p.id;
+                      return (
+                        <div
+                          key={p.id}
+                          className="flex flex-wrap sm:flex-nowrap items-center gap-3.5 p-3 rounded-2xl border border-slate-200 bg-white hover:border-emerald-300 transition shadow-2xs"
+                        >
+                          <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                            <img
+                              src={p.image || '/api/products/image-upload?file=chakki_atta.jpg'}
+                              alt={p.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">{p.name}</h4>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              {p.unit} &bull; {p.category} &bull; <span className="font-mono">{p.sku || p.id}</span>
+                            </p>
+                            <div className="mt-1.5 flex items-center gap-2 text-xs">
+                              <span className="text-slate-400 line-through text-[11px]">₹{p.mrp}</span>
+                              <span className="font-black text-[#064E3B]">₹{p.bachatPrice}</span>
+                              {p.discountPercent > 0 && (
+                                <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  {p.discountPercent}% OFF
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {metricModal === 'stock' ? (
+                            <div className="flex items-center gap-2 shrink-0 ml-auto">
+                              <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setStockDrafts((prev) => ({
+                                      ...prev,
+                                      [p.id]: Math.max(0, (prev[p.id] ?? units) - 1),
+                                    }))
+                                  }
+                                  className="px-2.5 py-1.5 text-sm font-black text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                                  aria-label={`Decrease stock for ${p.name}`}
+                                >
+                                  −
+                                </button>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={draftQty}
+                                  onChange={(e) => {
+                                    const val = Math.max(0, parseInt(e.target.value || '0', 10) || 0);
+                                    setStockDrafts((prev) => ({ ...prev, [p.id]: val }));
+                                  }}
+                                  className="w-14 text-center text-sm font-black text-[#064E3B] bg-white py-1.5 outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setStockDrafts((prev) => ({
+                                      ...prev,
+                                      [p.id]: (prev[p.id] ?? units) + 1,
+                                    }))
+                                  }
+                                  className="px-2.5 py-1.5 text-sm font-black text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                                  aria-label={`Increase stock for ${p.name}`}
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateProductStock(p.id)}
+                                disabled={isSaving || !hasChanged}
+                                className={`px-3 py-2 rounded-xl text-xs font-extrabold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                                  isSaved
+                                    ? 'bg-emerald-100 text-[#064E3B] border border-emerald-300'
+                                    : 'bg-[#16A34A] hover:bg-[#15803d] text-white'
+                                }`}
+                              >
+                                {isSaving ? 'Saving...' : isSaved ? 'Saved ✓' : 'Save'}
+                              </button>
+                            </div>
+                          ) : (
+                            <div
+                              className={`shrink-0 text-center px-3.5 py-2 rounded-2xl border ${
+                                units > 0
+                                  ? 'bg-[#E6F7EE] border-emerald-300 text-[#064E3B]'
+                                  : 'bg-rose-50 border-rose-200 text-rose-700'
+                              }`}
+                            >
+                              <div className="font-black leading-none text-lg sm:text-xl text-[#16A34A]">
+                                {units}
+                              </div>
+                              <div className="text-[10px] font-extrabold uppercase tracking-wider mt-1">
+                                {units > 0 ? 'In Stock' : 'Out'}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex items-center justify-between text-xs shrink-0">
+                  <span className="text-slate-500 font-semibold">
+                    {myProducts.length} items &middot; {displayStockUnits} total units
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMetricModal(null)}
+                    className="px-4 py-2 rounded-xl bg-[#064E3B] hover:bg-emerald-950 text-white font-bold transition cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

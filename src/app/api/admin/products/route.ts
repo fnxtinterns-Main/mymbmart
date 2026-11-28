@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
-import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { getCatalogProducts, syncCatalogFromRedis } from '@/lib/catalog';
 import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  await syncCatalogFromRedis().catch(() => {});
+  const products = getCatalogProducts();
   return NextResponse.json({
     success: true,
-    totalProducts: CATALOG_PRODUCTS.length,
-    products: CATALOG_PRODUCTS,
+    totalProducts: products.length,
+    products,
   });
 }
 
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { id, stockQuantity, bachatPrice, mrp, inStock } = body;
 
-    const product = CATALOG_PRODUCTS.find((p) => p.id === id);
+    const product = getCatalogProducts().find((p) => p.id === id);
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }

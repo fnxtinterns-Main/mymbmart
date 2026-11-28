@@ -22,9 +22,9 @@ export default function ShopPage() {
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [catalogProducts, setCatalogProducts] = useState<ProductItem[]>(sampleProducts);
 
-  // Fetch latest products from live catalog (including CSV-uploaded items)
+  // Fetch latest products from live catalog (including newly uploaded items & images)
   React.useEffect(() => {
-    fetch('/api/products')
+    fetch('/api/products', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && Array.isArray(data.products) && data.products.length > 0) {

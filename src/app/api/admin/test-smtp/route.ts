@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getEmailTransporter, sendEmail } from '@/lib/emailService';
+import { buildBrandEmailLayout, getEmailTransporter, sendEmail } from '@/lib/emailService';
 import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
@@ -44,17 +44,21 @@ export async function POST(req: Request) {
     // 2. Send test mail
     const result = await sendEmail({
       to: testRecipient,
-      subject: '✅ MegaBachatMart SMTP Verification Successful',
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #064E3B;">
-          <h2 style="color: #064E3B;">MegaBachatMart Mail Gateway Test</h2>
-          <p>This is a verified test email sent from <strong>support@mymbmart.com</strong> via Hostinger SMTP.</p>
-          <div style="background: #F0FDF4; border: 1px solid #86EFAC; padding: 12px; border-radius: 8px;">
-            <p style="margin: 0; color: #166534; font-weight: bold;">Status: All email services operational</p>
-            <p style="margin: 4px 0 0 0; color: #15803D; font-size: 13px;">Timestamp: ${new Date().toISOString()}</p>
+      subject: 'MegaBachatMart SMTP Verification Successful',
+      html: buildBrandEmailLayout({
+        badge: 'SMTP Verified',
+        title: 'Mail Gateway Test Successful',
+        subtitle: 'Sent via support@mymbmart.com',
+        bodyHtml: `
+          <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 18px 0;">
+            This is a verified test email sent from <strong>support@mymbmart.com</strong> via Hostinger SMTP.
+          </p>
+          <div style="background-color: #F2FBF6; border: 1px solid #BBF7D0; border-left: 4px solid #16A34A; padding: 14px 16px; border-radius: 10px;">
+            <p style="margin: 0; color: #064E3B; font-weight: 700; font-size: 13px;">Status: All email services operational</p>
+            <p style="margin: 4px 0 0 0; color: #15803D; font-size: 12px;">Timestamp: ${new Date().toISOString()}</p>
           </div>
-        </div>
-      `,
+        `,
+      }),
     });
 
     return NextResponse.json({

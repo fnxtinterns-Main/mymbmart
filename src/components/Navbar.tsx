@@ -18,7 +18,8 @@ import {
   LogIn,
   LogOut,
   Building2,
-  Package
+  Package,
+  User
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 import { getStoredUserSession, clearUserSession } from '@/lib/userSession';
@@ -198,6 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    window.dispatchEvent(new Event('mbm_nav_start'));
     if (searchQuery.trim()) {
       router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
@@ -211,7 +213,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-[1px] border-emerald-100/80 shadow-xs w-[100vw] max-w-[100vw] overflow-x-hidden">
+    <header className="sticky top-0 z-[70] bg-white/95 backdrop-blur-md border-b-[1px] border-emerald-100/80 shadow-xs w-full max-w-full overflow-visible">
       <div className="w-[100%] max-w-[100%] px-[3%] sm:px-[5%]">
         <div className="flex items-center justify-between h-[4rem] sm:h-[5rem] lg:h-[5.5rem] gap-[0.5rem] sm:gap-[1rem] lg:gap-[1.5rem] min-w-0">
           
@@ -293,7 +295,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Notification Popover Card */}
               {notificationsOpen && (
-                <div className="absolute right-0 sm:-right-12 mt-2 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-emerald-100 py-3 z-50 animate-in fade-in zoom-in duration-150">
+                <div className="absolute right-0 sm:-right-12 mt-2 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-emerald-100 py-3 z-[80] animate-in fade-in zoom-in duration-150">
                   
                   {/* Header */}
                   <div className="px-4 pb-3 border-b border-slate-100 flex items-center justify-between">
@@ -418,7 +420,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
 
                 {userDropdown && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-[80]">
                     <div className="px-4 py-2 border-b border-slate-100">
                       <p className="text-xs text-slate-500">Signed in as</p>
                       <p className="text-sm font-bold text-slate-900">{activeUser.name}</p>
@@ -427,50 +429,33 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </span>
                     </div>
 
-                    <Link
-                      href="/orders"
-                      onClick={() => setUserDropdown(false)}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-brand-mint flex items-center space-x-2 font-medium"
-                    >
-                      <Package className="w-4 h-4 text-emerald-600" />
-                      <span>My Orders & History</span>
-                    </Link>
-
-                    <Link
-                      href="/savings"
-                      onClick={() => setUserDropdown(false)}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-brand-mint flex items-center space-x-2"
-                    >
-                      <PiggyBank className="w-4 h-4 text-brand-green" />
-                      <span>My Savings & Wallet</span>
-                    </Link>
-
-                    <Link
-                      href="/refer"
-                      onClick={() => setUserDropdown(false)}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-brand-mint flex items-center space-x-2"
-                    >
-                      <Users className="w-4 h-4 text-brand-orange" />
-                      <span>Refer & Earn</span>
-                    </Link>
-
-                    <Link
-                      href="/producer"
-                      onClick={() => setUserDropdown(false)}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-brand-mint flex items-center space-x-2"
-                    >
-                      <Store className="w-4 h-4 text-brand-blue" />
-                      <span>Join as SHG / Producer</span>
-                    </Link>
-
-                    <Link
-                      href="/shop/register"
-                      onClick={() => setUserDropdown(false)}
-                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-brand-mint flex items-center space-x-2"
-                    >
-                      <Building2 className="w-4 h-4 text-emerald-700" />
-                      <span>Partner as Local Shop</span>
-                    </Link>
+                    {[
+                      { href: '/profile', label: 'My Profile & Location', icon: User, iconClass: 'text-[#064E3B]' },
+                      { href: '/orders', label: 'My Orders & History', icon: Package, iconClass: 'text-emerald-600' },
+                      { href: '/savings', label: 'My Savings & Wallet', icon: PiggyBank, iconClass: 'text-brand-green' },
+                      { href: '/refer', label: 'Refer & Earn', icon: Users, iconClass: 'text-brand-orange' },
+                      { href: '/producer', label: 'Join as SHG / Producer', icon: Store, iconClass: 'text-brand-blue' },
+                      { href: '/shop/register', label: 'Partner as Local Shop', icon: Building2, iconClass: 'text-emerald-700' },
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      const active = isActive(item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setUserDropdown(false)}
+                          aria-current={active ? 'page' : undefined}
+                          className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 transition ${
+                            active
+                              ? 'bg-brand-mint text-brand-forest font-bold border-l-4 border-brand-green'
+                              : 'text-slate-700 hover:bg-brand-mint font-medium'
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 ${item.iconClass}`} />
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
 
                     <div className="border-t border-slate-100 mt-1 pt-1 space-y-1">
                       <button

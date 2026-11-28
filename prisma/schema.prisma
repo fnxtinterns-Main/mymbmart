@@ -219,6 +219,7 @@ model Product {
   isSHG          Boolean          @default(false)
   producerName   String?
   fulfilmentType FulfilmentType   @default(QUICK_COMMERCE)
+  stockQuantity  Int              @default(50)
   sellerId       String?
   seller         SellerProfile?   @relation(fields: [sellerId], references: [id])
   storeInventory StoreInventory[]
@@ -483,5 +484,59 @@ model OutboxEvent {
 
   @@index([status, createdAt])
   @@index([aggregateType, aggregateId])
+}
+
+model StoredFile {
+  id        String   @id @default(uuid())
+  filename  String   @unique
+  category  String   // "kyc" | "product" | "site"
+  mimeType  String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  @@index([category])
+}
+
+model PartnerLocation {
+  id        String   @id @default(uuid())
+  shopId    String   @unique
+  shopName  String
+  address   String
+  city      String   @default("Ranchi")
+  pincode   String
+  latitude  Float
+  longitude Float
+  updatedAt DateTime @updatedAt
+
+  @@index([pincode])
+}
+
+model StoreReview {
+  id        String   @id @default(uuid())
+  shopId    String
+  shopName  String
+  userId    String
+  userName  String
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  @@unique([shopId, userId])
+  @@index([shopId])
+}
+
+model BlockedStore {
+  id        String   @id @default(uuid())
+  shopId    String
+  shopName  String
+  userId    String
+  userName  String?
+  reason    String
+  createdAt DateTime @default(now())
+
+  @@unique([shopId, userId])
+  @@index([userId])
+  @@index([shopId])
 }
 

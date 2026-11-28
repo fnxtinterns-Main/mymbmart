@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { shopPartnerStore, CsvProductRow } from '@/lib/shopPartnerStore';
+import { addCatalogProducts } from '@/lib/catalog';
+import { productImageLibrary } from '@/lib/productImageLibrary';
 import { isAdminAuthorized, getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
@@ -69,7 +71,33 @@ export async function POST(req: Request) {
       );
     }
 
+    const isValidImageUrl = (url?: string) =>
+      Boolean(
+        url &&
+          (url.startsWith('http://') ||
+            url.startsWith('https://') ||
+            url.startsWith('/uploads/') ||
+            url.startsWith('/api/products/image-upload') ||
+            url.startsWith('data:image/'))
+      );
+
+    const missingImages = parsedRows.filter(
+      (r) => !isValidImageUrl(r.imageUrl) && !productImageLibrary.hasCustomImage(r.productId, r.productName)
+    );
+    if (missingImages.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Product picture is mandatory for every item. Missing photo for: ${missingImages.map((r) => r.productName).join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
     const result = shopPartnerStore.ingestBulkCsvProducts(shopId, parsedRows);
+    if (result.products.length > 0) {
+      await addCatalogProducts(result.products);
+    }
 
     return NextResponse.json({
       success: result.success,

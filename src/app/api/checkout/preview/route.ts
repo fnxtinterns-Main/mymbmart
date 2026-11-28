@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { getCatalogProducts } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     for (const item of items) {
       const qty = Math.max(1, Math.min(99, Math.floor(Number(item.quantity) || 1)));
       const dbProduct = dbProducts.find((p) => p.id === item.productId);
-      const catalogProduct = CATALOG_PRODUCTS.find((p) => p.id === item.productId);
+      const catalogProduct = getCatalogProducts().find((p) => p.id === item.productId);
 
       if (!dbProduct && !catalogProduct) continue;
 

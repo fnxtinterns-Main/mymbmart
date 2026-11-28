@@ -1,7 +1,7 @@
 import '@/lib/envConfig';
 import { NextResponse } from 'next/server';
 import { shopPartnerStore, ApplicationStatus } from '@/lib/shopPartnerStore';
-import { sendPartnerApprovalEmail } from '@/lib/emailService';
+import { sendPartnerApprovalEmail, sendPartnerRejectionEmail } from '@/lib/emailService';
 import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
@@ -67,14 +67,26 @@ export async function GET(req: Request) {
           generatedShopId: s.id,
         }));
 
-        // Merge DB applications with Redis/in-memory applications by phone/email/id to avoid duplicates
-        const existingPhones = new Set(applications.map((a) => a.phone));
+        // Merge DB applications with Redis/in-memory applications by normalized phone/email to avoid duplicates
+        const existingPhones = new Set(
+          applications.map((a) => String(a.phone || '').replace(/\D/g, '').slice(-10)).filter(Boolean)
+        );
+        const existingEmails = new Set(
+          applications.map((a) => String(a.email || '').trim().toLowerCase()).filter(Boolean)
+        );
         for (const da of dbApps) {
-          if (!existingPhones.has(da.phone)) {
-            applications.push(da as any);
-            existingPhones.add(da.phone);
+          const normPhone = String(da.phone || '').replace(/\D/g, '').slice(-10);
+          const normEmail = String(da.email || '').trim().toLowerCase();
+          if ((normPhone && existingPhones.has(normPhone)) || (normEmail && existingEmails.has(normEmail))) {
+            continue;
           }
+          applications.push(da as any);
+          if (normPhone) existingPhones.add(normPhone);
+          if (normEmail) existingEmails.add(normEmail);
         }
+        applications.sort(
+          (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+        );
       }
     } catch {}
 
@@ -122,6 +134,12 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    // Sync cross-process Redis applications & accounts before mutating
+    await Promise.all([
+      shopPartnerStore.syncFromRedis(true).catch(() => {}),
+      shopPartnerStore.syncAccountsFromRedis(true).catch(() => {}),
+    ]);
 
     if (action === 'APPROVE') {
       const result = shopPartnerStore.approveApplication({
@@ -195,9 +213,83 @@ export async function POST(req: Request) {
     }
 
     if (action === 'REJECT') {
-      const result = shopPartnerStore.rejectApplication(applicationId, reason || 'Incomplete KYC documentation');
+      const cleanReason = String(reason || '').trim() || 'Incomplete KYC documentation';
+      let result = shopPartnerStore.rejectApplication(applicationId, cleanReason);
+
+      // Fallback: if application exists only in PostgreSQL SellerProfile, sync it into shopPartnerStore as REJECTED
+      if (!result.success && process.env.DATABASE_URL) {
+        try {
+          const { prisma } = await import('@/lib/prisma');
+          const dbSeller = await prisma.sellerProfile.findUnique({
+            where: { id: applicationId },
+            include: { user: true },
+          });
+          if (dbSeller) {
+            await prisma.sellerProfile.update({
+              where: { id: dbSeller.id },
+              data: { isVerified: false },
+            });
+            const rejectedApp = {
+              id: dbSeller.id,
+              applicationNumber: `APP-${dbSeller.id.slice(0, 8).toUpperCase()}`,
+              shopName: dbSeller.businessName,
+              ownerName: dbSeller.user?.name || 'Partner',
+              phone: dbSeller.user?.phone || '',
+              email: dbSeller.user?.email || '',
+              address: `${dbSeller.city}, ${dbSeller.state}`,
+              city: dbSeller.city,
+              state: dbSeller.state,
+              pincode: '834001',
+              businessType: (dbSeller.isSHG ? 'SHG_COOPERATIVE' : 'KIRANA_GENERAL') as any,
+              yearsInBusiness: 1,
+              fssaiNumber: dbSeller.fssaiNumber || '',
+              tradeLicenseNumber: '',
+              panNumber: '',
+              bankName: '',
+              bankAccountNumber: '',
+              ifscCode: '',
+              documents: { tradeLicenseUrl: '', fssaiCertUrl: '', panCardUrl: '', storePhotoUrl: '' },
+              status: 'REJECTED' as ApplicationStatus,
+              submittedAt: dbSeller.createdAt.toISOString(),
+              reviewedAt: new Date().toISOString(),
+              reviewedBy: 'Admin',
+              reviewNotes: cleanReason,
+            };
+            shopPartnerStore.applications.unshift(rejectedApp);
+            result = {
+              success: true,
+              message: `Application ${rejectedApp.applicationNumber} has been rejected.`,
+              application: rejectedApp,
+            };
+          }
+        } catch (dbErr) {
+          console.warn('[Merchants] DB SellerProfile rejection sync notice:', dbErr);
+        }
+      }
+
       if (!result.success) {
         return NextResponse.json({ success: false, message: result.message }, { status: 400 });
+      }
+
+      const targetApp =
+        result.application ||
+        shopPartnerStore.applications.find(
+          (a) => a.id === applicationId || a.applicationNumber === applicationId
+        );
+
+      let emailSent = false;
+      if (targetApp?.email) {
+        try {
+          emailSent = await sendPartnerRejectionEmail({
+            email: targetApp.email,
+            ownerName: targetApp.ownerName,
+            shopName: targetApp.shopName,
+            applicationNumber: targetApp.applicationNumber,
+            reason: cleanReason,
+          });
+        } catch (emailErr) {
+          console.warn('[Merchants] Failed to dispatch rejection email:', emailErr);
+        }
       }
 
       // Synchronize updated state and accounts to Redis
@@ -209,6 +301,42 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         message: result.message,
+        emailSent,
+        application: targetApp,
+      });
+    }
+
+    if (action === 'DELETE') {
+      const idx = shopPartnerStore.applications.findIndex(
+        (a) => a.id === applicationId || a.applicationNumber === applicationId
+      );
+      if (idx >= 0) {
+        shopPartnerStore.applications.splice(idx, 1);
+      }
+
+      // Overwrite Redis directly (do not use additive merge saveToRedis, which would restore deleted items)
+      try {
+        const { isRedisConfigured, redisSet } = await import('@/lib/redis');
+        if (isRedisConfigured()) {
+          await redisSet('mbm:shop_applications', shopPartnerStore.applications);
+        }
+      } catch {}
+
+      if (process.env.DATABASE_URL) {
+        try {
+          const { prisma } = await import('@/lib/prisma');
+          await prisma.sellerProfile.deleteMany({
+            where: {
+              id: applicationId,
+              isVerified: false,
+            },
+          });
+        } catch {}
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Rejected store application deleted.',
       });
     }
 

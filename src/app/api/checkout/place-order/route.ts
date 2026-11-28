@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { getCatalogProducts, syncCatalogFromRedis } from '@/lib/catalog';
 import { addOrder, type OrderRecord } from '@/lib/ordersStore';
 import { isRedisConfigured, redisGet, redisSet } from '@/lib/redis';
 import { prisma } from '@/lib/prisma';
@@ -36,8 +36,10 @@ export async function POST(req: Request) {
     let totalBachatPrice = 0;
     let totalCashback = 0;
 
+    await syncCatalogFromRedis().catch(() => {});
+    const catalog = getCatalogProducts();
     for (const item of items) {
-      const product = CATALOG_PRODUCTS.find((p) => p.id === item.productId || p.id === item.product?.id);
+      const product = catalog.find((p) => p.id === item.productId || p.id === item.product?.id);
       if (!product) continue;
 
       const rawQty = Number(item.quantity);
@@ -302,7 +304,7 @@ export async function POST(req: Request) {
                 data: { name: 'Groceries', slug: 'groceries' }
               });
             }
-            const catProd = CATALOG_PRODUCTS.find((p) => p.id === item.productId);
+            const catProd = catalog.find((p) => p.id === item.productId);
             await tx.product.create({
               data: {
                 id: item.productId,
@@ -313,7 +315,7 @@ export async function POST(req: Request) {
                 categoryId: cat.id,
                 mrp: catProd?.mrp || item.unitPrice,
                 bachatPrice: item.unitPrice,
-                imageUrl: item.image || '/images/products/atta.png',
+                imageUrl: item.image || '/api/products/image-upload?file=chakki_atta.jpg',
               }
             });
           }
@@ -338,7 +340,7 @@ export async function POST(req: Request) {
             deliveryOtp: newOrder.deliveryOtp,
             items: {
               create: newOrder.items.map((it) => {
-                const catProd = CATALOG_PRODUCTS.find((p) => p.id === it.productId);
+                const catProd = catalog.find((p) => p.id === it.productId);
                 return {
                   productId: it.productId,
                   quantity: it.quantity,
@@ -430,7 +432,7 @@ export async function POST(req: Request) {
 
     // Atomic catalog stock decrement in memory
     for (const item of items) {
-      const product = CATALOG_PRODUCTS.find((p) => p.id === item.productId || p.id === item.product?.id);
+      const product = catalog.find((p) => p.id === item.productId || p.id === item.product?.id);
       if (product) {
         const rawQty = Number(item.quantity);
         if (isNaN(rawQty) || rawQty <= 0) continue;

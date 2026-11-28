@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import { shopPartnerStore } from '@/lib/shopPartnerStore';
 import { getJwtSecret } from '@/lib/securityUtils';
 import { redisCommand, redisDel } from '@/lib/redis';
+import { prisma } from '@/lib/prisma';
+import { geocodeAddress } from '@/lib/geoUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,6 +70,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // Ensure PartnerLocation is seeded from the store's registered address/pincode if not yet recorded
+    let resolvedLat: number | undefined;
+    let resolvedLng: number | undefined;
+    try {
+      const existingLoc = await prisma.partnerLocation.findUnique({ where: { shopId: account.shopId } });
+      if (existingLoc) {
+        resolvedLat = existingLoc.latitude;
+        resolvedLng = existingLoc.longitude;
+      } else {
+        const regCoords = await geocodeAddress(`${account.address}, ${account.pincode}, India`, account.pincode);
+        resolvedLat = regCoords.latitude;
+        resolvedLng = regCoords.longitude;
+        await prisma.partnerLocation.create({
+          data: {
+            shopId: account.shopId,
+            shopName: account.shopName,
+            address: account.address,
+            pincode: account.pincode,
+            latitude: resolvedLat,
+            longitude: resolvedLng,
+          },
+        });
+      }
+    } catch {}
+
     // Sign session token for partner portal requests
     const token = jwt.sign(
       {
@@ -92,6 +119,8 @@ export async function POST(req: Request) {
         phone: account.phone,
         pincode: account.pincode,
         address: account.address,
+        latitude: resolvedLat,
+        longitude: resolvedLng,
         businessType: account.businessType,
         joinedAt: account.joinedAt,
         totalProductsListed: account.totalProductsListed,

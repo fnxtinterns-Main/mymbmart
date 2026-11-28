@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { WebMcpAgentRegistry } from '@/components/WebMcpAgentRegistry';
+import { PageLoader } from '@/components/PageLoader';
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://mymbmart.com"),
@@ -62,8 +64,15 @@ export const metadata: Metadata = {
     canonical: "https://mymbmart.com",
   },
   icons: {
-    icon: "/images/LOgo.jpeg",
-    apple: "/images/LOgo.jpeg",
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32 48x48", type: "image/x-icon" },
+      { url: "/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-96.png", sizes: "96x96", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/icon-96.png",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   manifest: "/manifest.json",
   appleWebApp: {
@@ -304,6 +313,9 @@ export default function RootLayout({
         {/* <script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js" async defer></script> */}
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-brand-orange selection:text-white overflow-x-hidden w-full max-w-full">
+        <Suspense fallback={null}>
+          <PageLoader />
+        </Suspense>
         <WebMcpAgentRegistry />
         {children}
       </body>

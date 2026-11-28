@@ -1,6 +1,8 @@
 import '@/lib/envConfig';
 import { NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 import { shopPartnerStore } from '@/lib/shopPartnerStore';
+import { getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,12 +29,30 @@ export async function POST(req: Request) {
       bankAccountNumber,
       ifscCode,
       documents,
+      emailVerificationToken,
     } = body;
 
     // Validation for essential fields
-    if (!shopName || !ownerName || !phone) {
+    if (!shopName || !ownerName || !phone || !email) {
       return NextResponse.json(
-        { success: false, message: 'Shop/Farm name, owner name, and contact phone number are required.' },
+        { success: false, message: 'Shop/Farm name, owner name, email, and contact phone number are required.' },
+        { status: 400 }
+      );
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    let isEmailVerified = false;
+    if (emailVerificationToken) {
+      try {
+        const decoded: any = jwt.verify(String(emailVerificationToken), getJwtSecret(), { algorithms: ['HS256'] });
+        if (decoded?.purpose === 'MERCHANT_EMAIL_VERIFY' && decoded?.email === cleanEmail) {
+          isEmailVerified = true;
+        }
+      } catch {}
+    }
+    if (!isEmailVerified) {
+      return NextResponse.json(
+        { success: false, message: 'Please verify your email address with OTP before submitting your application.' },
         { status: 400 }
       );
     }
@@ -93,6 +113,9 @@ export async function POST(req: Request) {
     const effectiveBankAcc = bankAccountNumber || 'PENDING_ONBOARDING';
     const effectiveIfsc = ifscCode || 'SBIN000000';
     const effectiveFssai = cleanFssai;
+
+    // Sync existing Redis applications before assigning next sequence number
+    await shopPartnerStore.syncFromRedis(true).catch(() => {});
 
     const application = shopPartnerStore.submitApplication({
       shopName: String(shopName).trim(),

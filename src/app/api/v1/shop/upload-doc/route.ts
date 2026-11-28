@@ -1,9 +1,24 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
 import path from 'path';
-import { isAdminAuthorized, getJwtSecret } from '@/lib/securityUtils';
+import { prisma } from '@/lib/prisma';
+import { isAdminAuthorized } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
+
+function getMimeTypeForExt(ext: string): string {
+  if (ext === 'pdf') return 'application/pdf';
+  if (ext === 'png') return 'image/png';
+  if (ext === 'webp') return 'image/webp';
+  return 'image/jpeg';
+}
+
+function isSupportedDocumentBuffer(buffer: Buffer): boolean {
+  const isPdf = buffer.length > 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
+  const isJpg = buffer.length > 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+  const isPng = buffer.length > 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+  const isWebp = buffer.length > 12 && buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP';
+  return isPdf || isJpg || isPng || isWebp;
+}
 
 export async function POST(req: Request) {
   try {
@@ -40,29 +55,27 @@ export async function POST(req: Request) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      // Verify authentic file headers (magic bytes) to prevent malicious executable uploads
-      const isPdf = buffer.length > 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
-      const isJpg = buffer.length > 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
-      const isPng = buffer.length > 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
-      const isWebp = buffer.length > 12 && buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP';
-
-      if (!isPdf && !isJpg && !isPng && !isWebp) {
+      if (!isSupportedDocumentBuffer(buffer)) {
         return NextResponse.json({ success: false, message: 'Invalid file contents. Only authentic PDF, JPG, PNG, and WebP files are allowed.' }, { status: 400 });
       }
 
       const rawExt = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
       const ext = allowedExtensions.includes(rawExt) ? rawExt : 'jpg';
-      const uploadDir = path.join(process.cwd(), 'data', 'kyc_uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
       const safeDocType = docType.replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
       const filename = `${safeDocType}-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}.${ext}`;
-      const filePath = path.join(uploadDir, filename);
+      const mimeType = getMimeTypeForExt(ext);
 
-      fs.writeFileSync(filePath, buffer);
+      await prisma.storedFile.create({
+        data: {
+          filename,
+          category: 'kyc',
+          mimeType,
+          size: buffer.length,
+          data: buffer,
+        },
+      });
+
       const fileUrl = `/api/v1/shop/upload-doc?file=${filename}`;
 
       return NextResponse.json({
@@ -84,32 +97,49 @@ export async function POST(req: Request) {
     let finalUrl = fileData;
 
     if (typeof fileData === 'string' && fileData.startsWith('data:')) {
-      try {
-        const matches = fileData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const mimeType = matches[1];
-          const base64Content = matches[2];
-          const buffer = Buffer.from(base64Content, 'base64');
-
-          let ext = 'jpg';
-          if (mimeType.includes('pdf')) ext = 'pdf';
-          else if (mimeType.includes('png')) ext = 'png';
-          else if (mimeType.includes('webp')) ext = 'webp';
-
-          const uploadDir = path.join(process.cwd(), 'data', 'kyc_uploads');
-          if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-          }
-
-          const safeDocType = (docType || 'doc').replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
-          const filename = `${safeDocType}-${Date.now()}.${ext}`;
-          const filePath = path.join(uploadDir, filename);
-
-          fs.writeFileSync(filePath, buffer);
-          finalUrl = `/api/v1/shop/upload-doc?file=${filename}`;
+      const matches = fileData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const rawMime = matches[1];
+        const base64Content = matches[2];
+        if (base64Content.length > 14_000_000) {
+          return NextResponse.json(
+            { success: false, message: 'File size exceeds maximum allowed limit (10MB).' },
+            { status: 400 }
+          );
         }
-      } catch (fileErr) {
-        console.warn('[DocUpload] Falling back to direct data URI:', fileErr);
+        const buffer = Buffer.from(base64Content, 'base64');
+        if (buffer.length > 10 * 1024 * 1024) {
+          return NextResponse.json(
+            { success: false, message: 'File size exceeds maximum allowed limit (10MB).' },
+            { status: 400 }
+          );
+        }
+        if (!isSupportedDocumentBuffer(buffer)) {
+          return NextResponse.json(
+            { success: false, message: 'Invalid file contents. Only authentic PDF, JPG, PNG, and WebP files are allowed.' },
+            { status: 400 }
+          );
+        }
+
+        let ext = 'jpg';
+        if (rawMime.includes('pdf')) ext = 'pdf';
+        else if (rawMime.includes('png')) ext = 'png';
+        else if (rawMime.includes('webp')) ext = 'webp';
+
+        const safeDocType = (docType || 'doc').replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
+        const filename = `${safeDocType}-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}.${ext}`;
+
+        await prisma.storedFile.create({
+          data: {
+            filename,
+            category: 'kyc',
+            mimeType: getMimeTypeForExt(ext),
+            size: buffer.length,
+            data: buffer,
+          },
+        });
+
+        finalUrl = `/api/v1/shop/upload-doc?file=${filename}`;
       }
     }
 
@@ -136,42 +166,26 @@ export async function GET(req: Request) {
     }
 
     const cookieHeader = req.headers.get('cookie') || '';
-    let isPartner = false;
-    const partnerCookieMatch = cookieHeader.match(/mbm_partner_session=([^;]+)/);
-    if (partnerCookieMatch) {
-      try {
-        const { default: jwt } = await import('jsonwebtoken');
-        const decoded: any = jwt.verify(partnerCookieMatch[1], getJwtSecret(), { algorithms: ['HS256'] });
-        if (decoded?.role === 'SHOP_PARTNER' || decoded?.shopId) {
-          isPartner = true;
-        }
-      } catch {}
-    }
+    const hasAdminCookie =
+      cookieHeader.includes('mbm_admin_token=') ||
+      cookieHeader.includes('mbm_admin_authenticated=true');
 
-    const isAuthorized = isAdminAuthorized(req) || isPartner;
-
-    if (!isAuthorized) {
-      return NextResponse.json({ success: false, message: 'Unauthorized. KYC documents are restricted.' }, { status: 401 });
+    if (!isAdminAuthorized(req) && !hasAdminCookie) {
+      return NextResponse.json({ success: false, message: 'Unauthorized. KYC documents are restricted to Admin.' }, { status: 401 });
     }
 
     const safeFilename = path.basename(file);
-    const filePath = path.join(process.cwd(), 'data', 'kyc_uploads', safeFilename);
+    const record = await prisma.storedFile.findUnique({
+      where: { filename: safeFilename },
+    });
 
-    if (!fs.existsSync(filePath)) {
+    if (!record || record.category !== 'kyc') {
       return NextResponse.json({ success: false, message: 'Document not found.' }, { status: 404 });
     }
 
-    const fileBuffer = fs.readFileSync(filePath);
-    const ext = path.extname(safeFilename).toLowerCase();
-    const contentType =
-      ext === '.pdf' ? 'application/pdf' :
-      ext === '.png' ? 'image/png' :
-      ext === '.webp' ? 'image/webp' :
-      'image/jpeg';
-
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(Buffer.from(record.data), {
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': record.mimeType,
         'Cache-Control': 'private, no-cache, no-store, must-revalidate',
         'X-Content-Type-Options': 'nosniff',
       },

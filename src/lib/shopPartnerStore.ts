@@ -289,6 +289,10 @@ class ShopPartnerStore {
   // In production, start empty without mock seeds
   public applications: ShopApplication[] = process.env.NODE_ENV === 'production' ? [] : [...INITIAL_APPLICATIONS];
   public accounts: ShopPartnerAccount[] = process.env.NODE_ENV === 'production' ? [] : [...INITIAL_ACCOUNTS];
+  private lastAppsSyncAt = 0;
+  private lastAccountsSyncAt = 0;
+  private inFlightAppsSync: Promise<ShopApplication[]> | null = null;
+  private inFlightAccountsSync: Promise<ShopPartnerAccount[]> | null = null;
 
   constructor() {}
 
@@ -332,9 +336,14 @@ class ShopPartnerStore {
       storePhotoUrl?: string;
     };
   }): ShopApplication {
-    const nextSeq = this.applications.length + 80;
+    const maxSeq = this.applications.reduce((max, app) => {
+      const m = String(app.applicationNumber || '').match(/(\d+)$/);
+      const n = m ? Number(m[1]) : 0;
+      return n > max ? n : max;
+    }, 83);
+    const nextSeq = maxSeq + 1;
     const appNumber = `APP-RCH-2026-${String(nextSeq).padStart(3, '0')}`;
-    const id = `app-rch-${String(nextSeq).padStart(3, '0')}`;
+    const id = `app-rch-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
 
     const sanitizeDoc = (url?: string, fallback = '') => {
       if (!url) return fallback;
@@ -376,20 +385,16 @@ class ShopPartnerStore {
 
     this.applications.unshift(newApp);
 
-    // Asynchronously synchronize with Upstash Redis across all worker processes
-    if (isRedisConfigured()) {
-      this.saveToRedis().catch((err) => {
-        console.warn('Redis applications backup notice:', err);
-      });
-    }
-
     return newApp;
   }
 
   // Cross-process async persistence to Upstash Redis
-  public async saveToRedis(): Promise<boolean> {
+  public async saveToRedis(replace = false): Promise<boolean> {
     if (isRedisConfigured()) {
       try {
+        if (replace) {
+          return await redisSet('mbm:shop_applications', this.applications);
+        }
         const stored = await redisGet<ShopApplication[]>('mbm:shop_applications');
         const map = new Map<string, ShopApplication>();
         if (Array.isArray(stored)) {
@@ -404,6 +409,7 @@ class ShopPartnerStore {
           (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
         );
         this.applications = merged;
+        this.lastAppsSyncAt = Date.now();
         return await redisSet('mbm:shop_applications', merged);
       } catch (err) {
         console.warn('saveToRedis failed:', err);
@@ -412,28 +418,40 @@ class ShopPartnerStore {
     return false;
   }
 
-  // Cross-process async synchronization from Upstash Redis
-  public async syncFromRedis(): Promise<ShopApplication[]> {
-    if (isRedisConfigured()) {
-      try {
-        const stored = await redisGet<ShopApplication[]>('mbm:shop_applications');
-        if (Array.isArray(stored) && stored.length > 0) {
-          const map = new Map<string, ShopApplication>();
-          for (const item of stored) {
-            map.set(item.id, item);
-          }
-          for (const item of this.applications) {
-            map.set(item.id, item);
-          }
-          this.applications = Array.from(map.values()).sort(
-            (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-          );
-        }
-      } catch (err) {
-        console.warn('Redis applications read notice:', err);
-      }
+  // Cross-process async synchronization from Upstash Redis (10s TTL cache)
+  public async syncFromRedis(force = false): Promise<ShopApplication[]> {
+    const now = Date.now();
+    if (!force && this.lastAppsSyncAt && now - this.lastAppsSyncAt < 10_000) {
+      return this.applications;
     }
-    return this.applications;
+    if (this.inFlightAppsSync) {
+      return this.inFlightAppsSync;
+    }
+    this.inFlightAppsSync = (async () => {
+      if (isRedisConfigured()) {
+        try {
+          const stored = await redisGet<ShopApplication[]>('mbm:shop_applications');
+          if (Array.isArray(stored) && stored.length > 0) {
+            const map = new Map<string, ShopApplication>();
+            for (const item of this.applications) {
+              map.set(item.id, item);
+            }
+            for (const item of stored) {
+              map.set(item.id, item);
+            }
+            this.applications = Array.from(map.values()).sort(
+              (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+            );
+          }
+          this.lastAppsSyncAt = Date.now();
+        } catch (err) {
+          console.warn('Redis applications read notice:', err);
+        }
+      }
+      this.inFlightAppsSync = null;
+      return this.applications;
+    })();
+    return this.inFlightAppsSync;
   }
 
   // Cross-process persistence for approved partner accounts
@@ -451,6 +469,7 @@ class ShopPartnerStore {
           map.set(item.shopId, item);
         }
         this.accounts = Array.from(map.values());
+        this.lastAccountsSyncAt = Date.now();
         return await redisSet('mbm:shop_accounts', this.accounts);
       } catch (err) {
         console.warn('saveAccountsToRedis failed:', err);
@@ -459,26 +478,38 @@ class ShopPartnerStore {
     return false;
   }
 
-  // Cross-process synchronization for partner accounts
-  public async syncAccountsFromRedis(): Promise<ShopPartnerAccount[]> {
-    if (isRedisConfigured()) {
-      try {
-        const stored = await redisGet<ShopPartnerAccount[]>('mbm:shop_accounts');
-        if (Array.isArray(stored) && stored.length > 0) {
-          const map = new Map<string, ShopPartnerAccount>();
-          for (const item of stored) {
-            map.set(item.shopId, item);
-          }
-          for (const item of this.accounts) {
-            map.set(item.shopId, item);
-          }
-          this.accounts = Array.from(map.values());
-        }
-      } catch (err) {
-        console.warn('Redis accounts read notice:', err);
-      }
+  // Cross-process synchronization for partner accounts (10s TTL cache)
+  public async syncAccountsFromRedis(force = false): Promise<ShopPartnerAccount[]> {
+    const now = Date.now();
+    if (!force && this.lastAccountsSyncAt && now - this.lastAccountsSyncAt < 10_000) {
+      return this.accounts;
     }
-    return this.accounts;
+    if (this.inFlightAccountsSync) {
+      return this.inFlightAccountsSync;
+    }
+    this.inFlightAccountsSync = (async () => {
+      if (isRedisConfigured()) {
+        try {
+          const stored = await redisGet<ShopPartnerAccount[]>('mbm:shop_accounts');
+          if (Array.isArray(stored) && stored.length > 0) {
+            const map = new Map<string, ShopPartnerAccount>();
+            for (const item of stored) {
+              map.set(item.shopId, item);
+            }
+            for (const item of this.accounts) {
+              map.set(item.shopId, item);
+            }
+            this.accounts = Array.from(map.values());
+          }
+          this.lastAccountsSyncAt = Date.now();
+        } catch (err) {
+          console.warn('Redis accounts read notice:', err);
+        }
+      }
+      this.inFlightAccountsSync = null;
+      return this.accounts;
+    })();
+    return this.inFlightAccountsSync;
   }
 
   // Admin Review & Approval: Generates Shop ID + Password & Dispatches via WhatsApp and Email
@@ -611,7 +642,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
   }
 
   // Reject application with reason
-  public rejectApplication(applicationId: string, reason: string): { success: boolean; message: string } {
+  public rejectApplication(applicationId: string, reason: string): { success: boolean; message: string; application?: ShopApplication } {
     const app = this.applications.find((a) => a.id === applicationId || a.applicationNumber === applicationId);
     if (!app) return { success: false, message: 'Application not found' };
 
@@ -623,7 +654,7 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
       this.saveToRedis().catch(() => {});
     }
 
-    return { success: true, message: `Application ${app.applicationNumber} has been rejected.` };
+    return { success: true, message: `Application ${app.applicationNumber} has been rejected.`, application: app };
   }
 
   // Authenticate shop partner by Store ID, Phone, or Email
@@ -911,6 +942,18 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
 
         const isSHG = row.category === 'SHG Specials' || (shop && shop.businessType === 'SHG_COOPERATIVE');
 
+        const resolvedImg = productImageLibrary.resolveImage({
+          productId: row.productId,
+          productName: row.productName,
+          category: row.category,
+          explicitUrl: row.imageUrl,
+        });
+        if (row.imageUrl) {
+          productImageLibrary.saveProductImage(row.productId, resolvedImg);
+          productImageLibrary.saveProductImage(row.productName, resolvedImg);
+        }
+
+        const stockQty = Math.max(0, Math.round(Number(row.stockQuantity) || 0));
         const product: ProductItem = {
           id: row.productId.toLowerCase().replace(/[^a-z0-9_-]/g, '-'),
           name: row.productName,
@@ -921,16 +964,12 @@ Congratulations! Your store *${app.shopName}* has been officially approved as a 
           discountPercent: discountPct,
           cashbackAmount: cashback,
           referralRewardAmount: referral,
-          image: productImageLibrary.resolveImage({
-            productId: row.productId,
-            productName: row.productName,
-            category: row.category,
-            explicitUrl: row.imageUrl,
-          }),
+          image: resolvedImg,
           isSHG: Boolean(isSHG),
-          producerName: `Sold by: ${shopName} (${pincode})`,
-          inStock: row.stockQuantity > 0,
-        };
+          producerName: `Sold by: ${shopName} (${pincode}) [${shopId}]`,
+          inStock: stockQty > 0,
+          stockQuantity: stockQty,
+        } as ProductItem & { stockQuantity: number };
 
         // Also add to inventory SKU registry and stock bucket
         try {

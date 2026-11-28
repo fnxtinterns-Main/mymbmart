@@ -25,6 +25,7 @@ export default function ShopPartnerLoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier || !password) return;
+
     setLoading(true);
     setErrorMsg('');
 

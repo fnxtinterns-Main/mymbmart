@@ -10,6 +10,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Footer } from '@/components/Footer';
+import { ShopByStoreModal } from '@/components/ShopByStoreModal';
 
 import { initialWallet } from '@/lib/data';
 import { CATALOG_PRODUCTS } from '@/lib/catalog';
@@ -22,16 +23,26 @@ import {
   CheckCircle2, 
   ChevronRight, 
   Check, 
-  Clock 
+  Clock,
+  Store
 } from 'lucide-react';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<ProductItem[]>(CATALOG_PRODUCTS.slice(0, 4));
 
-  // Load persisted cart & user session from localStorage / cookie on mount
+  // Load persisted cart, live featured products & user session on mount
   React.useEffect(() => {
+    fetch('/api/products?limit=4', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+          setFeaturedProducts(data.products.slice(0, 4));
+        }
+      })
+      .catch(() => {});
     try {
       const saved = localStorage.getItem('mymbmart_cart');
       if (saved) {
@@ -64,6 +75,7 @@ export default function Home() {
   const [addedId, setAddedId] = useState<string | null>(null);
   const [activeOrder, setActiveOrder] = useState<OrderRecord | null>(null);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+  const [isShopByStoreOpen, setIsShopByStoreOpen] = useState(false);
 
   const handleAddToCart = (product: ProductItem) => {
     setCartItems((prev) => {
@@ -139,14 +151,24 @@ export default function Home() {
               
               {/* Shop by Category */}
               <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center space-x-2">
                     <span className="text-brand-orange text-lg">❖</span>
                     <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">Shop by Category</h3>
                   </div>
-                  <Link href="/shop" className="text-xs font-bold text-brand-green hover:underline">
-                    View All →
-                  </Link>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsShopByStoreOpen(true)}
+                      className="inline-flex items-center space-x-1.5 bg-[#064E3B] hover:bg-emerald-950 text-white text-xs font-extrabold px-3.5 py-2 rounded-xl shadow-xs transition cursor-pointer"
+                    >
+                      <Store className="w-3.5 h-3.5 text-emerald-300" />
+                      <span>Shop by Store</span>
+                    </button>
+                    <Link href="/shop" className="text-xs font-bold text-brand-green hover:underline">
+                      View All →
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-2 sm:gap-3 text-center">
@@ -387,7 +409,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-            {CATALOG_PRODUCTS.slice(0, 4).map((product) => (
+            {featuredProducts.map((product) => (
               <div
                 key={product.id}
                 className="bg-white rounded-2xl border-[1px] border-slate-200/90 p-3.5 sm:p-4 hover:shadow-md hover:border-emerald-300 transition-all flex flex-col justify-between group"
@@ -614,6 +636,15 @@ export default function Home() {
       <MobileBottomNav
         cartCount={cartItems.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartOpen(true)}
+      />
+
+      <ShopByStoreModal
+        isOpen={isShopByStoreOpen}
+        onClose={() => setIsShopByStoreOpen(false)}
+        onSelectStore={(st) => {
+          setIsShopByStoreOpen(false);
+          window.location.href = `/shop?store=${encodeURIComponent(st.shopName)}`;
+        }}
       />
 
       {/* Footer */}

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getOrderByIdAsync, updateOrderStatus, ordersStore } from '@/lib/ordersStore';
-import { CATALOG_PRODUCTS } from '@/lib/catalog';
+import { getCatalogProducts } from '@/lib/catalog';
 import { redisSet, redisGet, isRedisConfigured } from '@/lib/redis';
+import { getJwtSecret } from '@/lib/securityUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
     // Verify caller ownership or admin status
     const cookieHeader = req.headers.get('cookie') || '';
     const authHeader = req.headers.get('authorization') || '';
-    const JWT_SECRET = process.env.JWT_SECRET || 'megabachatmart-smartchain-secret-key-2026';
+    const JWT_SECRET = getJwtSecret();
     const ADMIN_PIN = process.env.ADMIN_PIN || (process.env.NODE_ENV !== 'production' ? 'MBM@Admin2026' : '');
 
     let callerUserId: string | null = null;
@@ -98,8 +99,9 @@ export async function POST(req: Request) {
 
     // 2. Replenish inventory
     if (order.items && order.items.length > 0) {
+      const catalog = getCatalogProducts();
       for (const item of order.items) {
-        const prod = CATALOG_PRODUCTS.find((p) => p.id === item.productId);
+        const prod = catalog.find((p) => p.id === item.productId);
         if (prod) {
           prod.stockQuantity = (prod.stockQuantity || 0) + (item.quantity || 1);
           prod.inStock = true;

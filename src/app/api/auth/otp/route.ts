@@ -7,10 +7,12 @@ import { redisSet, redisGet, redisDel, redisCommand, isRedisConfigured } from '@
 
 export const dynamic = 'force-dynamic';
 
-const memoryOtpStore = new Map<string, { code: string; expiresAt: number }>();
-
-// Ephemeral in-memory fallback store if Redis is ever unreachable
-const localOtpStore = new Map<string, { otp: string; expiresAt: number }>();
+const globalForAuthOtp = globalThis as typeof globalThis & {
+  __mbmAuthOtpStore?: Map<string, { otp: string; expiresAt: number }>;
+};
+const localOtpStore =
+  globalForAuthOtp.__mbmAuthOtpStore ||
+  (globalForAuthOtp.__mbmAuthOtpStore = new Map<string, { otp: string; expiresAt: number }>());
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
     const effectiveJwtSecret = JWT_SECRET || 'dev-insecure-jwt-key-2026';
 
     const body = await req.json();
-    const { identifier, action = 'SEND', otp, referralCode } = body;
+    const { identifier, action = 'SEND', otp, referralCode, address } = body;
 
     if (!identifier) {
       return NextResponse.json({ error: 'Mobile number or Email is required' }, { status: 400 });
@@ -53,14 +55,10 @@ export async function POST(req: Request) {
       // Verify against memory fallback store first, then Upstash Redis
       let isVerified = isTestOtp;
       if (!isVerified && submittedOtp) {
-        const memRecord = localOtpStore.get(cleanId) || memoryOtpStore.get(identifier);
-        if (memRecord && memRecord.expiresAt > Date.now()) {
-          const expected = 'otp' in memRecord ? memRecord.otp : (memRecord as any).code;
-          if (expected === submittedOtp) {
-            isVerified = true;
-            localOtpStore.delete(cleanId);
-            memoryOtpStore.delete(identifier);
-          }
+        const memRecord = localOtpStore.get(cleanId);
+        if (memRecord && memRecord.expiresAt > Date.now() && memRecord.otp === submittedOtp) {
+          isVerified = true;
+          localOtpStore.delete(cleanId);
         }
         
         if (!isVerified && isRedisConfigured()) {
@@ -132,6 +130,25 @@ export async function POST(req: Request) {
             },
           });
           resolvedUserId = created.id;
+        }
+
+        if (address && (address.fullAddress || address.pincode)) {
+          const addrData = {
+            fullAddress: String(address.fullAddress || 'Ranchi').slice(0, 250),
+            pincode: String(address.pincode || '834001').replace(/\D/g, '').slice(0, 6) || '834001',
+            latitude: typeof address.latitude === 'number' ? address.latitude : 23.3441,
+            longitude: typeof address.longitude === 'number' ? address.longitude : 85.3096,
+          };
+          const existingAddr = await prisma.address.findFirst({
+            where: { userId: resolvedUserId, isDefault: true },
+          });
+          if (existingAddr) {
+            await prisma.address.update({ where: { id: existingAddr.id }, data: addrData });
+          } else {
+            await prisma.address.create({
+              data: { userId: resolvedUserId, type: 'HOME', isDefault: true, ...addrData },
+            });
+          }
         }
       } catch (dbErr) {
         // Safe fallback: proceed with deterministic attributes
@@ -227,16 +244,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Cryptographically secure PRNG for OTP generation
+    // Cryptographically secure PRNG for OTP generation (15-minute TTL, 15s resend cooldown)
     const generatedOtp = crypto.randomInt(100000, 1000000).toString();
-    memoryOtpStore.set(identifier, { code: generatedOtp, expiresAt: Date.now() + 600 * 1000 });
-    if (isRedisConfigured()) {
-      redisSet(`otp:${identifier}`, generatedOtp, 600).catch(() => {});
-    }
 
-    // Persist OTP in Redis (10 minutes TTL) + In-memory fallback
-    await redisSet(`otp:${cleanId}`, generatedOtp, 600).catch(() => {});
-    localOtpStore.set(cleanId, { otp: generatedOtp, expiresAt: Date.now() + 600000 });
+    // Persist OTP in Redis (15 minutes TTL) + In-memory fallback
+    await redisSet(`otp:${cleanId}`, generatedOtp, 900).catch(() => {});
+    localOtpStore.set(cleanId, { otp: generatedOtp, expiresAt: Date.now() + 900 * 1000 });
 
     if (cleanId.includes('@')) {
       try {
@@ -250,7 +263,7 @@ export async function POST(req: Request) {
       success: true,
       message: `OTP dispatched to ${identifier}`,
       ...(!isProd ? { testOtp: '123456' } : {}),
-      expiresInSeconds: 600,
+      resendInSeconds: 15,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to process authentication' }, { status: 500 });

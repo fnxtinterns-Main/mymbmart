@@ -79,6 +79,22 @@ interface AdminMetrics {
   };
 }
 
+const VALID_ADMIN_TABS = [
+  'overview',
+  'orders',
+  'dispatch_board',
+  'pickup_slots',
+  'inventory',
+  'merchants',
+  'routing',
+  'pilot',
+  'producers',
+  'roles',
+  'checklist',
+] as const;
+
+type AdminTab = (typeof VALID_ADMIN_TABS)[number];
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -87,9 +103,22 @@ export default function AdminDashboardPage() {
   // Navigation & Layout states
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'orders' | 'dispatch_board' | 'pickup_slots' | 'inventory' | 'merchants' | 'routing' | 'pilot' | 'producers' | 'roles' | 'checklist'
-  >('overview');
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+
+  const selectTab = (tab: AdminTab) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('mbm_admin_active_tab', tab);
+        const url = new URL(window.location.href);
+        if (url.pathname.includes('/orders') && tab !== 'orders') {
+          url.pathname = '/admin';
+        }
+        url.searchParams.set('tab', tab);
+        window.history.replaceState(null, '', url.toString());
+      } catch {}
+    }
+  };
   
   // Header modals
   const [showNotifications, setShowNotifications] = useState(false);
@@ -308,8 +337,17 @@ export default function AdminDashboardPage() {
         (document.cookie.includes('mbm_admin_authenticated=true') ? 'true' : 'false');
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab');
-      if (tabParam === 'orders' || window.location.pathname.includes('/orders')) {
+      const savedTab = sessionStorage.getItem('mbm_admin_active_tab');
+      const isValidTab = (t: string | null): t is AdminTab =>
+        Boolean(t && (VALID_ADMIN_TABS as readonly string[]).includes(t));
+
+      if (isValidTab(tabParam)) {
+        setActiveTab(tabParam);
+        sessionStorage.setItem('mbm_admin_active_tab', tabParam);
+      } else if (window.location.pathname.includes('/orders')) {
         setActiveTab('orders');
+      } else if (isValidTab(savedTab)) {
+        setActiveTab(savedTab);
       }
       if (authStatus === 'true') {
         setIsAuthenticated(true);
@@ -324,6 +362,7 @@ export default function AdminDashboardPage() {
       sessionStorage.removeItem('mbm_admin_authenticated');
       sessionStorage.removeItem('mbm_admin_role');
       sessionStorage.removeItem('mbm_admin_name');
+      sessionStorage.removeItem('mbm_admin_active_tab');
     }
     setIsAuthenticated(false);
     router.push('/admin/login');
@@ -686,7 +725,7 @@ export default function AdminDashboardPage() {
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id as any);
+                  selectTab(item.id as AdminTab);
                   setMobileMenuOpen(false);
                 }}
                 className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
@@ -1096,7 +1135,7 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-slate-500">Real-time fulfillment queue</p>
                     </div>
                     <button
-                      onClick={() => setActiveTab('orders')}
+                      onClick={() => selectTab('orders')}
                       className="text-xs font-bold text-[#064E3B] hover:text-[#16A34A] hover:underline cursor-pointer"
                     >
                       View All Orders →
@@ -1258,14 +1297,14 @@ export default function AdminDashboardPage() {
 
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => setActiveTab('dispatch_board')}
+                      onClick={() => selectTab('dispatch_board')}
                       className="bg-[#064E3B] hover:bg-emerald-950 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
                     >
                       <Truck className="w-3.5 h-3.5" />
                       <span>Open Dispatch Board →</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab('pickup_slots')}
+                      onClick={() => selectTab('pickup_slots')}
                       className="bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition shadow-2xs flex items-center space-x-1.5 cursor-pointer"
                     >
                       <Clock className="w-3.5 h-3.5" />

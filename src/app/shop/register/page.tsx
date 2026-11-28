@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Building2, 
@@ -14,7 +14,10 @@ import {
   AlertCircle,
   Camera,
   Trash2,
-  FileUp
+  FileUp,
+  Mail,
+  KeyRound,
+  X
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -23,6 +26,48 @@ export default function ShopRegistrationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [submittedApp, setSubmittedApp] = useState<any | null>(null);
+  const [showApprovalPopup, setShowApprovalPopup] = useState(false);
+
+  // Step 4 Email OTP Verification State
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpInput, setEmailOtpInput] = useState('');
+  const [emailOtpSending, setEmailOtpSending] = useState(false);
+  const [emailOtpVerifying, setEmailOtpVerifying] = useState(false);
+  const [emailOtpError, setEmailOtpError] = useState('');
+  const [emailOtpInfo, setEmailOtpInfo] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [emailVerificationToken, setEmailVerificationToken] = useState('');
+  const [emailOtpSecondsLeft, setEmailOtpSecondsLeft] = useState(0);
+  const [isBranchMode, setIsBranchMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('mode=new-branch')) {
+      try {
+        const raw = sessionStorage.getItem('mbm_add_branch_prefill');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          setIsBranchMode(true);
+          setFormData((prev) => ({
+            ...prev,
+            shopName: parsed.shopName || prev.shopName,
+            ownerName: parsed.ownerName || prev.ownerName,
+            phone: String(parsed.phone || prev.phone).replace(/\D/g, '').slice(-10),
+            email: parsed.email || prev.email,
+            address: '',
+            pincode: '',
+          }));
+        }
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (emailOtpSecondsLeft <= 0 || emailVerified) return;
+    const timer = setInterval(() => {
+      setEmailOtpSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [emailOtpSecondsLeft, emailVerified]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -193,6 +238,14 @@ export default function ShopRegistrationPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'email') {
+      setEmailVerified(false);
+      setEmailVerificationToken('');
+      setEmailOtpSent(false);
+      setEmailOtpInput('');
+      setEmailOtpError('');
+      setEmailOtpInfo('');
+    }
   };
 
   const handleNextStep = (e: React.FormEvent) => {
@@ -258,8 +311,72 @@ export default function ShopRegistrationPage() {
     }
   };
 
+  const handleSendEmailOtp = async () => {
+    setEmailOtpSending(true);
+    setEmailOtpError('');
+    setEmailOtpInfo('');
+
+    try {
+      const res = await fetch('/api/v1/shop/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, action: 'SEND' }),
+      });
+      const data = await res.json();
+      setEmailOtpSending(false);
+
+      if (res.ok && data.success) {
+        setEmailOtpSent(true);
+        setEmailOtpInput('');
+        setEmailOtpSecondsLeft(Number(data.resendInSeconds) || 15);
+        setEmailOtpInfo(`A 6-digit OTP has been sent to ${formData.email}.`);
+      } else {
+        setEmailOtpError(data.message || 'Failed to send OTP. Please try again.');
+      }
+    } catch (err: any) {
+      setEmailOtpSending(false);
+      setEmailOtpError(err.message || 'Failed to reach verification server.');
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtpInput.trim()) {
+      setEmailOtpError('Please enter the 6-digit OTP sent to your email.');
+      return;
+    }
+
+    setEmailOtpVerifying(true);
+    setEmailOtpError('');
+
+    try {
+      const res = await fetch('/api/v1/shop/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, action: 'VERIFY', otp: emailOtpInput.trim() }),
+      });
+      const data = await res.json();
+      setEmailOtpVerifying(false);
+
+      if (res.ok && data.success && data.emailVerificationToken) {
+        setEmailVerified(true);
+        setEmailOtpSecondsLeft(0);
+        setEmailVerificationToken(data.emailVerificationToken);
+        setEmailOtpInfo('Email verified! You can now submit your application.');
+      } else {
+        setEmailOtpError(data.message || 'Invalid OTP code. Please try again.');
+      }
+    } catch (err: any) {
+      setEmailOtpVerifying(false);
+      setEmailOtpError(err.message || 'Failed to verify OTP.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!emailVerified || !emailVerificationToken) {
+      setErrorMsg('Please verify your email address with OTP before submitting.');
+      return;
+    }
     setSubmitting(true);
     setErrorMsg('');
 
@@ -267,7 +384,7 @@ export default function ShopRegistrationPage() {
       const res = await fetch('/api/v1/shop/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, emailVerificationToken }),
       });
 
       const data = await res.json();
@@ -275,6 +392,7 @@ export default function ShopRegistrationPage() {
 
       if (data.success) {
         setSubmittedApp(data.application);
+        setShowApprovalPopup(true);
         // Save local backup copy for seamless instant visibility across tabs
         if (typeof window !== 'undefined') {
           try {
@@ -454,15 +572,18 @@ export default function ShopRegistrationPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Store / Shop Name *</label>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        Store / Shop Name * {isBranchMode && <span className="text-[10px] text-emerald-700 font-semibold">(Same partner brand)</span>}
+                      </label>
                       <input
                         type="text"
                         name="shopName"
                         required
+                        readOnly={isBranchMode}
                         placeholder="e.g. Gupta Daily Grocery & General Store"
                         value={formData.shopName}
                         onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        className={`w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none ${isBranchMode ? 'bg-slate-100 font-bold text-slate-700' : ''}`}
                       />
                     </div>
 
@@ -1213,6 +1334,87 @@ export default function ShopRegistrationPage() {
                     </p>
                   </div>
 
+                  {/* Email OTP Verification before Submit */}
+                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="font-bold text-slate-900 flex items-center space-x-1.5">
+                          <Mail className="w-4 h-4 text-emerald-700" />
+                          <span>Email Verification</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Verify <strong>{formData.email}</strong> with a 6-digit OTP to unlock application submission.
+                        </p>
+                      </div>
+
+                      {!emailVerified ? (
+                        <button
+                          type="button"
+                          onClick={handleSendEmailOtp}
+                          disabled={emailOtpSending || (emailOtpSent && emailOtpSecondsLeft > 0)}
+                          className="bg-[#064E3B] hover:bg-emerald-950 text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                        >
+                          {emailOtpSending
+                            ? 'Sending OTP...'
+                            : emailOtpSent && emailOtpSecondsLeft > 0
+                            ? `Resend in ${emailOtpSecondsLeft}s`
+                            : emailOtpSent
+                            ? 'Resend OTP'
+                            : 'Send OTP'}
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-[11px] font-extrabold shrink-0">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Verified</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {emailOtpSent && !emailVerified && (
+                      <div className="space-y-2 pt-1">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <div className="relative flex-1">
+                            <KeyRound className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              value={emailOtpInput}
+                              onChange={(e) => {
+                                setEmailOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6));
+                                if (emailOtpError) setEmailOtpError('');
+                              }}
+                              placeholder="Enter 6-digit OTP"
+                              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleVerifyEmailOtp}
+                            disabled={emailOtpVerifying || emailOtpInput.length < 6}
+                            className="bg-[#16A34A] hover:bg-[#15803d] text-white font-bold px-5 py-2 rounded-xl text-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {emailOtpVerifying ? 'Verifying...' : 'Verify OTP'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {emailOtpError && (
+                      <p className="text-[11px] text-rose-600 font-bold flex items-center space-x-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{emailOtpError}</span>
+                      </p>
+                    )}
+
+                    {emailOtpInfo && !emailOtpError && (
+                      <p className="text-[11px] text-emerald-700 font-bold flex items-center space-x-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>{emailOtpInfo}</span>
+                      </p>
+                    )}
+                  </div>
+
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                     <button
                       type="button"
@@ -1221,14 +1423,21 @@ export default function ShopRegistrationPage() {
                     >
                       Back
                     </button>
-                    <button
-                      onClick={handleSubmit}
-                      disabled={submitting}
-                      className="bg-[#16A34A] hover:bg-[#15803d] text-white font-extrabold px-8 py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-700/20 transition flex items-center space-x-2 cursor-pointer disabled:opacity-50"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{submitting ? 'Submitting Application...' : 'Submit Application for Admin Review'}</span>
-                    </button>
+                    {emailVerified ? (
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="bg-[#16A34A] hover:bg-[#15803d] text-white font-extrabold px-8 py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-700/20 transition flex items-center space-x-2 cursor-pointer disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{submitting ? 'Submitting Application...' : 'Submit Application'}</span>
+                      </button>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-slate-400">
+                        Verify your email OTP above to submit
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
@@ -1238,6 +1447,43 @@ export default function ShopRegistrationPage() {
 
         </div>
       </main>
+
+      {/* Approval Wait Popup Modal */}
+      {showApprovalPopup && submittedApp && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="approval-popup-title"
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div className="bg-white rounded-3xl border border-emerald-200 shadow-2xl max-w-md w-full p-6 sm:p-7 text-center space-y-4 relative animate-in fade-in zoom-in duration-150">
+            <button
+              type="button"
+              onClick={() => setShowApprovalPopup(false)}
+              aria-label="Close popup"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-lg transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <h3 id="approval-popup-title" className="text-lg font-black text-slate-900">
+              Application Submitted
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Please wait for admin&apos;s approval. Your application (<strong className="text-[#064E3B]">{submittedApp.applicationNumber}</strong>) has been received and your Store ID &amp; login details will be sent once approved.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowApprovalPopup(false)}
+              className="w-full bg-[#064E3B] hover:bg-emerald-950 text-white font-extrabold py-3 rounded-2xl text-xs transition cursor-pointer"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Minimal Clean Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">

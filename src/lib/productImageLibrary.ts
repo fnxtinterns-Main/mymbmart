@@ -285,6 +285,12 @@ class ProductImageLibraryStore {
     return CATEGORY_DEFAULT_IMAGES[category] || CATEGORY_DEFAULT_IMAGES['Groceries'];
   }
 
+  public hasCustomImage(productId?: string, productName?: string): boolean {
+    if (productId && this.customImages.has(this.normalizeKey(productId))) return true;
+    if (productName && this.customImages.has(this.normalizeKey(productName))) return true;
+    return false;
+  }
+
   public getAllCustomImages(): Record<string, string> {
     const obj: Record<string, string> = {};
     this.customImages.forEach((v, k) => {
@@ -294,4 +300,11 @@ class ProductImageLibraryStore {
   }
 }
 
-export const productImageLibrary = new ProductImageLibraryStore();
+const globalForImageLib = globalThis as unknown as {
+  productImageLibraryInstance?: ProductImageLibraryStore;
+};
+
+export const productImageLibrary =
+  globalForImageLib.productImageLibraryInstance || new ProductImageLibraryStore();
+
+globalForImageLib.productImageLibraryInstance = productImageLibrary;

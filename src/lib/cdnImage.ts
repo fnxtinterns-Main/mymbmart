@@ -18,7 +18,7 @@ export function getCdnImageUrl(
   imagePath: string | null | undefined,
   options: ImageOptimizationOptions = {}
 ): string {
-  if (!imagePath) return '/images/products/placeholder.png';
+  if (!imagePath) return '/api/products/image-upload?file=chakki_atta.jpg';
 
   // Preserve raw base64 data URIs and blob URIs directly
   if (imagePath.startsWith('data:image/') || imagePath.startsWith('blob:')) {

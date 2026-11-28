@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   X, 
@@ -9,10 +9,13 @@ import {
   Sparkles, 
   Store, 
   Eye, 
-  EyeOff
+  EyeOff,
+  MapPin,
+  Compass
 } from 'lucide-react';
 import { UserProfile } from '@/lib/types';
 import { saveUserSession } from '@/lib/userSession';
+import { resolvePincodeCoords } from '@/lib/geoUtils';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -36,8 +39,77 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
   const [message, setMessage] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [otpSecondsLeft, setOtpSecondsLeft] = useState(0);
+  const [fullAddress, setFullAddress] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [userCoords, setUserCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [detectingLoc, setDetectingLoc] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep('input');
+      setOtp(['', '', '', '', '', '']);
+      setMessage('');
+      setErrorMsg('');
+      setOtpSecondsLeft(0);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (otpSecondsLeft <= 0 || step !== 'verify') return;
+    const timer = setInterval(() => {
+      setOtpSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpSecondsLeft, step]);
 
   if (!isOpen) return null;
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setErrorMsg('Geolocation is not supported by your browser. Please enter your 6-digit pincode.');
+      return;
+    }
+    setDetectingLoc(true);
+    setErrorMsg('');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCoords({
+          latitude: Number(pos.coords.latitude.toFixed(6)),
+          longitude: Number(pos.coords.longitude.toFixed(6)),
+        });
+        setDetectingLoc(false);
+      },
+      () => {
+        setDetectingLoc(false);
+        setErrorMsg('GPS permission denied. Enter your address and 6-digit pincode instead.');
+      },
+      { timeout: 6000 }
+    );
+  };
+
+  const persistCustomerLocation = () => {
+    const cleanPin = pincode.replace(/\D/g, '').slice(0, 6);
+    const cleanAddr = fullAddress.trim();
+    if (!cleanPin && !cleanAddr && !userCoords) return null;
+    const fallback = resolvePincodeCoords(cleanPin || '834001');
+    const loc = {
+      fullAddress: cleanAddr || fallback.area || 'Ranchi',
+      pincode: cleanPin || '834001',
+      latitude: userCoords?.latitude ?? fallback.latitude,
+      longitude: userCoords?.longitude ?? fallback.longitude,
+      label: cleanAddr
+        ? `${cleanAddr}${cleanPin ? ` (${cleanPin})` : ''}`
+        : userCoords
+        ? `GPS Location (${cleanPin || 'Detected'})`
+        : `${fallback.area || 'Area'} (${cleanPin})`,
+    };
+    try {
+      localStorage.setItem('mbm_customer_location', JSON.stringify(loc));
+      window.dispatchEvent(new CustomEvent('mbm_location_updated', { detail: loc }));
+    } catch {}
+    return loc;
+  };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +117,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
     setMessage('');
     setErrorMsg('');
+    setOtp(['', '', '', '', '', '']);
 
     try {
       const res = await fetch('/api/auth/otp', {
@@ -56,6 +129,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setLoading(false);
       if (data.success) {
         setStep('verify');
+        setOtpSecondsLeft(15);
         setMessage(data.message || `OTP dispatched to ${contact}`);
       } else {
         setErrorMsg(data.error || 'Failed to dispatch OTP');
@@ -63,6 +137,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } catch {
       setLoading(false);
       setStep('verify');
+      setOtpSecondsLeft(15);
       setMessage(`OTP sent to ${contact}. Use test code: 123456`);
     }
   };
@@ -77,6 +152,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
     setErrorMsg('');
 
+    const loc = persistCustomerLocation();
     try {
       const res = await fetch('/api/auth/otp', {
         method: 'POST',
@@ -85,7 +161,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           identifier: contact, 
           action: 'VERIFY', 
           otp: otpValue, 
-          referralCode 
+          referralCode,
+          address: loc,
         }),
       });
       const data = await res.json();
@@ -101,6 +178,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
 
         onLoginSuccess(data.user);
+        setStep('input');
+        setOtp(['', '', '', '', '', '']);
+        setMessage('');
+        setErrorMsg('');
+        setOtpSecondsLeft(0);
         onClose();
       } else {
         setErrorMsg(data.error || 'Invalid OTP. Please enter 123456');
@@ -123,6 +205,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handlePasswordLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    persistCustomerLocation();
     setTimeout(() => {
       setLoading(false);
       const user = {
@@ -157,6 +240,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           console.error('Storage error', err);
         }
         onLoginSuccess(data.user);
+        setStep('input');
+        setOtp(['', '', '', '', '', '']);
+        setMessage('');
+        setErrorMsg('');
+        setOtpSecondsLeft(0);
         onClose();
       } else {
         setErrorMsg(data.error || 'Social sign-in failed. Please try again.');
@@ -292,8 +380,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   */
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div data-testid="auth-modal" role="dialog" className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100">
+    <div className="fixed inset-0 z-[110] overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-4">
+      <div data-testid="auth-modal" role="dialog" className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 sm:p-7 shadow-2xl relative border border-slate-100 my-auto">
         
         {/* Close Button */}
         <button
@@ -383,6 +471,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </p>
                 </div>
 
+                {/* Delivery Address & Location */}
+                <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-extrabold text-brand-forest flex items-center space-x-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-brand-green" />
+                      <span>Your Address &amp; Location</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleDetectLocation}
+                      disabled={detectingLoc}
+                      className="inline-flex items-center space-x-1 text-[11px] font-bold bg-white hover:bg-emerald-100 text-brand-forest border border-emerald-300 px-2.5 py-1 rounded-lg transition cursor-pointer disabled:opacity-50"
+                    >
+                      <Compass className="w-3 h-3 text-brand-green" />
+                      <span>{detectingLoc ? 'Detecting...' : userCoords ? 'GPS Locked ✓' : 'Use GPS'}</span>
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="House / Flat, Street, Area (for nearest stores)"
+                    value={fullAddress}
+                    onChange={(e) => setFullAddress(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white focus:ring-2 focus:ring-brand-green outline-hidden text-xs"
+                  />
+                  <input
+                    type="text"
+                    maxLength={6}
+                    inputMode="numeric"
+                    placeholder="6-Digit Pincode (e.g. 834001)"
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white focus:ring-2 focus:ring-brand-green outline-hidden font-mono text-xs"
+                  />
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -437,6 +560,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       className="w-11 h-12 text-center text-lg font-black rounded-xl border border-slate-300 focus:border-brand-green focus:ring-2 focus:ring-emerald-200 outline-hidden"
                     />
                   ))}
+                </div>
+
+                <div className="flex items-center justify-end text-xs px-1">
+                  <button
+                    type="button"
+                    disabled={otpSecondsLeft > 0 || loading}
+                    onClick={handleSendOtp}
+                    className="font-extrabold text-[#064E3B] hover:underline disabled:opacity-40 disabled:no-underline cursor-pointer"
+                  >
+                    {otpSecondsLeft > 0 ? `Resend OTP (${otpSecondsLeft}s)` : 'Resend OTP'}
+                  </button>
                 </div>
 
                 <button

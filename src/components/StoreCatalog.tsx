@@ -13,9 +13,18 @@ import {
   Compass, 
   Zap,
   Truck,
-  Building2
+  Building2,
+  Store,
+  Star
 } from 'lucide-react';
 import { CartItem, ProductItem } from '@/lib/types';
+import {
+  ShopByStoreModal,
+  NearbyStoreItem,
+  CustomerLocation,
+  getSavedCustomerLocation,
+} from '@/components/ShopByStoreModal';
+import { getStoredUserSession } from '@/lib/userSession';
 
 interface StoreCatalogProps {
   products: ProductItem[];
@@ -45,6 +54,10 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [tempLocation, setTempLocation] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
+  const [isShopByStoreOpen, setIsShopByStoreOpen] = useState(false);
+  const [selectedStoreName, setSelectedStoreName] = useState<string | null>(null);
+  const [nearestStore, setNearestStore] = useState<NearbyStoreItem | null>(null);
+  const [blockedStoreNames, setBlockedStoreNames] = useState<string[]>([]);
   const [hubInfo, setHubInfo] = useState<HubInfo>({
     name: 'MegaBachatMart Ranchi Central Dark Store',
     city: 'Ranchi',
@@ -54,19 +67,59 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
     distanceKm: 2.8,
   });
 
-  // Deep-link query param synchronization (?cat=... or ?q=...)
+  // Deep-link query param synchronization (?cat=... or ?q=... or ?store=...)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const catParam = params.get('cat');
       const qParam = params.get('q');
+      const storeParam = params.get('store');
       if (catParam) {
         setSelectedFilter(catParam);
       }
       if (qParam) {
         setSearchQuery(qParam);
       }
+      if (storeParam) {
+        setSelectedStoreName(storeParam);
+      }
     }
+  }, []);
+
+  const syncNearbyStores = async (loc?: CustomerLocation) => {
+    try {
+      const activeLoc = loc || getSavedCustomerLocation();
+      setLocationName(activeLoc.label);
+      const session = getStoredUserSession();
+      const userId =
+        session.user?.id ||
+        session.user?.memberId ||
+        session.user?.phone ||
+        (typeof window !== 'undefined' ? localStorage.getItem('mbm_guest_id') || '' : '');
+      const qs = new URLSearchParams({
+        lat: String(activeLoc.latitude),
+        lng: String(activeLoc.longitude),
+        pincode: activeLoc.pincode || '834001',
+        userId,
+      });
+      const res = await fetch(`/api/stores?${qs.toString()}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.stores)) {
+        const blocked = data.stores.filter((s: NearbyStoreItem) => s.isBlocked).map((s: NearbyStoreItem) => s.shopName.toLowerCase());
+        setBlockedStoreNames(blocked);
+        const firstActive = data.stores.find((s: NearbyStoreItem) => !s.isBlocked) || null;
+        setNearestStore(firstActive);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    syncNearbyStores();
+    const onLocUpdate = (e: any) => {
+      syncNearbyStores(e?.detail);
+    };
+    window.addEventListener('mbm_location_updated', onLocUpdate);
+    return () => window.removeEventListener('mbm_location_updated', onLocUpdate);
   }, []);
 
   const filterTabs = [
@@ -123,15 +176,24 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          await checkServiceability({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
+          const lat = Number(position.coords.latitude.toFixed(6));
+          const lng = Number(position.coords.longitude.toFixed(6));
+          await checkServiceability({ latitude: lat, longitude: lng });
+          const nextLoc: CustomerLocation = {
+            fullAddress: 'Current GPS Location',
+            pincode: getSavedCustomerLocation().pincode,
+            latitude: lat,
+            longitude: lng,
+            label: `GPS (${lat.toFixed(3)}, ${lng.toFixed(3)})`,
+          };
+          try {
+            localStorage.setItem('mbm_customer_location', JSON.stringify(nextLoc));
+            window.dispatchEvent(new CustomEvent('mbm_location_updated', { detail: nextLoc }));
+          } catch {}
           setIsDetecting(false);
           setIsLocationModalOpen(false);
         },
         async () => {
-          // Default to Ranchi Pilot hub
           await checkServiceability(undefined, '834001');
           setLocationName('Ranchi Central, Jharkhand (834001)');
           setIsDetecting(false);
@@ -149,10 +211,27 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
   const handleSaveLocation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (tempLocation.trim()) {
-      const pinMatch = tempLocation.match(/\b\d{6}\b/);
-      const pin = pinMatch ? pinMatch[0] : tempLocation.trim();
+      const raw = tempLocation.trim();
+      const pinMatch = raw.match(/\b\d{6}\b/);
+      const pin = pinMatch ? pinMatch[0] : getSavedCustomerLocation().pincode;
       await checkServiceability(undefined, pin);
-      setLocationName(tempLocation.trim());
+      try {
+        const res = await fetch(
+          `/api/stores?address=${encodeURIComponent(raw)}&pincode=${encodeURIComponent(pin)}`,
+          { cache: 'no-store' }
+        );
+        const data = await res.json();
+        const nextLoc: CustomerLocation = {
+          fullAddress: raw,
+          pincode: pin,
+          latitude: data?.userCoords?.latitude ?? 23.3441,
+          longitude: data?.userCoords?.longitude ?? 85.3096,
+          label: raw.includes(pin) ? raw : `${raw} (${pin})`,
+        };
+        localStorage.setItem('mbm_customer_location', JSON.stringify(nextLoc));
+        window.dispatchEvent(new CustomEvent('mbm_location_updated', { detail: nextLoc }));
+      } catch {}
+      setLocationName(raw);
       setIsLocationModalOpen(false);
     }
   };
@@ -189,7 +268,12 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
                          p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (p.producerName && p.producerName.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesFilter && matchesQuery;
+    const producerLower = (p.producerName || '').toLowerCase();
+    const isFromBlockedStore = blockedStoreNames.some((bn) => bn && producerLower.includes(bn));
+    const matchesSelectedStore =
+      !selectedStoreName || producerLower.includes(selectedStoreName.toLowerCase());
+
+    return matchesFilter && matchesQuery && !isFromBlockedStore && matchesSelectedStore;
   });
 
   const getProductQuantity = (productId: string) => {
@@ -273,21 +357,54 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
             <div>
               <div className="flex items-center flex-wrap gap-2 text-xs font-black text-slate-900">
                 <span className="text-sm">Delivery in {hubInfo.deliveryEtaMins} minutes</span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
-                  {hubInfo.name.split(' ')[1] || 'Central'} Hub
-                </span>
+                {nearestStore ? (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full border border-emerald-300 inline-flex items-center space-x-1">
+                    <Store className="w-3 h-3" />
+                    <span>Nearest: {nearestStore.shopName} ({nearestStore.distanceKm} km away)</span>
+                    {nearestStore.reviewCount > 0 && (
+                      <span className="inline-flex items-center ml-1 text-amber-700">
+                        <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-500 mr-0.5" />
+                        {nearestStore.avgRating}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                    {hubInfo.name.split(' ')[1] || 'Central'} Hub
+                  </span>
+                )}
                 <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">
                   Free delivery above ₹{hubInfo.minOrderFreeDelivery}
                 </span>
               </div>
-              <button
-                onClick={() => setIsLocationModalOpen(true)}
-                className="flex items-center space-x-1.5 text-xs text-slate-500 hover:text-brand-forest transition font-medium mt-1 group"
-              >
-                <MapPin className="w-3.5 h-3.5 text-brand-orange group-hover:scale-110 transition-transform" />
-                <span className="font-bold text-slate-800 underline decoration-slate-300 underline-offset-2">{locationName}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
+              <div className="flex items-center flex-wrap gap-3 mt-1">
+                <button
+                  onClick={() => setIsLocationModalOpen(true)}
+                  className="flex items-center space-x-1.5 text-xs text-slate-500 hover:text-brand-forest transition font-medium group cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-brand-orange group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-slate-800 underline decoration-slate-300 underline-offset-2">{locationName}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsShopByStoreOpen(true)}
+                  className="inline-flex items-center space-x-1.5 bg-[#064E3B] hover:bg-emerald-950 text-white text-[11px] font-extrabold px-3 py-1 rounded-xl shadow-2xs transition cursor-pointer"
+                >
+                  <Store className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Shop by Store</span>
+                </button>
+                {selectedStoreName && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStoreName(null)}
+                    className="inline-flex items-center space-x-1 bg-amber-100 text-amber-900 text-[11px] font-bold px-2.5 py-1 rounded-xl border border-amber-300 cursor-pointer"
+                  >
+                    <span>Store: {selectedStoreName}</span>
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -535,6 +652,22 @@ export const StoreCatalog: React.FC<StoreCatalogProps> = ({
             );
           })}
         </div>
+
+      <ShopByStoreModal
+        isOpen={isShopByStoreOpen}
+        onClose={() => setIsShopByStoreOpen(false)}
+        onSelectStore={(st) => {
+          setSelectedStoreName(st.shopName);
+          setIsShopByStoreOpen(false);
+        }}
+        onStoresUpdated={(stores, loc) => {
+          setLocationName(loc.label);
+          setBlockedStoreNames(
+            stores.filter((s) => s.isBlocked).map((s) => s.shopName.toLowerCase())
+          );
+          setNearestStore(stores.find((s) => !s.isBlocked) || null);
+        }}
+      />
 
       </div>
     </section>
